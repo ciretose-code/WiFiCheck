@@ -337,54 +337,84 @@ class WiFiDataManager {
         return need
     }
 
-    /// Requests administrator password to make WiFi preferences file readable
-    /// - Returns: true if permissions were successfully changed, false otherwise
-    func requestFilePermissions() -> Bool {
-        // Check if file already readable
-        if FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath) {
-            return true
-        }
-
-        // Use AppleScript to prompt for password and change permissions
-        let script = NSAppleScript(source: """
-            do shell script "chmod 644 \(wifiKnownNetworksPath)" with administrator privileges
-        """)
-
-        var errorInfo: NSDictionary?
-        script?.executeAndReturnError(&errorInfo)
-
-        if let error = errorInfo {
-            print("Error requesting file permissions: \(error)")
-            return false
-        }
-
-        // Verify the file is now readable
+    /// Checks if the app has direct access to read the WiFi preferences file
+    /// - Returns: true if the app can read the file without admin privileges
+    func hasDirectAccess() -> Bool {
         return FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath)
     }
 
-    // Load data
-    func load(_ filename: String) -> Array<WiFiData> {
+    /// Copies WiFi preferences file to temp location using administrator privileges
+    /// - Returns: Data from the file if successful, nil otherwise
+    private func loadFileWithAdminPrivileges() -> Data? {
+        // Create a temp file path in user's home directory
+        let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        let tempPath = homeDir + "/.wifi-check-temp.plist"
 
-        if !FileManager.default.isReadableFile(atPath: filename) {
-            print("Error: File is not readable at path: \(filename)")
-            return Array<WiFiData>()
+        // Clean up any existing temp file
+        try? FileManager.default.removeItem(atPath: tempPath)
+
+        // Use AppleScript to run sudo cp command with administrator privileges
+        let script = NSAppleScript(source: """
+            do shell script "cp \(wifiKnownNetworksPath) \(tempPath) && chmod 644 \(tempPath)" with administrator privileges
+        """)
+
+        var errorInfo: NSDictionary?
+        _ = script?.executeAndReturnError(&errorInfo)
+
+        if let error = errorInfo {
+            print("Error copying file with admin privileges: \(error)")
+            return nil
         }
 
-        let _fileurl = URL(fileURLWithPath: filename)
-
-        // Load file data with proper error handling
-        let _data: Data
-        do {
-            _data = try Data(contentsOf: _fileurl)
-        } catch {
-            print("Error reading file: \(error.localizedDescription)")
-            return Array<WiFiData>()
+        // Read the temp file
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: tempPath)) else {
+            print("Error: Could not read temporary file at: \(tempPath)")
+            return nil
         }
 
+        // Clean up temp file
+        try? FileManager.default.removeItem(atPath: tempPath)
+
+        return data
+    }
+
+    /// Attempts to load WiFi data using administrator password if needed
+    /// - Returns: true if data was successfully loaded, false otherwise
+    func requestFilePermissions() -> Bool {
+        // First, try direct access (if user already granted Full Disk Access)
+        if hasDirectAccess() {
+            reloadData()
+            return wifidatalist.count > 0
+        }
+
+        // Need admin privileges - copy file to accessible location
+        print("Requesting administrator password to access WiFi preferences...")
+
+        guard let data = loadFileWithAdminPrivileges() else {
+            print("Failed to read WiFi preferences file")
+            return false
+        }
+
+        // Parse the data
+        let loadedData = parseWiFiData(from: data)
+        if !loadedData.isEmpty {
+            wifidatalist = loadedData
+            wifidatalist = sortByPreferredOrder()
+            print("Successfully loaded \(loadedData.count) WiFi networks")
+            return true
+        }
+
+        return false
+    }
+
+    /// Parses WiFi data from raw plist data
+    /// - Parameter data: Raw plist data to parse
+    /// - Returns: Array of WiFiData objects
+    private func parseWiFiData(from data: Data) -> Array<WiFiData> {
         // Parse property list with proper error handling
         let _rawContent: Any
         do {
-            _rawContent = try PropertyListSerialization.propertyList(from: _data, options: .mutableContainersAndLeaves, format: nil)
+            _rawContent = try PropertyListSerialization.propertyList(from: data, options: .mutableContainersAndLeaves, format: nil)
         } catch {
             print("Error parsing property list: \(error.localizedDescription)")
             return Array<WiFiData>()
@@ -438,6 +468,28 @@ class WiFiDataManager {
             _knownNetworks.append(wifidata)
         }
         return _knownNetworks
+    }
+
+    // Load data from file
+    func load(_ filename: String) -> Array<WiFiData> {
+
+        if !FileManager.default.isReadableFile(atPath: filename) {
+            print("Error: File is not readable at path: \(filename)")
+            return Array<WiFiData>()
+        }
+
+        let _fileurl = URL(fileURLWithPath: filename)
+
+        // Load file data with proper error handling
+        let _data: Data
+        do {
+            _data = try Data(contentsOf: _fileurl)
+        } catch {
+            print("Error reading file: \(error.localizedDescription)")
+            return Array<WiFiData>()
+        }
+
+        return parseWiFiData(from: _data)
     }
     
 }

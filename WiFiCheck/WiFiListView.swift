@@ -65,6 +65,7 @@ struct WiFiListPane: View {
     @State private var sortString = "Preferred"
     @State private var listSelection: WiFiData? = nil
     @State private var showingAlert = false
+    @State private var showPermissionError = false
     @State private var reloadView = false
 //    @State private var savePasswordChecked = false
     
@@ -81,18 +82,18 @@ struct WiFiListPane: View {
                         Divider()
                         Text("WiFi/Check provides information about WiFi Network connections known to your Mac. This information comes from your Network System Preferences, hidden preferences files and command line utilities.")
                         Text("")
-                        Text("Apple has changed the default access in newer versions of macOS to the WiFi Known Networks file.  As such, you need to enter your password to be able to view this file.  Any modifications to the Known Networks file will reset file access and you'll need to enter your password again.")
+                        Text("On macOS Big Sur and later, the WiFi Known Networks file requires administrator access. Click the button below and enter your password when prompted.")
                     }.padding()
                     VStack(alignment: .center) {
                         Button(action:{
-                            // Request file permissions via administrator password prompt
+                            // Request administrator password to access WiFi data
                             if WiFiDataManager.shared.requestFilePermissions() {
-                                // Permissions granted, reload data
-                                WiFiDataManager.shared.reloadData()
+                                // Password accepted, data loaded
                                 loadWiFiData()
                                 reloadView.toggle()
                             } else {
-                                print("Failed to obtain file permissions")
+                                // Password cancelled or error occurred
+                                showPermissionError = true
                             }
                         }) {
                             HStack {
@@ -101,6 +102,13 @@ struct WiFiListPane: View {
                             }
                         }
                         .buttonStyle(WiFiButtonStyle())
+                        .alert(isPresented: $showPermissionError) {
+                            Alert(
+                                title: Text("Access Denied"),
+                                message: Text("Unable to access WiFi preferences. Please ensure you entered the correct administrator password.\n\nIf the problem persists, you can manually run:\nsudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/\n\nThen restart WiFi/Check."),
+                                dismissButton: .default(Text("OK"))
+                            )
+                        }
                        
 //                        HStack {
 //                            CheckboxView(checked: $savePasswordChecked)
