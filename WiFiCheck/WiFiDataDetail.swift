@@ -21,8 +21,8 @@ struct WiFiDataDetail: View {
 
     // Password auto-hide timer
     @State private var passwordTimer: Timer?
-    @State private var remainingSeconds: Int = 30
-    private let autoHideDelay: Int = 30 // seconds
+    @State private var remainingSeconds: Int = Constants.passwordAutoHideDelay
+    private let autoHideDelay: Int = Constants.passwordAutoHideDelay
 
     var body: some View {
 
@@ -185,7 +185,7 @@ struct WiFiDataDetail: View {
         }
     }
 
-    /// Starts the countdown timer to auto-hide the password after 30 seconds
+    /// Starts the countdown timer to auto-hide the password
     private func startPasswordTimer() {
         // Reset countdown
         remainingSeconds = autoHideDelay

@@ -17,8 +17,8 @@ class WiFiDataManager {
 
     static let shared = WiFiDataManager()
 
-    fileprivate let systemConfigurationFolder: String = "/Library/Preferences"
-    fileprivate let wifiKnownNetworksFile: String = "com.apple.wifi.known-networks.plist"
+    fileprivate let systemConfigurationFolder: String = Constants.systemConfigurationFolder
+    fileprivate let wifiKnownNetworksFile: String = Constants.wifiKnownNetworksFile
 
     // Computed property for full file path
     private var wifiKnownNetworksPath: String {

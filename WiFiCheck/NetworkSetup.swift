@@ -14,9 +14,9 @@ class NetworkSetup {
 
     static let shared = NetworkSetup()
 
-    fileprivate let airportCommand: String = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
+    fileprivate let airportCommand: String = Constants.airportCommandPath
 
-    private let networksetup: String = "/usr/sbin/networksetup"
+    private let networksetup: String = Constants.networksetupPath
     private var devicename: String = "en0"
     private let wifiservice: String = "Wi-Fi"
 
@@ -117,11 +117,11 @@ class NetworkSetup {
         
         if !output.isEmpty {
             let networks = output.components(separatedBy: .newlines).dropFirst()
-            var i = 100
+            var i = Constants.networkOrderIncrement
             for network in networks {
                 let n = network.trimmingCharacters(in: .whitespacesAndNewlines)
                 prefWiFi[n] = i
-                i = i+100
+                i += Constants.networkOrderIncrement
             }
         }
         return prefWiFi
