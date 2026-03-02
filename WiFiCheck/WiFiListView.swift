@@ -159,19 +159,27 @@ struct WiFiListPane: View {
                 }
                 .disabled(listSelection == nil)
                 .alert(isPresented: $showingAlert) {
-                    Alert(
-                        title: Text("Are you sure you want to remove \"\(listSelection!.ssidString())\"?"),
-                        message: Text("This will remove \"\(listSelection!.ssidString())\" from your list of known WiFi Networks.  You can always rejoin this WiFi Network in the future."),
-                        primaryButton: .destructive(Text("Delete")) {
-                            _ = NetworkSetup.shared.deleteNetwork(listSelection!.ssidString())
-                            let idx = wifidataArray.firstIndex(of: listSelection!)
-                            if idx != nil {
-                                wifidataArray.remove(at: idx!)
-                                listSelection = nil
-                            }
-                        },
-                        secondaryButton: .cancel()
-                    )
+                    if let selection = listSelection {
+                        return Alert(
+                            title: Text("Are you sure you want to remove \"\(selection.ssidString())\"?"),
+                            message: Text("This will remove \"\(selection.ssidString())\" from your list of known WiFi Networks.  You can always rejoin this WiFi Network in the future."),
+                            primaryButton: .destructive(Text("Delete")) {
+                                _ = NetworkSetup.shared.deleteNetwork(selection.ssidString())
+                                if let idx = wifidataArray.firstIndex(of: selection) {
+                                    wifidataArray.remove(at: idx)
+                                    listSelection = nil
+                                }
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    } else {
+                        // This shouldn't happen, but provide a fallback alert
+                        return Alert(
+                            title: Text("No Network Selected"),
+                            message: Text("Please select a network to remove."),
+                            dismissButton: .default(Text("OK"))
+                        )
+                    }
                 }
                 .buttonStyle(WiFiButtonStyle(delete: true, disabled: (listSelection == nil)))
             }

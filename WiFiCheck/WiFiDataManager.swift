@@ -71,74 +71,65 @@ class WiFiDataManager {
     }
     
     fileprivate func findBool(_ value: AnyObject?) -> Bool {
-        if value == nil {
+        guard let value = value, let result = value as? Bool else {
             return false
-        } else {
-            return value as! Bool
         }
+        return result
     }
-    
+
     fileprivate func findInt(_ value: AnyObject?) -> Int {
-        if value == nil {
+        guard let value = value, let result = value as? Int else {
             return -1
-        } else {
-            return value as! Int
         }
+        return result
     }
-    
+
     fileprivate func findString(_ value: AnyObject?) -> String {
-        if value == nil {
+        guard let value = value, let result = value as? String else {
             return ""
-        } else {
-            return value as! String
         }
+        return result
     }
-    
+
     fileprivate func findDate(_ value: AnyObject?) -> Date? {
-        if value == nil {
+        guard let value = value else {
             return nil
-        } else {
-            return (value as! Date)
         }
+        return value as? Date
     }
-    
+
     fileprivate func findData(_ value: AnyObject?) -> Data? {
-        if value == nil {
+        guard let value = value else {
             return nil
-        } else {
-            return (value as! Data)
         }
+        return value as? Data
     }
     
     
     fileprivate func findCaptiveProfile(_ value: AnyObject?) -> Array<WiFiData.CaptiveProfileData> {
         var cpList = Array<WiFiData.CaptiveProfileData>()
-        if (value == nil) {
+        guard let value = value, let dict = value as? Dictionary<String,AnyObject> else {
             return cpList
-        } else {
-            let dict: Dictionary = value as! Dictionary<String,AnyObject>
-            var cp = WiFiData.CaptiveProfileData()
-            cp.CaptiveNetwork = findInt(dict[CaptiveNetwork])
-            cp.CaptiveWebSheetLoginDate = findDate(dict[CaptiveWebSheetLoginDate]) ?? nil
-            cpList.append(cp)
         }
+        var cp = WiFiData.CaptiveProfileData()
+        cp.CaptiveNetwork = findInt(dict[CaptiveNetwork])
+        cp.CaptiveWebSheetLoginDate = findDate(dict[CaptiveWebSheetLoginDate])
+        cpList.append(cp)
         return cpList
     }
     
     fileprivate func findBSSIDList(_ value: AnyObject?) -> Array<WiFiData.BSSIDData> {
         var bssidList = Array<WiFiData.BSSIDData>()
-        if (value == nil) {
+        guard let value = value, let arr = value as? Array<Dictionary<String,AnyObject>> else {
             return bssidList
-        } else {
-            let arr: Array = value as! Array<Dictionary<String,AnyObject>>
-            for dict in arr {
-                var bssid = WiFiData.BSSIDData()
-                bssid.LEAKY_AP_BSSID = findString(dict[LEAKY_AP_BSSID])
-                bssid.LEAKY_AP_LEARNED_DATA = findData(dict[LEAKY_AP_LEARNED_DATA])!
-                // Now find the Manufacturer
-                bssid.Manufacturer = "" //TODO: self.macAddress.orgName(by: bssid.mac()) ?? ""
-                bssidList.append(bssid)
-            }
+        }
+        for dict in arr {
+            var bssid = WiFiData.BSSIDData()
+            bssid.LEAKY_AP_BSSID = findString(dict[LEAKY_AP_BSSID])
+            bssid.LEAKY_AP_LEARNED_DATA = findData(dict[LEAKY_AP_LEARNED_DATA]) ?? Data()
+            // Manufacturer lookup not yet implemented
+            bssid.Manufacturer = ""
+            bssidList.append(bssid)
         }
         return bssidList
     }
@@ -150,36 +141,29 @@ class WiFiDataManager {
     }
     
     fileprivate func findChannelHistory(_ value: AnyObject?) -> Array<WiFiData.ChannelData> {
-        
         var channelHistory = Array<WiFiData.ChannelData>()
-        if value == nil {
+        guard let value = value, let arr = value as? Array<Dictionary<String,AnyObject>> else {
             return channelHistory
-        } else {
-            let arr: Array = value as! Array<Dictionary<String,AnyObject>>
-            for dict in arr {
-                var chan = WiFiData.ChannelData()
-                chan.Channel = findInt(dict[Channel])
-                chan.Timestamp = findDate(dict[Timestamp]) ?? Date(timeIntervalSince1970: 0)
-                channelHistory.append(chan)
-            }
+        }
+        for dict in arr {
+            var chan = WiFiData.ChannelData()
+            chan.Channel = findInt(dict[Channel])
+            chan.Timestamp = findDate(dict[Timestamp]) ?? Date(timeIntervalSince1970: 0)
+            channelHistory.append(chan)
         }
         return sortChannelHistory(channelHistory)
-        
     }
     
     fileprivate func findCollocatedGroup(_ value: AnyObject?) -> Array<WiFiData.CollocatedGroupData> {
         var collocatedGroup = Array<WiFiData.CollocatedGroupData>()
-        if (value == nil) {
+        guard let value = value, let arr = value as? Array<String> else {
             return collocatedGroup
-        } else {
-            let arr: Array = value as! Array<String>
-            for str in arr {
-                var cg = WiFiData.CollocatedGroupData()
-                cg.ssid = parseWiFiSSID(str)
-                collocatedGroup.append(cg)
-            }
         }
-        
+        for str in arr {
+            var cg = WiFiData.CollocatedGroupData()
+            cg.ssid = parseWiFiSSID(str)
+            collocatedGroup.append(cg)
+        }
         return collocatedGroup
     }
     
@@ -211,8 +195,11 @@ class WiFiDataManager {
                     } else if count == 2 {
                         intSSID = "\(intSSID)\(ch)"
                         count = 0
-                        let asciiToChar = Character(UnicodeScalar(Int(intSSID, radix:16)!)!)
-                        parsedSSID = "\(parsedSSID)\(asciiToChar)"
+                        if let hexValue = Int(intSSID, radix: 16),
+                           let unicodeScalar = UnicodeScalar(hexValue) {
+                            let asciiToChar = Character(unicodeScalar)
+                            parsedSSID = "\(parsedSSID)\(asciiToChar)"
+                        }
                     }
                 }
             }
@@ -287,47 +274,76 @@ class WiFiDataManager {
         return need
     }
     
-    func isWiFiFileReadable(atPath filename: String, withPassword password: String? = nil) -> Bool {
-        if !FileManager.default.isReadableFile(atPath: filename) {
-            var errorInfo: NSDictionary?
-            let script: NSAppleScript?
-            if password != nil {
-                script = NSAppleScript(source: """
-                do shell script \"chmod 644 \(filename)\" password \"\(password!)\" with administrator privileges
-            """)
-            } else {
-                script = NSAppleScript(source: """
-                do shell script \"chmod 644 \(filename)\" with administrator privileges
-            """)
-            }
-            
-            script!.executeAndReturnError(&errorInfo)
-            return (errorInfo == nil)
-        }
-        return true
-    }
+    /// New async version with completion handler to avoid blocking the UI thread.
+//    func isWiFiFileReadable(atPath filename: String, withPassword password: String? = nil, completion: @escaping (Bool) -> Void) {
+//        if !FileManager.default.isReadableFile(atPath: filename) {
+//            DispatchQueue.global(qos: .userInitiated).async {
+//                var errorInfo: NSDictionary?
+//                let script: NSAppleScript?
+//                if let password = password {
+//                    script = NSAppleScript(source: """
+//                    do shell script "chmod 644 \(filename)" password "\(password)" with administrator privileges
+//                    """)
+//                } else {
+//                    script = NSAppleScript(source: """
+//                    do shell script "chmod 644 \(filename)" with administrator privileges
+//                    """)
+//                }
+//                _ = script?.executeAndReturnError(&errorInfo)
+//                DispatchQueue.main.async {
+//                    completion(errorInfo == nil)
+//                }
+//            }
+//        } else {
+//            completion(true)
+//        }
+//    }
     
     
     
     // Load data
     func load(_ filename: String) -> Array<WiFiData> {
-        
-        if !isWiFiFileReadable(atPath: filename) {
+
+        if !FileManager.default.isReadableFile(atPath: filename) {
+            print("Error: File is not readable at path: \(filename)")
             return Array<WiFiData>()
         }
+
         let _fileurl = URL(fileURLWithPath: filename)
-        let _data = try! Data(contentsOf: _fileurl)
-        let _rawContent = try! PropertyListSerialization.propertyList(from: _data, options: .mutableContainersAndLeaves, format: nil)
-        
+
+        // Load file data with proper error handling
+        let _data: Data
+        do {
+            _data = try Data(contentsOf: _fileurl)
+        } catch {
+            print("Error reading file: \(error.localizedDescription)")
+            return Array<WiFiData>()
+        }
+
+        // Parse property list with proper error handling
+        let _rawContent: Any
+        do {
+            _rawContent = try PropertyListSerialization.propertyList(from: _data, options: .mutableContainersAndLeaves, format: nil)
+        } catch {
+            print("Error parsing property list: \(error.localizedDescription)")
+            return Array<WiFiData>()
+        }
+
         let preferredNetworks: Dictionary<String,Int> = NetworkSetup.shared.getPreferredNetworkOrder()
-        //    print("\(preferredNetworks)")
-        
-        
+
         var _knownNetworks: Array<WiFiData> = []
-        let knownNetworks: Dictionary = (_rawContent as? Dictionary<String,AnyObject>)!
-//        print(knownNetworks)
+
+        guard let knownNetworks = _rawContent as? Dictionary<String,AnyObject> else {
+            print("Error: Invalid property list format")
+            return Array<WiFiData>()
+        }
+
         for (wifiKey, valueDict) in knownNetworks {
-            let value = valueDict as! Dictionary<String,AnyObject>
+            guard let value = valueDict as? Dictionary<String,AnyObject> else {
+                print("Warning: Skipping invalid WiFi entry: \(wifiKey)")
+                continue
+            }
+
             var wifidata = WiFiData()
             wifidata.WiFiID = wifiKey
             wifidata.AddReason = findString(value[AddReason])
@@ -336,24 +352,28 @@ class WiFiDataManager {
             wifidata.Hidden = findBool(value[Hidden])
             wifidata.JoinedBySystemAt = findDate(value[JoinedBySystemAt])
             wifidata.JoinedByUserAt = findDate(value[JoinedByUserAt])
-            wifidata.SSID = findData(value[SSID])!
+            wifidata.SSID = findData(value[SSID])
             wifidata.SupportedSecurityTypes = findString(value[SupportedSecurityTypes])
             wifidata.WEPSubtype = findString(value[WEPSubtype])
             wifidata.SystemMode = findBool(value[SystemMode])
             wifidata.UpdatedAt = findDate(value[UpdatedAt])
-            
-            let osvalue = value[__OSSpecific__] as! Dictionary<String,AnyObject>
-            wifidata.BSSIDList = findBSSIDList(osvalue[BSSIDList])
-            wifidata.ChannelHistory = findChannelHistory(osvalue[ChannelHistory])
-            wifidata.CollocatedGroup = findCollocatedGroup(osvalue[CollocatedGroup])
-            wifidata.RoamingProfileType = findString(osvalue[RoamingProfileType])
-            wifidata.TemporarilyDisabled = findBool(osvalue[TemporarilyDisabled])
-            wifidata.UserPreferredOrderTimestamp = findDate(osvalue[UserPreferredOrderTimestamp])
-            wifidata.WasHiddenBefore = findDate(osvalue[WasHiddenBefore])
-            
-            // Set preferred order?
+
+            // Parse OS-specific data with error handling
+            if let osvalue = value[__OSSpecific__] as? Dictionary<String,AnyObject> {
+                wifidata.BSSIDList = findBSSIDList(osvalue[BSSIDList])
+                wifidata.ChannelHistory = findChannelHistory(osvalue[ChannelHistory])
+                wifidata.CollocatedGroup = findCollocatedGroup(osvalue[CollocatedGroup])
+                wifidata.RoamingProfileType = findString(osvalue[RoamingProfileType])
+                wifidata.TemporarilyDisabled = findBool(osvalue[TemporarilyDisabled])
+                wifidata.UserPreferredOrderTimestamp = findDate(osvalue[UserPreferredOrderTimestamp])
+                wifidata.WasHiddenBefore = findDate(osvalue[WasHiddenBefore])
+            } else {
+                print("Warning: Missing __OSSpecific__ data for network: \(wifiKey)")
+            }
+
+            // Set preferred order
             wifidata.PreferredOrder = preferredNetworks[wifidata.ssidString()] ?? Int.max
-            
+
             _knownNetworks.append(wifidata)
         }
         return _knownNetworks
