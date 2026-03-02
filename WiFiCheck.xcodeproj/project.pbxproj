@@ -227,6 +227,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(PROJECT_DIR)/$(INFOPLIST_FILE)",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

@@ -109,11 +109,28 @@ class KeychainAccess {
         return password
     }
 
-    static func getWiFiPassword(forNetwork wifiname: String) -> (Bool, String) {
+    /// Retrieves WiFi password from Keychain using Result type
+    /// - Parameter wifiname: The SSID of the WiFi network
+    /// - Returns: Result containing password string on success, or error on failure
+    static func getPassword(forNetwork wifiname: String) -> Result<String, Error> {
         do {
             let pwd = try KeychainAccess.readPassword(service: "AirPort", account: wifiname)
-            return (true, String(decoding: pwd, as: UTF8.self))
+            let password = String(decoding: pwd, as: UTF8.self)
+            return .success(password)
         } catch {
+            return .failure(error)
+        }
+    }
+
+    /// Legacy method for retrieving WiFi password (deprecated)
+    /// - Parameter wifiname: The SSID of the WiFi network
+    /// - Returns: Tuple of (success: Bool, password/error: String)
+    @available(*, deprecated, message: "Use getPassword(forNetwork:) which returns Result<String, Error>")
+    static func getWiFiPassword(forNetwork wifiname: String) -> (Bool, String) {
+        switch getPassword(forNetwork: wifiname) {
+        case .success(let password):
+            return (true, password)
+        case .failure(let error):
             return (false, "Unable to get password: \(error)")
         }
     }

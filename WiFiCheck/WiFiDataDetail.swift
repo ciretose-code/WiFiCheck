@@ -69,11 +69,13 @@ struct WiFiDataDetail: View {
                     VStack(alignment: .trailing) {
                         VStack(alignment: .trailing) {
                             if (showPassword) {
-                                let (res, pwd) = KeychainAccess.getWiFiPassword(forNetwork: wifidata.ssidString())
-                                if res {
-                                    Text("\(pwd)").font(.system(.title, design: .monospaced))
-                                } else {
+                                // Retrieve password using Result type
+                                switch KeychainAccess.getPassword(forNetwork: wifidata.ssidString()) {
+                                case .success(let password):
+                                    Text("\(password)").font(.system(.title, design: .monospaced))
+                                case .failure:
                                     Text("**********").font(.system(.title, design: .monospaced))
+                                        .foregroundColor(.secondary)
                                 }
                                 // Show countdown timer when password is visible
                                 Text("Auto-hide in \(remainingSeconds)s")
