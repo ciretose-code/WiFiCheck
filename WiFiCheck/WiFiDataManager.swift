@@ -207,15 +207,7 @@ class WiFiDataManager {
         }
         return appleWiFiID
     }
-    
-    
-    //class WiFiIdentifier: Equatable {
-    //    let wifiKey: String
-    //    static func == (lhs: WiFiIdentifier, rhs: WiFiIdentifier) -> Bool { lhs.wifiKey == rhs.wifiKey }
-    //    init(_ wifiKey: String) { self.wifiKey = wifiKey }
-    //}
-    
-    
+
     func sortByPreferredOrder() -> [WiFiData] {
         wifidatalist.sorted { a, b in
             return a.PreferredOrder < b.PreferredOrder
@@ -273,34 +265,7 @@ class WiFiDataManager {
         }
         return need
     }
-    
-    /// New async version with completion handler to avoid blocking the UI thread.
-//    func isWiFiFileReadable(atPath filename: String, withPassword password: String? = nil, completion: @escaping (Bool) -> Void) {
-//        if !FileManager.default.isReadableFile(atPath: filename) {
-//            DispatchQueue.global(qos: .userInitiated).async {
-//                var errorInfo: NSDictionary?
-//                let script: NSAppleScript?
-//                if let password = password {
-//                    script = NSAppleScript(source: """
-//                    do shell script "chmod 644 \(filename)" password "\(password)" with administrator privileges
-//                    """)
-//                } else {
-//                    script = NSAppleScript(source: """
-//                    do shell script "chmod 644 \(filename)" with administrator privileges
-//                    """)
-//                }
-//                _ = script?.executeAndReturnError(&errorInfo)
-//                DispatchQueue.main.async {
-//                    completion(errorInfo == nil)
-//                }
-//            }
-//        } else {
-//            completion(true)
-//        }
-//    }
-    
-    
-    
+
     // Load data
     func load(_ filename: String) -> Array<WiFiData> {
 

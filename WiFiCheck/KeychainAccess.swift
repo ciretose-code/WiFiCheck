@@ -59,77 +59,7 @@ class KeychainAccess {
             throw KeychainError.unexpectedStatus(status)
         }
     }
-    
-//    static func findPassword(_ name: String) throws -> String {
-//
-//           // clean up anything lingering
-//        var myErr: OSStatus
-//        var serviceName: String = name
-//        var passPtr: UnsafeMutableRawPointer?
-//        var passLength:UInt32 = 0
-//        var myKeychainItem: SecKeychainItem?
-//
-//           myErr = SecKeychainFindGenericPassword(nil, UInt32(serviceName.count), serviceName, UInt32(name.count), name, &passLength, &passPtr, &myKeychainItem)
-//
-//           if myErr == OSStatus(errSecSuccess) {
-//               let password = NSString(bytes: passPtr!, length: Int(passLength), encoding: String.Encoding.utf8.rawValue)
-//               return password! as String
-//           } else {
-//               // now check for all lowercase password just in case
-//
-//               if name == name.lowercased() {
-//                   // already lowercase, no need to check again
-//
-//                   throw KeychainError.itemNotFound
-//               }
-//
-//               myErr = SecKeychainFindGenericPassword(nil, UInt32(serviceName.count), serviceName, UInt32(name.lowercased().count), name.lowercased(), &passLength, &passPtr, &myKeychainItem)
-//
-//               if myErr == OSStatus(errSecSuccess) {
-//                   let password = NSString(bytes: passPtr!, length: Int(passLength), encoding: String.Encoding.utf8.rawValue)
-//                   return password! as String
-//               } else {
-//
-//                   // now to look for /anything/ that might match
-//
-//                   var searchReturn: AnyObject? = nil
-//
-//                   let attrs = [
-//                       kSecClass : kSecClassGenericPassword,
-//                       kSecAttrService : serviceName,
-//                       kSecReturnRef : true,
-//                       kSecReturnAttributes : true,
-//                       kSecMatchLimit : kSecMatchLimitAll,
-//                       ] as [CFString : Any]
-//
-//                   myErr = SecItemCopyMatching(attrs as CFDictionary, &searchReturn)
-//
-//                   if myErr != 0 || searchReturn == nil {
-//                       // no results throw
-//                       throw KeychainError.itemNotFound
-//                   }
-//
-//                   let returnDict = searchReturn as! CFArray as Array
-//                   for item in returnDict {
-//                       if ((item["acct"] as? String ?? "").lowercased() == name.lowercased()) {
-//                           // got a match now let's lookup the password
-//
-//                           myErr = SecKeychainFindGenericPassword(nil, UInt32(serviceName.count), serviceName, UInt32((item["acct"] as? String ?? "").count), (item["acct"] as? String ?? ""), &passLength, &passPtr, &myKeychainItem)
-//
-//                           if myErr == OSStatus(errSecSuccess) {
-//                               let password = NSString(bytes: passPtr!, length: Int(passLength), encoding: String.Encoding.utf8.rawValue)
-//                               return password! as String
-//                           } else {
-//                               throw KeychainError.itemNotFound
-//                           }
-//                       }
-//                   }
-//                   throw KeychainError.itemNotFound
-//               }
-//           }
-//
-//    }
-    
+
     static func readPassword(service: String, account: String) throws -> Data {
         let query: [String: AnyObject] = [
             // kSecAttrService,  kSecAttrAccount, and kSecClass
