@@ -85,9 +85,15 @@ struct WiFiListPane: View {
                     }.padding()
                     VStack(alignment: .center) {
                         Button(action:{
-                            WiFiDataManager.shared.reloadData()
-                            loadWiFiData()
-                            reloadView.toggle()
+                            // Request file permissions via administrator password prompt
+                            if WiFiDataManager.shared.requestFilePermissions() {
+                                // Permissions granted, reload data
+                                WiFiDataManager.shared.reloadData()
+                                loadWiFiData()
+                                reloadView.toggle()
+                            } else {
+                                print("Failed to obtain file permissions")
+                            }
                         }) {
                             HStack {
                                 Image(systemName: "lock.rotation.open")

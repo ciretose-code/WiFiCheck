@@ -337,6 +337,31 @@ class WiFiDataManager {
         return need
     }
 
+    /// Requests administrator password to make WiFi preferences file readable
+    /// - Returns: true if permissions were successfully changed, false otherwise
+    func requestFilePermissions() -> Bool {
+        // Check if file already readable
+        if FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath) {
+            return true
+        }
+
+        // Use AppleScript to prompt for password and change permissions
+        let script = NSAppleScript(source: """
+            do shell script "chmod 644 \(wifiKnownNetworksPath)" with administrator privileges
+        """)
+
+        var errorInfo: NSDictionary?
+        script?.executeAndReturnError(&errorInfo)
+
+        if let error = errorInfo {
+            print("Error requesting file permissions: \(error)")
+            return false
+        }
+
+        // Verify the file is now readable
+        return FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath)
+    }
+
     // Load data
     func load(_ filename: String) -> Array<WiFiData> {
 
