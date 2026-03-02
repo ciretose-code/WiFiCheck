@@ -82,31 +82,36 @@ struct WiFiListPane: View {
                         Divider()
                         Text("WiFi/Check provides information about WiFi Network connections known to your Mac. This information comes from your Network System Preferences, hidden preferences files and command line utilities.")
                         Text("")
-                        Text("On macOS Big Sur and later, the WiFi Known Networks file requires administrator access. Click the button below and enter your password when prompted.")
+                        Text("On macOS Big Sur and later, WiFi/Check requires Full Disk Access to read the WiFi Known Networks file.")
+                        Text("")
+                        Text("Click 'Check Access' below. If access is denied, click 'Open System Settings' to grant permission.")
                     }.padding()
                     VStack(alignment: .center) {
                         Button(action:{
-                            // Request administrator password to access WiFi data
+                            // Check if app has Full Disk Access
                             if WiFiDataManager.shared.requestFilePermissions() {
-                                // Password accepted, data loaded
+                                // Access granted, data loaded
                                 loadWiFiData()
                                 reloadView.toggle()
                             } else {
-                                // Password cancelled or error occurred
+                                // Full Disk Access not granted
                                 showPermissionError = true
                             }
                         }) {
                             HStack {
-                                Image(systemName: "lock.rotation.open")
-                                Text("Enter Password")
+                                Image(systemName: "checkmark.shield")
+                                Text("Check Access")
                             }
                         }
                         .buttonStyle(WiFiButtonStyle())
                         .alert(isPresented: $showPermissionError) {
                             Alert(
-                                title: Text("Access Denied"),
-                                message: Text("Unable to access WiFi preferences. Please ensure you entered the correct administrator password.\n\nIf the problem persists, you can manually run:\nsudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/\n\nThen restart WiFi/Check."),
-                                dismissButton: .default(Text("OK"))
+                                title: Text("Full Disk Access Required"),
+                                message: Text("WiFi/Check needs Full Disk Access to read WiFi preferences.\n\nSteps:\n1. Click 'Open System Settings' below\n2. Click the lock icon to unlock\n3. Click '+' button\n4. Select WiFi/Check.app from Applications\n5. Quit and relaunch WiFi/Check\n6. Click 'Check Access' again"),
+                                primaryButton: .default(Text("Open System Settings")) {
+                                    WiFiDataManager.shared.openFullDiskAccessSettings()
+                                },
+                                secondaryButton: .cancel()
                             )
                         }
                        

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppKit
 
 class WiFiDataManager {
 
@@ -343,68 +344,39 @@ class WiFiDataManager {
         return FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath)
     }
 
-    /// Copies WiFi preferences file to temp location using administrator privileges
-    /// - Returns: Data from the file if successful, nil otherwise
-    private func loadFileWithAdminPrivileges() -> Data? {
-        // Create a temp file path in user's home directory
-        let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
-        let tempPath = homeDir + "/.wifi-check-temp.plist"
 
-        // Clean up any existing temp file
-        try? FileManager.default.removeItem(atPath: tempPath)
-
-        // Use AppleScript to run sudo cp command with administrator privileges
-        let script = NSAppleScript(source: """
-            do shell script "cp \(wifiKnownNetworksPath) \(tempPath) && chmod 644 \(tempPath)" with administrator privileges
-        """)
-
-        var errorInfo: NSDictionary?
-        _ = script?.executeAndReturnError(&errorInfo)
-
-        if let error = errorInfo {
-            print("Error copying file with admin privileges: \(error)")
-            return nil
-        }
-
-        // Read the temp file
-        guard let data = try? Data(contentsOf: URL(fileURLWithPath: tempPath)) else {
-            print("Error: Could not read temporary file at: \(tempPath)")
-            return nil
-        }
-
-        // Clean up temp file
-        try? FileManager.default.removeItem(atPath: tempPath)
-
-        return data
-    }
-
-    /// Attempts to load WiFi data using administrator password if needed
-    /// - Returns: true if data was successfully loaded, false otherwise
+    /// Attempts to load WiFi data - requires Full Disk Access
+    /// - Returns: true if data was successfully loaded, false if Full Disk Access needed
     func requestFilePermissions() -> Bool {
-        // First, try direct access (if user already granted Full Disk Access)
+        // Try direct access (requires Full Disk Access to be granted)
         if hasDirectAccess() {
+            print("Full Disk Access granted - loading data directly")
             reloadData()
             return wifidatalist.count > 0
         }
 
-        // Need admin privileges - copy file to accessible location
-        print("Requesting administrator password to access WiFi preferences...")
-
-        guard let data = loadFileWithAdminPrivileges() else {
-            print("Failed to read WiFi preferences file")
-            return false
-        }
-
-        // Parse the data
-        let loadedData = parseWiFiData(from: data)
-        if !loadedData.isEmpty {
-            wifidatalist = loadedData
-            wifidatalist = sortByPreferredOrder()
-            print("Successfully loaded \(loadedData.count) WiFi networks")
-            return true
-        }
+        print("")
+        print("⚠️  WiFi/Check does not have Full Disk Access")
+        print("")
+        print("The WiFi preferences file is protected by System Integrity Protection.")
+        print("Even administrator privileges cannot bypass this protection.")
+        print("")
+        print("To grant Full Disk Access:")
+        print("1. Click 'Open System Settings' in the alert")
+        print("2. Click the lock icon and enter your password")
+        print("3. Click the '+' button")
+        print("4. Navigate to Applications and select WiFi/Check.app")
+        print("5. Quit and relaunch WiFi/Check")
+        print("6. Click 'Check Access' again")
+        print("")
 
         return false
+    }
+
+    /// Opens System Settings to the Full Disk Access pane
+    func openFullDiskAccessSettings() {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!
+        NSWorkspace.shared.open(url)
     }
 
     /// Parses WiFi data from raw plist data
