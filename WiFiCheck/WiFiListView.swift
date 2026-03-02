@@ -67,6 +67,7 @@ struct WiFiListPane: View {
     @State private var showingAlert = false
     @State private var showPermissionError = false
     @State private var reloadView = false
+    @State private var isLoading = false
 //    @State private var savePasswordChecked = false
     
     func loadWiFiData() {
@@ -87,39 +88,51 @@ struct WiFiListPane: View {
                         Text("Click 'Check Access' below. If access is denied, click 'Open System Settings' to grant permission.")
                     }.padding()
                     VStack(alignment: .center) {
-                        Button(action:{
-                            // Check if app has Full Disk Access
-                            if WiFiDataManager.shared.requestFilePermissions() {
-                                // Access granted, data loaded
-                                loadWiFiData()
-                                reloadView.toggle()
-                            } else {
-                                // Full Disk Access not granted
-                                showPermissionError = true
+                        if isLoading {
+                            ProgressView("Checking access...")
+                                .padding()
+                        } else {
+                            Button(action:{
+                                // Show loading state
+                                isLoading = true
+
+                                // Small delay to allow UI to update
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    // Check if app has Full Disk Access
+                                    if WiFiDataManager.shared.requestFilePermissions() {
+                                        // Access granted, data loaded
+                                        loadWiFiData()
+                                        reloadView.toggle()
+                                    } else {
+                                        // Full Disk Access not granted
+                                        showPermissionError = true
+                                    }
+                                    isLoading = false
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "checkmark.shield")
+                                    Text("Check Access")
+                                }
                             }
-                        }) {
-                            HStack {
-                                Image(systemName: "checkmark.shield")
-                                Text("Check Access")
-                            }
+                            .buttonStyle(WiFiButtonStyle())
                         }
-                        .buttonStyle(WiFiButtonStyle())
-                        .alert(isPresented: $showPermissionError) {
-                            Alert(
-                                title: Text("Full Disk Access Required"),
-                                message: Text("WiFi/Check needs Full Disk Access to read WiFi preferences.\n\nSteps:\n1. Click 'Open System Settings' below\n2. Click the lock icon to unlock\n3. Click '+' button\n4. Select WiFi/Check.app from Applications\n5. Quit and relaunch WiFi/Check\n6. Click 'Check Access' again"),
-                                primaryButton: .default(Text("Open System Settings")) {
-                                    WiFiDataManager.shared.openFullDiskAccessSettings()
-                                },
-                                secondaryButton: .cancel()
-                            )
-                        }
-                       
+
 //                        HStack {
 //                            CheckboxView(checked: $savePasswordChecked)
 //                            Spacer()
 //                            Text("Save password to Keychain")
 //                        }
+                    }
+                    .alert(isPresented: $showPermissionError) {
+                        Alert(
+                            title: Text("Full Disk Access Required"),
+                            message: Text("WiFi/Check needs Full Disk Access to read WiFi preferences.\n\nSteps:\n1. Click 'Open System Settings' below\n2. Click the lock icon to unlock\n3. Click '+' button\n4. Select WiFi/Check.app from Applications\n5. Quit and relaunch WiFi/Check\n6. Click 'Check Access' again"),
+                            primaryButton: .default(Text("Open System Settings")) {
+                                WiFiDataManager.shared.openFullDiskAccessSettings()
+                            },
+                            secondaryButton: .cancel()
+                        )
                     }
                 }
                 Spacer()
