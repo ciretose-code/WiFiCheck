@@ -8,12 +8,17 @@
 import Foundation
 
 class WiFiDataManager {
-    
+
     static let shared = WiFiDataManager()
 
     fileprivate let systemConfigurationFolder: String = "/Library/Preferences"
     fileprivate let wifiKnownNetworksFile: String = "com.apple.wifi.known-networks.plist"
-    
+
+    // Computed property for full file path
+    private var wifiKnownNetworksPath: String {
+        return systemConfigurationFolder + "/" + wifiKnownNetworksFile
+    }
+
     // Known PLIST Keys
     
     let AddReason = "AddReason"
@@ -51,17 +56,45 @@ class WiFiDataManager {
     
     
     var wifidatalist: Array<WiFiData> = Array<WiFiData>()
-    
+
     init() {
-        if FileManager.default.isReadableFile(atPath: systemConfigurationFolder+"/"+wifiKnownNetworksFile) {
+        // Validate system paths exist
+        validateSystemPaths()
+
+        // Try to load WiFi data if accessible
+        if FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath) {
             reloadData()
         } else {
             print("Unable to load \(wifiKnownNetworksFile) - need to get user permissions")
         }
     }
+
+    /// Validates that required system paths exist
+    private func validateSystemPaths() {
+        let fileManager = FileManager.default
+
+        // Check if system configuration folder exists
+        var isDirectory: ObjCBool = false
+        if !fileManager.fileExists(atPath: systemConfigurationFolder, isDirectory: &isDirectory) {
+            print("ERROR: System configuration folder not found at: \(systemConfigurationFolder)")
+            print("This is a critical system folder. Your macOS installation may be corrupted.")
+        } else if !isDirectory.boolValue {
+            print("ERROR: Expected directory at: \(systemConfigurationFolder), but found a file instead.")
+        }
+
+        // Check if WiFi known networks file exists (may not exist until user has connected to WiFi)
+        let fullPath = wifiKnownNetworksPath
+        if !fileManager.fileExists(atPath: fullPath) {
+            print("INFO: WiFi known networks file not found at: \(fullPath)")
+            print("This file will be created when you connect to a WiFi network, or may require administrator access.")
+        } else if !fileManager.isReadableFile(atPath: fullPath) {
+            print("INFO: WiFi known networks file exists but is not readable: \(fullPath)")
+            print("You will need to grant administrator access to read this file.")
+        }
+    }
     
     func reloadData() {
-        wifidatalist = load(systemConfigurationFolder+"/"+wifiKnownNetworksFile)
+        wifidatalist = load(wifiKnownNetworksPath)
         wifidatalist = sortByPreferredOrder()
     }
     
@@ -259,7 +292,7 @@ class WiFiDataManager {
     }
     
     func needsPassword() -> Bool {
-        let need = !FileManager.default.isReadableFile(atPath: systemConfigurationFolder+"/"+wifiKnownNetworksFile)
+        let need = !FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath)
         if !need {
             reloadData()
         }
