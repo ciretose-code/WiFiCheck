@@ -156,7 +156,7 @@ struct WiFiDataDetail: View {
             Spacer()
             VStack(alignment: .leading) {
                 Spacer()
-                Text("ciretose © 2021")
+                Text("ciretose © 2021-\(Calendar.current.component(.year, from: Date()))")
                     .foregroundColor(Color.gray)
             }
         }
