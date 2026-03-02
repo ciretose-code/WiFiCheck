@@ -66,6 +66,9 @@ struct WiFiListPane: View {
     @State private var listSelection: WiFiData? = nil
     @State private var showingAlert = false
     @State private var showPermissionError = false
+    @State private var showDeleteResult = false
+    @State private var deleteSuccess = false
+    @State private var deleteMessage = ""
     @State private var reloadView = false
     @State private var isLoading = false
 //    @State private var savePasswordChecked = false
@@ -196,11 +199,21 @@ struct WiFiListPane: View {
                             title: Text("Are you sure you want to remove \"\(selection.ssidString())\"?"),
                             message: Text("This will remove \"\(selection.ssidString())\" from your list of known WiFi Networks.  You can always rejoin this WiFi Network in the future."),
                             primaryButton: .destructive(Text("Delete")) {
-                                _ = NetworkSetup.shared.deleteNetwork(selection.ssidString())
-                                if let idx = wifidataArray.firstIndex(of: selection) {
-                                    wifidataArray.remove(at: idx)
-                                    listSelection = nil
+                                let result = NetworkSetup.shared.deleteNetwork(selection.ssidString())
+                                if result {
+                                    // Delete succeeded - remove from UI
+                                    if let idx = wifidataArray.firstIndex(of: selection) {
+                                        wifidataArray.remove(at: idx)
+                                        listSelection = nil
+                                    }
+                                    deleteSuccess = true
+                                    deleteMessage = "Successfully removed \"\(selection.ssidString())\""
+                                } else {
+                                    // Delete failed - show error
+                                    deleteSuccess = false
+                                    deleteMessage = "Failed to remove \"\(selection.ssidString())\". Please try again."
                                 }
+                                showDeleteResult = true
                             },
                             secondaryButton: .cancel()
                         )
@@ -214,6 +227,13 @@ struct WiFiListPane: View {
                     }
                 }
                 .buttonStyle(WiFiButtonStyle(delete: true, disabled: (listSelection == nil)))
+                .alert(isPresented: $showDeleteResult) {
+                    Alert(
+                        title: Text(deleteSuccess ? "Success" : "Error"),
+                        message: Text(deleteMessage),
+                        dismissButton: .default(Text("OK"))
+                    )
+                }
             }
             Spacer()
         }
