@@ -7,8 +7,13 @@
 
 import Foundation
 import AppKit
+import os.log
 
 class WiFiDataManager {
+
+    // MARK: - Logging
+
+    private static let logger = Logger(subsystem: "com.ciretose.wificheck", category: "WiFiDataManager")
 
     static let shared = WiFiDataManager()
 
@@ -66,7 +71,7 @@ class WiFiDataManager {
         if FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath) {
             reloadData()
         } else {
-            print("Unable to load \(wifiKnownNetworksFile) - need to get user permissions")
+            Self.logger.info("Unable to load WiFi preferences - user permissions required")
         }
     }
 
@@ -77,20 +82,20 @@ class WiFiDataManager {
         // Check if system configuration folder exists
         var isDirectory: ObjCBool = false
         if !fileManager.fileExists(atPath: systemConfigurationFolder, isDirectory: &isDirectory) {
-            print("ERROR: System configuration folder not found at: \(systemConfigurationFolder)")
-            print("This is a critical system folder. Your macOS installation may be corrupted.")
+            Self.logger.error("System configuration folder not found at: \(self.systemConfigurationFolder, privacy: .public)")
+            Self.logger.error("This is a critical system folder. Your macOS installation may be corrupted.")
         } else if !isDirectory.boolValue {
-            print("ERROR: Expected directory at: \(systemConfigurationFolder), but found a file instead.")
+            Self.logger.error("Expected directory at: \(self.systemConfigurationFolder, privacy: .public), but found a file instead.")
         }
 
         // Check if WiFi known networks file exists (may not exist until user has connected to WiFi)
         let fullPath = wifiKnownNetworksPath
         if !fileManager.fileExists(atPath: fullPath) {
-            print("INFO: WiFi known networks file not found at: \(fullPath)")
-            print("This file will be created when you connect to a WiFi network, or may require administrator access.")
+            Self.logger.info("WiFi known networks file not found at: \(fullPath, privacy: .public)")
+            Self.logger.info("This file will be created when you connect to a WiFi network, or may require administrator access.")
         } else if !fileManager.isReadableFile(atPath: fullPath) {
-            print("INFO: WiFi known networks file exists but is not readable: \(fullPath)")
-            print("You will need to grant administrator access to read this file.")
+            Self.logger.info("WiFi known networks file exists but is not readable: \(fullPath, privacy: .public)")
+            Self.logger.info("You will need to grant Full Disk Access to read this file.")
         }
     }
     
@@ -324,9 +329,7 @@ class WiFiDataManager {
     
     func sortByAlphabetical() -> [WiFiData] {
         wifidatalist.sorted { a, b in
-            var res = false
-            res = a.ssidString().lowercased() < b.ssidString().lowercased()
-            return res
+            a.ssidString().lowercased() < b.ssidString().lowercased()
         }
     }
     
@@ -350,25 +353,14 @@ class WiFiDataManager {
     func requestFilePermissions() -> Bool {
         // Try direct access (requires Full Disk Access to be granted)
         if hasDirectAccess() {
-            print("Full Disk Access granted - loading data directly")
+            Self.logger.info("Full Disk Access granted - loading data directly")
             reloadData()
             return wifidatalist.count > 0
         }
 
-        print("")
-        print("⚠️  WiFi/Check does not have Full Disk Access")
-        print("")
-        print("The WiFi preferences file is protected by System Integrity Protection.")
-        print("Even administrator privileges cannot bypass this protection.")
-        print("")
-        print("To grant Full Disk Access:")
-        print("1. Click 'Open System Settings' in the alert")
-        print("2. Click the lock icon and enter your password")
-        print("3. Click the '+' button")
-        print("4. Navigate to Applications and select WiFi/Check.app")
-        print("5. Quit and relaunch WiFi/Check")
-        print("6. Click 'Check Access' again")
-        print("")
+        Self.logger.warning("WiFi/Check does not have Full Disk Access")
+        Self.logger.info("The WiFi preferences file is protected by System Integrity Protection.")
+        Self.logger.info("To grant Full Disk Access: Open System Settings → Privacy & Security → Full Disk Access")
 
         return false
     }
@@ -388,7 +380,7 @@ class WiFiDataManager {
         do {
             _rawContent = try PropertyListSerialization.propertyList(from: data, options: .mutableContainersAndLeaves, format: nil)
         } catch {
-            print("Error parsing property list: \(error.localizedDescription)")
+            Self.logger.error("Error parsing property list: \(error.localizedDescription, privacy: .public)")
             return Array<WiFiData>()
         }
 
@@ -397,13 +389,13 @@ class WiFiDataManager {
         var _knownNetworks: Array<WiFiData> = []
 
         guard let knownNetworks = _rawContent as? Dictionary<String,AnyObject> else {
-            print("Error: Invalid property list format")
+            Self.logger.error("Invalid property list format")
             return Array<WiFiData>()
         }
 
         for (wifiKey, valueDict) in knownNetworks {
             guard let value = valueDict as? Dictionary<String,AnyObject> else {
-                print("Warning: Skipping invalid WiFi entry: \(wifiKey)")
+                Self.logger.warning("Skipping invalid WiFi entry: \(wifiKey, privacy: .public)")
                 continue
             }
 
@@ -431,7 +423,7 @@ class WiFiDataManager {
                 wifidata.UserPreferredOrderTimestamp = findDate(osvalue[UserPreferredOrderTimestamp])
                 wifidata.WasHiddenBefore = findDate(osvalue[WasHiddenBefore])
             } else {
-                print("Warning: Missing __OSSpecific__ data for network: \(wifiKey)")
+                Self.logger.warning("Missing __OSSpecific__ data for network: \(wifiKey, privacy: .public)")
             }
 
             // Set preferred order
@@ -446,7 +438,7 @@ class WiFiDataManager {
     func load(_ filename: String) -> Array<WiFiData> {
 
         if !FileManager.default.isReadableFile(atPath: filename) {
-            print("Error: File is not readable at path: \(filename)")
+            Self.logger.error("File is not readable at path: \(filename, privacy: .public)")
             return Array<WiFiData>()
         }
 
@@ -457,7 +449,7 @@ class WiFiDataManager {
         do {
             _data = try Data(contentsOf: _fileurl)
         } catch {
-            print("Error reading file: \(error.localizedDescription)")
+            Self.logger.error("Error reading file: \(error.localizedDescription, privacy: .public)")
             return Array<WiFiData>()
         }
 

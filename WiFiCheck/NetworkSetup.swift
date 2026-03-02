@@ -6,8 +6,11 @@
 //
 
 import Foundation
+import os.log
 
 class NetworkSetup {
+
+    private static let logger = Logger(subsystem: "com.ciretose.wificheck", category: "NetworkSetup")
 
     static let shared = NetworkSetup()
 
@@ -32,14 +35,14 @@ class NetworkSetup {
 
         // Check networksetup command (required)
         if !fileManager.fileExists(atPath: networksetup) {
-            print("ERROR: networksetup command not found at: \(networksetup)")
-            print("This is a critical system utility. Your macOS installation may be corrupted.")
+            Self.logger.error("networksetup command not found at: \(self.networksetup, privacy: .public)")
+            Self.logger.error("This is a critical system utility. Your macOS installation may be corrupted.")
         }
 
         // Check airport command (optional, for advanced features)
         if !fileManager.fileExists(atPath: airportCommand) {
-            print("WARNING: airport command not found at: \(airportCommand)")
-            print("Some advanced WiFi features may not be available. This path may have changed in your macOS version.")
+            Self.logger.warning("airport command not found at: \(self.airportCommand, privacy: .public)")
+            Self.logger.info("Some advanced WiFi features may not be available. This path may have changed in your macOS version.")
         }
     }
 
@@ -49,9 +52,9 @@ class NetworkSetup {
         do {
             output = try Utils.runCommand(networksetup, withArgs: ["-listallhardwareports"])
         } catch let e as RuntimeError {
-            print("RuntimeError: \(e.kind) - \(e.message)")
+            Self.logger.error("RuntimeError: \(String(describing: e.kind), privacy: .public) - \(e.message, privacy: .public)")
         } catch {
-            print("Error: \(error))")
+            Self.logger.error("Error: \(error.localizedDescription, privacy: .public)")
         }
         
         if !output.isEmpty {
@@ -80,10 +83,10 @@ class NetworkSetup {
         do {
             output = try Utils.runCommand(networksetup, withArgs: ["-getairportnetwork", devicename])
         } catch let e as RuntimeError {
-            print("RuntimeError: \(e.kind) - \(e.message)")
+            Self.logger.error("RuntimeError: \(String(describing: e.kind), privacy: .public) - \(e.message, privacy: .public)")
             return ssid
         } catch {
-            print("Error: \(error))")
+            Self.logger.error("Error: \(error.localizedDescription, privacy: .public)")
             return ssid
         }
         
@@ -105,10 +108,10 @@ class NetworkSetup {
         do {
             output = try Utils.runCommand(networksetup, withArgs: ["-listpreferredwirelessnetworks", devicename])
         } catch let e as RuntimeError {
-            print("RuntimeError: \(e.kind) - \(e.message)")
+            Self.logger.error("RuntimeError: \(String(describing: e.kind), privacy: .public) - \(e.message, privacy: .public)")
             return prefWiFi
         } catch {
-            print("Error: \(error))")
+            Self.logger.error("Error: \(error.localizedDescription, privacy: .public)")
             return prefWiFi
         }
         
@@ -129,10 +132,10 @@ class NetworkSetup {
         do {
             output = try Utils.runCommand(networksetup, withArgs: ["-removepreferredwirelessnetwork", devicename, network])
         } catch let e as RuntimeError {
-            print("RuntimeError: \(e.kind) - \(e.message)")
+            Self.logger.error("RuntimeError: \(String(describing: e.kind), privacy: .public) - \(e.message, privacy: .public)")
             return false
         } catch {
-            print("Error: \(error))")
+            Self.logger.error("Error: \(error.localizedDescription, privacy: .public)")
             return false
         }
         if !output.isEmpty {
