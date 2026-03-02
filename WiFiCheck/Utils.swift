@@ -134,23 +134,45 @@ class Utils {
         }
     }
     
-    static func runCommand(_ executable: String, withArgs args: [String], withEnvironment env: [String:String]? = nil) throws -> String {
+    static func runCommand(_ executable: String, withArgs args: [String], withEnvironment env: [String:String]? = nil, timeout: TimeInterval = 30.0) throws -> String {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: executable)
         task.arguments = args
-        if env != nil && env!.count > 0 {
-            task.environment = env
+        if let environment = env, !environment.isEmpty {
+            task.environment = environment
         }
         let outputPipe = Pipe()
         let errorPipe = Pipe()
         task.standardOutput = outputPipe
         task.standardError = errorPipe
-        
+
         do {
             try task.run()
         } catch {
             throw RuntimeError(message: "\(error)", kind: .taskRun)
         }
+
+        // Set up timeout handler
+        var didTimeout = false
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
+        timer.schedule(deadline: .now() + timeout)
+        timer.setEventHandler {
+            if task.isRunning {
+                task.terminate()
+                didTimeout = true
+            }
+        }
+        timer.resume()
+
+        // Wait for process to complete
+        task.waitUntilExit()
+        timer.cancel()
+
+        // Check if process timed out
+        if didTimeout {
+            throw RuntimeError(message: "Command timed out after \(timeout) seconds", kind: .taskRun)
+        }
+
         let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
         let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
 

@@ -146,33 +146,26 @@ struct WiFiData: Hashable, Codable, Identifiable {
     }
     
     func userPreferredOrder() -> Int64 {
-        if AddedAt == nil {
+        guard let addedDate = AddedAt else {
             return 0
-        } else {
-            return AddedAt!.currentTimeMillis()
         }
+        return addedDate.currentTimeMillis()
     }
     
     func isCaptive() -> Bool {
-        if CaptiveProfile.count == 0 {
+        guard !CaptiveProfile.isEmpty,
+              let cpd = CaptiveProfile.first else {
             return false
         }
-        let cpd: CaptiveProfileData? = CaptiveProfile[0]
-        if cpd != nil {
-            return !(cpd!.CaptiveNetwork == 0)
-        }
-        return false
+        return cpd.CaptiveNetwork != 0
     }
     
     func captiveLogin() -> String {
-        if CaptiveProfile.count == 0 {
+        guard !CaptiveProfile.isEmpty,
+              let cpd = CaptiveProfile.first else {
             return "Unknown"
         }
-        let cpd: CaptiveProfileData? = CaptiveProfile[0]
-        if cpd != nil {
-            return Utils.relativeDateToString(cpd!.CaptiveWebSheetLoginDate) ?? "Unknown"
-        }
-        return "Unknown"
+        return Utils.relativeDateToString(cpd.CaptiveWebSheetLoginDate) ?? "Unknown"
     }
 
     func hiddenStateText() -> String {

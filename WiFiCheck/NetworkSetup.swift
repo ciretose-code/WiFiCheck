@@ -128,6 +128,20 @@ class NetworkSetup {
     }
     
     func deleteNetwork(_ network: String) -> Bool {
+        // Input validation to prevent command injection
+        // Network SSIDs should not contain shell metacharacters
+        let dangerousCharacters = CharacterSet(charactersIn: ";|&$`<>()[]{}*?~!")
+        if network.rangeOfCharacter(from: dangerousCharacters) != nil {
+            Self.logger.error("Invalid network name contains dangerous characters: \(network, privacy: .public)")
+            return false
+        }
+
+        // Additional validation: network name should not be empty
+        guard !network.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            Self.logger.error("Network name is empty")
+            return false
+        }
+
         var output: String = ""
         do {
             output = try Utils.runCommand(networksetup, withArgs: ["-removepreferredwirelessnetwork", devicename, network])

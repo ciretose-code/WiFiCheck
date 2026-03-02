@@ -33,9 +33,15 @@ class KeychainAccess {
             kSecAttrService as String: service as AnyObject,
             kSecAttrAccount as String: account as AnyObject,
             kSecClass as String: kSecClassGenericPassword,
-            
+
             // kSecValueData is the item value to save
-            kSecValueData as String: password as AnyObject
+            kSecValueData as String: password as AnyObject,
+
+            // kSecAttrAccessible controls when the keychain item can be accessed
+            // kSecAttrAccessibleWhenUnlockedThisDeviceOnly means:
+            // - Only accessible when device is unlocked
+            // - Not backed up to iCloud or transferred to other devices
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
         
         // SecItemAdd attempts to add the item identified by
