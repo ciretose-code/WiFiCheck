@@ -200,44 +200,82 @@ class WiFiDataManager {
         return collocatedGroup
     }
     
-    // Convert the airport plist id to an SSID
+    /// Parses Apple's internal WiFi SSID format into a human-readable SSID string.
+    ///
+    /// Apple stores WiFi SSIDs in the known networks plist using a special format where the SSID
+    /// is encoded as hexadecimal values within angle brackets. This function decodes that format.
+    ///
+    /// **Format Details:**
+    /// - Input: `"wifi.ssid.<hexdata>"`
+    /// - The hexdata section contains pairs of hex digits representing ASCII/Unicode characters
+    /// - Format: `<4D7946726565 57696669>` where spaces are optional separators
+    /// - Each pair of hex digits (e.g., "4D") represents one character
+    ///
+    /// **Example:**
+    /// ```
+    /// Input:  "wifi.ssid.<4D7946726565 57696669>"
+    /// Decode: 4D=M, 79=y, 46=F, 72=r, 65=e, 65=e, 57=W, 69=i, 66=f, 69=i
+    /// Output: "MyFreeWifi"
+    /// ```
+    ///
+    /// **Algorithm:**
+    /// 1. Remove the "wifi.ssid." prefix (first 10 characters)
+    /// 2. Iterate through remaining characters
+    /// 3. Skip '<', '>', and space characters
+    /// 4. Collect hex digits in pairs (two characters at a time)
+    /// 5. Convert each hex pair to its corresponding Unicode character
+    /// 6. Build the final SSID string from the decoded characters
+    ///
+    /// - Parameter appleWiFiID: The Apple plist key in format "wifi.ssid.<hexdata>"
+    /// - Returns: The decoded SSID string, or the original input if not in Apple's format
     func parseWiFiSSID(_ appleWiFiID: String) -> String {
-        // Parse the Apple Plist Key into the SSID
+        // Check if this is an Apple WiFi SSID format (starts with "wifi.ssid.")
         if (appleWiFiID.hasPrefix("wifi.ssid.")) {
+            // Strip the "wifi.ssid." prefix (10 characters)
             let index = appleWiFiID.index(appleWiFiID.startIndex, offsetBy: 10)
             let preSSID = String(appleWiFiID[index...])
-            // preSSID now should look like <65776545 88776655>
-            // This is now raw ascii that we'll need to convert to a string
-            var parsedSSID = ""
-            var intSSID = ""
-            var count = 0
+            // preSSID now contains the hex-encoded data like: <4D7946726565 57696669>
+
+            var parsedSSID = ""      // Final decoded SSID
+            var intSSID = ""         // Temporary storage for hex pair (e.g., "4D")
+            var count = 0            // Counter for hex digits (0, 1, or 2)
+
+            // Process each character in the hex string
             for ch in preSSID {
                 count = count + 1
+
                 if (ch == "<") {
-                    // Starting char
+                    // Opening angle bracket - marks start of hex data
                     count = 0
                 } else if (ch == " ") {
-                    // Skip
+                    // Space separator - skip it
                     count = 0
                 } else if (ch == ">") {
-                    // Last char
+                    // Closing angle bracket - marks end of hex data
                     count = 0
                 } else {
+                    // Processing hex digits
                     if count == 1 {
+                        // First hex digit of the pair
                         intSSID = "\(ch)"
                     } else if count == 2 {
+                        // Second hex digit of the pair - now convert to character
                         intSSID = "\(intSSID)\(ch)"
                         count = 0
+
+                        // Convert hex string to integer, then to Unicode character
                         if let hexValue = Int(intSSID, radix: 16),
                            let unicodeScalar = UnicodeScalar(hexValue) {
                             let asciiToChar = Character(unicodeScalar)
                             parsedSSID = "\(parsedSSID)\(asciiToChar)"
                         }
+                        // Note: Invalid hex values are silently skipped
                     }
                 }
             }
             return parsedSSID
         }
+        // Not in Apple's format - return as-is
         return appleWiFiID
     }
 
