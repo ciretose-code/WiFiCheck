@@ -242,9 +242,9 @@ class WiFiDataManager {
             let preSSID = String(appleWiFiID[index...])
             // preSSID now contains the hex-encoded data like: <4D7946726565 57696669>
 
-            var parsedSSID = ""      // Final decoded SSID
-            var intSSID = ""         // Temporary storage for hex pair (e.g., "4D")
-            var count = 0            // Counter for hex digits (0, 1, or 2)
+            var characters: [Character] = []  // Array to collect decoded characters (avoids O(n²) string concat)
+            var intSSID = ""                   // Temporary storage for hex pair (e.g., "4D")
+            var count = 0                      // Counter for hex digits (0, 1, or 2)
 
             // Process each character in the hex string
             for ch in preSSID {
@@ -272,14 +272,13 @@ class WiFiDataManager {
                         // Convert hex string to integer, then to Unicode character
                         if let hexValue = Int(intSSID, radix: 16),
                            let unicodeScalar = UnicodeScalar(hexValue) {
-                            let asciiToChar = Character(unicodeScalar)
-                            parsedSSID = "\(parsedSSID)\(asciiToChar)"
+                            characters.append(Character(unicodeScalar))
                         }
                         // Note: Invalid hex values are silently skipped
                     }
                 }
             }
-            return parsedSSID
+            return String(characters)
         }
         // Not in Apple's format - return as-is
         return appleWiFiID

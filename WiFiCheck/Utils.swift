@@ -30,39 +30,57 @@ struct RuntimeError: Error {
 }
 
 class Utils {
-    
+
+    // MARK: - Cached Formatters
+    // DateFormatter is expensive to create, so we cache static instances
+
+    private static let fullDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter
+    }()
+
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
+
+    private static let monthShortFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM"
+        return formatter
+    }()
+
+    private static let relativeDateFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter
+    }()
+
     static func dateToString(_ d: Date?) -> String? {
-        if d == nil {
+        guard let date = d else {
             return nil
         }
-        let df: DateFormatter = DateFormatter()
-        df.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        
-        return df.string(from: d!)
+        return fullDateFormatter.string(from: date)
     }
     
     static func relativeDateToString(_ d: Date?) -> String? {
-        if d == nil {
+        guard let date = d else {
             return nil
         }
-        let rdf: RelativeDateTimeFormatter = RelativeDateTimeFormatter()
-        rdf.unitsStyle = .full
-        let check = Calendar.current.date(byAdding: .month, value: -9, to: Date())
-        if check != nil && d!.moreRecentThan(check!) {
-            return rdf.localizedString(for: d!, relativeTo: Date())
-        } else {
+        guard let check = Calendar.current.date(byAdding: .month, value: -9, to: Date()),
+              date.moreRecentThan(check) else {
             return "\(Utils.getDayString(d)) "+"\(Utils.getMonthShort(d)) "+"\(Utils.getYear(d))"
         }
+        return relativeDateFormatter.localizedString(for: date, relativeTo: Date())
     }
     
     static func getTime(_ d: Date?) -> String {
-        if d == nil {
+        guard let date = d else {
             return ""
         }
-        let df: DateFormatter = DateFormatter()
-        df.dateFormat = "HH:mm:ss"
-        
-        return df.string(from: d!)
+        return timeFormatter.string(from: date)
     }
     
     static func getDay(_ d: Date?) -> Int {
@@ -74,12 +92,10 @@ class Utils {
     }
     
     static func getMonthShort(_ d: Date?) -> String {
-        if d == nil {
+        guard let date = d else {
             return "???"
         }
-        let df = DateFormatter()
-        df.dateFormat = "MMM"
-        return df.string(from: d!)
+        return monthShortFormatter.string(from: date)
     }
     
     static func getDayString(_ d: Date?) -> String {
@@ -99,11 +115,10 @@ class Utils {
     }
     
     static func getYear(_ d: Date?) -> Int {
-        if d == nil {
+        guard let date = d else {
             return 0
         }
-        let cal = Calendar.current
-        return cal.component(.year, from: d!)
+        return Calendar.current.component(.year, from: date)
     }
     
     static func getSecurityColor(_ wifidata: WiFiData) -> Color {
