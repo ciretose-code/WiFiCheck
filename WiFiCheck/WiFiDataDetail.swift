@@ -10,7 +10,7 @@ import SwiftUI
 
 struct WiFiDataDetail: View {
     var wifidata: WiFiData = WiFiDataManager.shared.getWiFiDataList().first ?? WiFiData()
-    
+
     var circleSize: CGFloat = 26.0
     var circleColor: Color = Color(white:0.4, opacity: 0.2)
 
@@ -18,9 +18,14 @@ struct WiFiDataDetail: View {
     @State private var pwdShown = false
     @State private var pwdText = "Show Password"
     @State private var pwdIcon = "lock"
-    
+
+    // Password auto-hide timer
+    @State private var passwordTimer: Timer?
+    @State private var remainingSeconds: Int = 30
+    private let autoHideDelay: Int = 30 // seconds
+
     var body: some View {
-        
+
         ScrollView {
             VStack(alignment: .leading) {
                 HStack(alignment: .top) {
@@ -70,23 +75,20 @@ struct WiFiDataDetail: View {
                                 } else {
                                     Text("**********").font(.system(.title, design: .monospaced))
                                 }
+                                // Show countdown timer when password is visible
+                                Text("Auto-hide in \(remainingSeconds)s")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             } else {
                                 Text("**********").font(.system(.title, design: .monospaced))
                             }
                             Button(action:{
-                                showPassword.toggle()
-                                if (showPassword) {
-                                    self.pwdText = "Hide Password"
-                                    self.pwdIcon = "lock.slash"
-                                } else {
-                                    self.pwdText = "Show Password"
-                                    self.pwdIcon = "lock"
-                                }
+                                togglePasswordVisibility()
                             }) {
                                 HStack {
                                     Image(systemName: pwdIcon)
                                     Text(pwdText)
-                                }//.padding(EdgeInsets(top:2, leading: 10, bottom: 2, trailing: 10))
+                                }
                             }
                             .buttonStyle(WiFiButtonStyle(disabled: (wifidata.securityType() == .open)))
                         }
@@ -158,6 +160,62 @@ struct WiFiDataDetail: View {
                     .foregroundColor(Color.gray)
             }
         }
+        .onDisappear {
+            // Clean up timer when view disappears
+            stopPasswordTimer()
+        }
+    }
+
+    // MARK: - Password Timer Methods
+
+    /// Toggles password visibility and manages the auto-hide timer
+    private func togglePasswordVisibility() {
+        showPassword.toggle()
+
+        if showPassword {
+            // Password is now shown - start the auto-hide timer
+            pwdText = "Hide Password"
+            pwdIcon = "lock.slash"
+            startPasswordTimer()
+        } else {
+            // Password is now hidden - cancel the timer
+            pwdText = "Show Password"
+            pwdIcon = "lock"
+            stopPasswordTimer()
+        }
+    }
+
+    /// Starts the countdown timer to auto-hide the password after 30 seconds
+    private func startPasswordTimer() {
+        // Reset countdown
+        remainingSeconds = autoHideDelay
+
+        // Cancel any existing timer
+        stopPasswordTimer()
+
+        // Start a new timer that ticks every second
+        passwordTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if remainingSeconds > 0 {
+                remainingSeconds -= 1
+            } else {
+                // Time's up - hide the password
+                hidePassword()
+            }
+        }
+    }
+
+    /// Stops and invalidates the password timer
+    private func stopPasswordTimer() {
+        passwordTimer?.invalidate()
+        passwordTimer = nil
+    }
+
+    /// Hides the password and resets the UI state
+    private func hidePassword() {
+        showPassword = false
+        pwdText = "Show Password"
+        pwdIcon = "lock"
+        stopPasswordTimer()
     }
 }
 
