@@ -120,7 +120,7 @@ class KeychainAccess {
     /// - Returns: Result containing password string on success, or error on failure
     static func getPassword(forNetwork wifiname: String) -> Result<String, Error> {
         do {
-            let pwd = try KeychainAccess.readPassword(service: "AirPort", account: wifiname)
+            let pwd = try KeychainAccess.readPassword(service: Constants.keychainService, account: wifiname)
             let password = String(decoding: pwd, as: UTF8.self)
             return .success(password)
         } catch {

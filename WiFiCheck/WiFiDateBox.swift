@@ -26,6 +26,7 @@ struct WiFiDateBox: View {
                 .background(color)
                 .clipShape(Capsule())
                 .help(Text("\(Utils.dateToString(date) ?? "NEVER")"))
+                .accessibilityLabel(Utils.dateToString(date) ?? "Never joined")
         }
     }
 }

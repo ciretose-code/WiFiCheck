@@ -16,10 +16,19 @@ enum Constants {
     /// Networks are assigned order values in increments of 100 to allow easy reordering
     static let networkOrderIncrement = 100
 
+    /// Default WiFi network interface device name
+    static let defaultWiFiDevice = "en0"
+
+    /// WiFi service name used by networksetup
+    static let wifiServiceName = "Wi-Fi"
+
     // MARK: - Security
 
     /// Duration in seconds before auto-hiding displayed passwords
     static let passwordAutoHideDelay = 30
+
+    /// Keychain service name for WiFi passwords
+    static let keychainService = "AirPort"
 
     // MARK: - File Paths
 

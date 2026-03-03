@@ -23,7 +23,6 @@
 		7B3DEFE226EBF0DE007BE881 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B3DEFE126EBF0DE007BE881 /* Preview Assets.xcassets */; };
 		7B5A4388272362CE00E4D73F /* WiFiDateBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5A4387272362CE00E4D73F /* WiFiDateBox.swift */; };
 		7B6363392725077F0054A094 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6363382725077F0054A094 /* ContentView.swift */; };
-		7B63633B27250D220054A094 /* TimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B63633A27250D220054A094 /* TimeView.swift */; };
 		7B6FE0E72719408C00CF5CEB /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6FE0E62719408C00CF5CEB /* Utils.swift */; };
 		7B7D654C2F56525700FA47CF /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B7D654B2F56525700FA47CF /* Constants.swift */; };
 		7BCF2FA72737335E00ABC4D1 /* CheckboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BCF2FA62737335E00ABC4D1 /* CheckboxView.swift */; };
@@ -50,7 +49,6 @@
 		7B3DEFE426EBF0DE007BE881 /* WiFiCheck.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WiFiCheck.entitlements; sourceTree = "<group>"; };
 		7B5A4387272362CE00E4D73F /* WiFiDateBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiDateBox.swift; sourceTree = "<group>"; };
 		7B6363382725077F0054A094 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		7B63633A27250D220054A094 /* TimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeView.swift; sourceTree = "<group>"; };
 		7B6FE0E62719408C00CF5CEB /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		7B7D654B2F56525700FA47CF /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		7BCF2FA62737335E00ABC4D1 /* CheckboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxView.swift; sourceTree = "<group>"; };
@@ -120,7 +118,6 @@
 				7BCF2FA62737335E00ABC4D1 /* CheckboxView.swift */,
 				7B6363382725077F0054A094 /* ContentView.swift */,
 				7B0B6A87272CA8C3006053B8 /* KeychainAccess.swift */,
-				7B63633A27250D220054A094 /* TimeView.swift */,
 				7B3DEFDC26EBF0DC007BE881 /* WiFiListView.swift */,
 				7B6FE0E62719408C00CF5CEB /* Utils.swift */,
 				7B0315F327247A7B00D775ED /* NetworkSetup.swift */,
@@ -253,7 +250,6 @@
 				7B3DEFDB26EBF0DC007BE881 /* WiFiCheckApp.swift in Sources */,
 				7B2086C1270A991A007A6500 /* WiFiDataDetail.swift in Sources */,
 				7B6FE0E72719408C00CF5CEB /* Utils.swift in Sources */,
-				7B63633B27250D220054A094 /* TimeView.swift in Sources */,
 				7B0B6A88272CA8C3006053B8 /* KeychainAccess.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -196,7 +196,7 @@ struct WiFiListPane: View {
                     }
                 }
                 .disabled(listSelection == nil)
-                .accessibilityLabel(listSelection != nil ? "Remove \(listSelection!.ssidString())" : "Remove WiFi network")
+                .accessibilityLabel(listSelection.map { "Remove \($0.ssidString())" } ?? "Remove WiFi network")
                 .alert(isPresented: $showingAlert) {
                     if let selection = listSelection {
                         return Alert(
