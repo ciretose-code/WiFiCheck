@@ -17,8 +17,13 @@ struct WiFiDataRow: View {
                 .font(.body)
                 .foregroundColor(.primary)
         } icon: {
-            Image(systemName: "wifi")
-                .renderingMode(.template)
+            HStack(spacing: 4) {
+                Image(systemName: "wifi")
+                    .renderingMode(.template)
+                Image(systemName: securityIcon)
+                    .renderingMode(.template)
+                    .font(.caption)
+            }
         }
         .accentColor(securityColor)
         .accessibilityLabel(accessibilityDescription)
@@ -37,6 +42,24 @@ struct WiFiDataRow: View {
             return .red
         case .unknown:
             return .gray
+        }
+    }
+
+    /// Returns the security icon for visual distinction (helps colorblind users)
+    private var securityIcon: String {
+        switch wifidata.securityType() {
+        case .wpa3:
+            return "checkmark.shield.fill"  // Best security
+        case .wpa2:
+            return "shield.fill"            // Good security
+        case .wpa:
+            return "shield"                 // Older but secure
+        case .wep:
+            return "exclamationmark.triangle.fill"  // Weak security warning
+        case .open:
+            return "lock.open.fill"         // No security
+        case .unknown:
+            return "questionmark.circle"    // Unknown
         }
     }
 
