@@ -16,6 +16,8 @@ struct CheckboxView: View {
             .onTapGesture {
                 self.checked.toggle()
             }
+            .accessibilityAddTraits(.isButton)
+            .accessibilityValue(checked ? "Checked" : "Unchecked")
     }
 }
 

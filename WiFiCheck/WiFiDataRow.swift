@@ -8,68 +8,56 @@
 import SwiftUI
 
 struct WiFiDataRow: View {
-   
+
     var wifidata: WiFiData
-    
+
     var body: some View {
-        
-        let stype = wifidata.securityType()
-        switch stype {
-        case .wpa3:
-            Label {
-                Text(wifidata.ssidString())
-                    .font(.body)
-                    .foregroundColor(.primary)
-            } icon: {
-                Image(systemName: "wifi").renderingMode(.template)
-            }
-            .accentColor(.green)
-        case .wpa2:
-            Label {
-                Text(wifidata.ssidString())
-                    .font(.body)
-                    .foregroundColor(.primary)
-            } icon: {
-                Image(systemName: "wifi").renderingMode(.template)
-            }
-            .accentColor(Color(NSColor.systemTeal))
-        case .wpa:
-            Label {
-                Text(wifidata.ssidString())
-                    .font(.body)
-                    .foregroundColor(.primary)
-            } icon: {
-                Image(systemName: "wifi").renderingMode(.template)
-            }
-            .accentColor(Color(NSColor.systemTeal))
-        case .wep:
-            Label {
-                Text(wifidata.ssidString())
-                    .font(.body)
-                    .foregroundColor(.primary)
-            } icon: {
-                Image(systemName: "wifi").renderingMode(.template)
-            }
-            .accentColor(.yellow)
-        case .open:
-            Label {
-                Text(wifidata.ssidString())
-                    .font(.body)
-                    .foregroundColor(.primary)
-            } icon: {
-                Image(systemName: "wifi").renderingMode(.template)
-            }
-            .accentColor(.red)
-        case .unknown:
-            Label {
-                Text(wifidata.ssidString())
-                    .font(.body)
-                    .foregroundColor(.primary)
-            } icon: {
-                Image(systemName: "wifi").renderingMode(.template)
-            }
-            .accentColor(.gray)
+        Label {
+            Text(wifidata.ssidString())
+                .font(.body)
+                .foregroundColor(.primary)
+        } icon: {
+            Image(systemName: "wifi")
+                .renderingMode(.template)
         }
+        .accentColor(securityColor)
+        .accessibilityLabel(accessibilityDescription)
+    }
+
+    /// Returns the color for the security level
+    private var securityColor: Color {
+        switch wifidata.securityType() {
+        case .wpa3:
+            return .green
+        case .wpa2, .wpa:
+            return Color(NSColor.systemTeal)
+        case .wep:
+            return .yellow
+        case .open:
+            return .red
+        case .unknown:
+            return .gray
+        }
+    }
+
+    /// Returns the accessibility description for screen readers
+    private var accessibilityDescription: String {
+        let securityLevel: String
+        switch wifidata.securityType() {
+        case .wpa3:
+            securityLevel = "WPA3 secured"
+        case .wpa2:
+            securityLevel = "WPA2 secured"
+        case .wpa:
+            securityLevel = "WPA secured"
+        case .wep:
+            securityLevel = "WEP secured (weak security)"
+        case .open:
+            securityLevel = "Open unsecured"
+        case .unknown:
+            securityLevel = "Unknown security"
+        }
+        return "\(securityLevel) network: \(wifidata.ssidString())"
     }
 }
 

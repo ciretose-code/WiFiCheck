@@ -44,7 +44,9 @@ struct WiFiListView: View {
             ToolbarItem(placement: .navigation) {
                 Button(action: toggleSidebar, label: {
                     Image(systemName: "sidebar.leading")
-                }).padding(0)
+                })
+                .padding(0)
+                .accessibilityLabel("Toggle sidebar")
             }
         }
     }
@@ -119,6 +121,7 @@ struct WiFiListPane: View {
                                 }
                             }
                             .buttonStyle(WiFiButtonStyle())
+                            .accessibilityLabel("Check Full Disk Access permission")
                         }
 
 //                        HStack {
@@ -193,6 +196,7 @@ struct WiFiListPane: View {
                     }
                 }
                 .disabled(listSelection == nil)
+                .accessibilityLabel(listSelection != nil ? "Remove \(listSelection!.ssidString())" : "Remove WiFi network")
                 .alert(isPresented: $showingAlert) {
                     if let selection = listSelection {
                         return Alert(
@@ -249,9 +253,10 @@ struct WiFiDetailPane: View {
                     Image(systemName: "arrow.left.circle.fill").font(.system(.title))
                     Text("Select WiFi Network").font(.title)
                 }
+                .accessibilityLabel("Select a WiFi network from the list to view details")
             }
         }.frame(minWidth: 400)
-        
+
     }
 }
 

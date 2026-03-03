@@ -39,6 +39,7 @@ struct WiFiDataDetail: View {
                                 Image(systemName: "wifi").renderingMode(.template).foregroundColor(Utils.getSecurityColor(wifidata))
                                     .font(.title)
                             }
+                            .accessibilityLabel("Network: \(wifidata.ssidString())")
                         }
                         Spacer()
                         VStack(alignment: .leading) {
@@ -52,6 +53,7 @@ struct WiFiDataDetail: View {
                                     .foregroundColor(.secondary)
                                     .font(.subheadline)
                             }
+                            .accessibilityLabel("Security: \(wifidata.getSecurityName())")
                             Spacer()
                             Label {
                                 Text(wifidata.hiddenStateText())
@@ -63,6 +65,7 @@ struct WiFiDataDetail: View {
                                     .foregroundColor(.secondary)
                                     .font(.subheadline)
                             }
+                            .accessibilityLabel("Network visibility: \(wifidata.hiddenStateText())")
                         }
                     }
                     Spacer()
@@ -93,6 +96,7 @@ struct WiFiDataDetail: View {
                                 }
                             }
                             .buttonStyle(WiFiButtonStyle(disabled: (wifidata.securityType() == .open)))
+                            .accessibilityLabel(showPassword ? "Hide network password" : "Show network password")
                         }
                     }
                 }
@@ -224,7 +228,7 @@ struct WiFiDataDetail: View {
 
 struct CollocatedGroupView: View {
     var collocatedGroups: [WiFiData.CollocatedGroupData]
-    
+
     var body: some View {
         VStack(alignment: .leading) {
             Text("Networks At Same Location").bold()
@@ -240,6 +244,7 @@ struct CollocatedGroupView: View {
                 .frame(height: 26, alignment: .center)
                 .background(Color.accentColor)
                 .clipShape(Capsule())
+                .accessibilityLabel("Collocated network: \(cgd.ssid)")
             }
         }
     }
