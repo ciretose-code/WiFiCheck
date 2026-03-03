@@ -36,6 +36,7 @@ class WiFiDataManager {
     let Hidden = "Hidden"
     
     let JoinedBySystemAt = "JoinedBySystemAt"
+    let JoinedBySystemAtWeek = "JoinedBySystemAtWeek"
     let JoinedByUserAt = "JoinedByUserAt"
     
     let SSID = "SSID"
@@ -43,25 +44,47 @@ class WiFiDataManager {
     let WEPSubtype = "WEPSubtype"
     let SystemMode = "SystemMode"
     let UpdatedAt = "UpdatedAt"
+
+    // New top-level keys
+    let BrokenBackhaulState = "BrokenBackhaulState"
+    let BrokenBackhaulStateUpdatedAt = "BrokenBackhaulStateUdatedAt" // typo is in the plist
+    let CachedPrivateMACAddress = "CachedPrivateMACAddress"
+    let CachedPrivateMACAddressUpdatedAt = "CachedPrivateMACAddressUpdatedAt"
+    let Is2GHzBssPresent = "is2GHzBssPresent"
+    let LastDisconnectReason = "LastDisconnectReason"
+    let LastDisconnectTimestamp = "LastDisconnectTimestamp"
+    let LastDiscoveredAt = "LastDiscoveredAt"
+    let Moving = "Moving"
+    let PersonalHotspot = "PersonalHotspot"
+    let PrivateMACAddressEvaluatedAt = "PrivateMACAddressEvaluatedAt"
+
+    // BSSList keys
+    let BSSList = "BSSList"
+    let BSSID = "BSSID"
+    let ChannelFlags = "ChannelFlags"
+    let LastAssociatedAt = "LastAssociatedAt"
+    let AWDLRealTimeModeTimestamp = "AWDLRealTimeModeTimestamp"
+    let DHCPServerID = "DHCPServerID"
+    let IPv4NetworkSignature = "IPv4NetworkSignature"
+    let IPv6NetworkSignature = "IPv6NetworkSignature"
+    let Location = "Location"
+    let LocationLatitude = "LocationLatitude"
+    let LocationLongitude = "LocationLongitude"
+    let LocationAccuracy = "LocationAccuracy"
+    let LocationTimestamp = "LocationTimestamp"
     
     let __OSSpecific__ = "__OSSpecific__"
-    let BSSIDList = "BSSIDList"
-    let LEAKY_AP_BSSID = "LEAKY_AP_BSSID"
-    let LEAKY_AP_LEARNED_DATA = "LEAKY_AP_LEARNED_DATA"
-    
     let ChannelHistory = "ChannelHistory"
     let Channel = "Channel"
     let Timestamp = "Timestamp"
-    
     let CollocatedGroup = "CollocatedGroup"
-    
     let RoamingProfileType = "RoamingProfileType"
     let TemporarilyDisabled = "TemporarilyDisabled"
     let UserPreferredOrderTimestamp = "UserPreferredOrderTimestamp"
-    let WasHiddenBefore = "WasHiddenBefore"
     
     
     var wifidatalist: Array<WiFiData> = Array<WiFiData>()
+    private(set) var loadedFromDrop: Bool = false
 
     init() {
         // Validate system paths exist
@@ -151,26 +174,36 @@ class WiFiDataManager {
             return cpList
         }
         var cp = WiFiData.CaptiveProfileData()
-        cp.CaptiveNetwork = findInt(dict[CaptiveNetwork])
+        cp.CaptiveNetwork = findBool(dict[CaptiveNetwork])
         cp.CaptiveWebSheetLoginDate = findDate(dict[CaptiveWebSheetLoginDate])
         cpList.append(cp)
         return cpList
     }
-    
-    fileprivate func findBSSIDList(_ value: AnyObject?) -> Array<WiFiData.BSSIDData> {
-        var bssidList = Array<WiFiData.BSSIDData>()
+
+    fileprivate func findBSSList(_ value: AnyObject?) -> Array<WiFiData.BSSData> {
+        var bssList = Array<WiFiData.BSSData>()
         guard let value = value, let arr = value as? Array<Dictionary<String,AnyObject>> else {
-            return bssidList
+            return bssList
         }
         for dict in arr {
-            var bssid = WiFiData.BSSIDData()
-            bssid.LEAKY_AP_BSSID = findString(dict[LEAKY_AP_BSSID])
-            bssid.LEAKY_AP_LEARNED_DATA = findData(dict[LEAKY_AP_LEARNED_DATA]) ?? Data()
-            // Manufacturer lookup not yet implemented
-            bssid.Manufacturer = ""
-            bssidList.append(bssid)
+            var bss = WiFiData.BSSData()
+            bss.BSSID = findString(dict[BSSID])
+            bss.Channel = findInt(dict[Channel])
+            bss.ChannelFlags = findInt(dict[ChannelFlags])
+            bss.LastAssociatedAt = findDate(dict[LastAssociatedAt])
+            bss.AWDLRealTimeModeTimestamp = findDate(dict[AWDLRealTimeModeTimestamp])
+            bss.DHCPServerID = findData(dict[DHCPServerID])
+            bss.IPv4NetworkSignature = findString(dict[IPv4NetworkSignature])
+            bss.IPv6NetworkSignature = findString(dict[IPv6NetworkSignature])
+            if let loc = dict[Location] as? Dictionary<String,AnyObject> {
+                bss.LocationLatitude = loc[LocationLatitude] as? Double
+                bss.LocationLongitude = loc[LocationLongitude] as? Double
+                bss.LocationAccuracy = loc[LocationAccuracy] as? Double
+                bss.LocationTimestamp = findDate(loc[LocationTimestamp])
+            }
+            bssList.append(bss)
         }
-        return bssidList
+        return bssList
     }
     
     fileprivate func sortChannelHistory(_ items: [WiFiData.ChannelData]) -> [WiFiData.ChannelData] {
@@ -333,6 +366,7 @@ class WiFiDataManager {
     }
     
     func needsPassword() -> Bool {
+        if loadedFromDrop { return false }
         let need = !FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath)
         if !need {
             reloadData()
@@ -370,6 +404,21 @@ class WiFiDataManager {
         NSWorkspace.shared.open(url)
     }
 
+    /// Opens the WiFi known networks plist file in its default application.
+    /// Falls back to revealing it in Finder if it cannot be opened directly.
+    func openKnownNetworksPlist() {
+        let fileURL = URL(fileURLWithPath: wifiKnownNetworksPath)
+        if !NSWorkspace.shared.open(fileURL) {
+            NSWorkspace.shared.activateFileViewerSelecting([fileURL])
+        }
+    }
+
+    /// Reveals the WiFi known networks plist file in Finder.
+    func revealKnownNetworksPlistInFinder() {
+        let fileURL = URL(fileURLWithPath: wifiKnownNetworksPath)
+        NSWorkspace.shared.activateFileViewerSelecting([fileURL])
+    }
+
     /// Parses WiFi data from raw plist data
     /// - Parameter data: Raw plist data to parse
     /// - Returns: Array of WiFiData objects
@@ -405,6 +454,7 @@ class WiFiDataManager {
             wifidata.CaptiveProfile = findCaptiveProfile(value[CaptiveProfile])
             wifidata.Hidden = findBool(value[Hidden])
             wifidata.JoinedBySystemAt = findDate(value[JoinedBySystemAt])
+            wifidata.JoinedBySystemAtWeek = findInt(value[JoinedBySystemAtWeek])
             wifidata.JoinedByUserAt = findDate(value[JoinedByUserAt])
             wifidata.SSID = findData(value[SSID])
             wifidata.SupportedSecurityTypes = findString(value[SupportedSecurityTypes])
@@ -412,15 +462,29 @@ class WiFiDataManager {
             wifidata.SystemMode = findBool(value[SystemMode])
             wifidata.UpdatedAt = findDate(value[UpdatedAt])
 
-            // Parse OS-specific data with error handling
+            // New top-level fields
+            wifidata.BrokenBackhaulState = findString(value[BrokenBackhaulState])
+            wifidata.BrokenBackhaulStateUpdatedAt = findDate(value[BrokenBackhaulStateUpdatedAt])
+            wifidata.CachedPrivateMACAddress = findString(value[CachedPrivateMACAddress])
+            wifidata.CachedPrivateMACAddressUpdatedAt = findDate(value[CachedPrivateMACAddressUpdatedAt])
+            wifidata.is2GHzBssPresent = findBool(value[Is2GHzBssPresent])
+            wifidata.LastDisconnectReason = findInt(value[LastDisconnectReason])
+            wifidata.LastDisconnectTimestamp = findDate(value[LastDisconnectTimestamp])
+            wifidata.LastDiscoveredAt = findDate(value[LastDiscoveredAt])
+            wifidata.Moving = findBool(value[Moving])
+            wifidata.PersonalHotspot = findBool(value[PersonalHotspot])
+            wifidata.PrivateMACAddressEvaluatedAt = findDate(value[PrivateMACAddressEvaluatedAt])
+
+            // BSSList — top-level array of access points
+            wifidata.BSSList = findBSSList(value[BSSList])
+
+            // __OSSpecific__ fields
             if let osvalue = value[__OSSpecific__] as? Dictionary<String,AnyObject> {
-                wifidata.BSSIDList = findBSSIDList(osvalue[BSSIDList])
                 wifidata.ChannelHistory = findChannelHistory(osvalue[ChannelHistory])
                 wifidata.CollocatedGroup = findCollocatedGroup(osvalue[CollocatedGroup])
                 wifidata.RoamingProfileType = findString(osvalue[RoamingProfileType])
                 wifidata.TemporarilyDisabled = findBool(osvalue[TemporarilyDisabled])
                 wifidata.UserPreferredOrderTimestamp = findDate(osvalue[UserPreferredOrderTimestamp])
-                wifidata.WasHiddenBefore = findDate(osvalue[WasHiddenBefore])
             } else {
                 Self.logger.warning("Missing __OSSpecific__ data for network: \(wifiKey, privacy: .public)")
             }
@@ -431,6 +495,47 @@ class WiFiDataManager {
             _knownNetworks.append(wifidata)
         }
         return _knownNetworks
+    }
+
+    /// Loads WiFi data from raw plist Data delivered by a drag-and-drop provider.
+    /// - Parameter data: Raw plist bytes.
+    /// - Returns: `true` if at least one network was parsed.
+    @discardableResult
+    func parseDroppedData(_ data: Data) -> Bool {
+        let parsed = parseWiFiData(from: data)
+        guard !parsed.isEmpty else {
+            Self.logger.warning("parseDroppedData: no networks found in dropped data")
+            return false
+        }
+        wifidatalist = parsed
+        wifidatalist = sortByPreferredOrder()
+        loadedFromDrop = true
+        Self.logger.info("parseDroppedData: loaded \(parsed.count, privacy: .public) networks")
+        return true
+    }
+
+    /// Loads WiFi data from an arbitrary plist file URL (e.g. drag-and-dropped file).
+    /// - Parameter url: The file URL to load from.
+    /// - Returns: `true` if the file was parsed successfully and contained at least one network.
+    @discardableResult
+    func loadFromURL(_ url: URL) -> Bool {
+        let data: Data
+        do {
+            data = try Data(contentsOf: url)
+        } catch {
+            Self.logger.error("loadFromURL: failed to read \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+        let parsed = parseWiFiData(from: data)
+        guard !parsed.isEmpty else {
+            Self.logger.warning("loadFromURL: no networks found in \(url.path, privacy: .public)")
+            return false
+        }
+        wifidatalist = parsed
+        wifidatalist = sortByPreferredOrder()
+        loadedFromDrop = true
+        Self.logger.info("loadFromURL: loaded \(parsed.count, privacy: .public) networks from \(url.path, privacy: .public)")
+        return true
     }
 
     // Load data from file

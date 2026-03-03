@@ -72,13 +72,79 @@ struct WiFiListPane: View {
     @State private var deleteSuccess = false
     @State private var deleteMessage = ""
     @State private var reloadView = false
-    @State private var isLoading = false
+    @State private var isDropTargeted = false
+    @State private var showDropError = false
+    @State private var dropErrorMessage = ""
 //    @State private var savePasswordChecked = false
     
     func loadWiFiData() {
         wifidataArray = WiFiDataManager.shared.getWiFiDataList()
     }
-    
+
+    func handleDrop(providers: [NSItemProvider]) -> Bool {
+        guard let provider = providers.first else { return false }
+
+        provider.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, error in
+            guard error == nil else {
+                DispatchQueue.main.async {
+                    dropErrorMessage = error?.localizedDescription ?? "Could not read the dropped file."
+                    showDropError = true
+                }
+                return
+            }
+
+            // The item is delivered as Data containing a file URL
+            let url: URL?
+            if let urlData = item as? Data {
+                url = URL(dataRepresentation: urlData, relativeTo: nil)
+            } else if let directURL = item as? URL {
+                url = directURL
+            } else {
+                url = nil
+            }
+
+            guard let fileURL = url else {
+                DispatchQueue.main.async {
+                    dropErrorMessage = "Could not resolve the dropped file path."
+                    showDropError = true
+                }
+                return
+            }
+
+            guard fileURL.pathExtension == "plist" else {
+                DispatchQueue.main.async {
+                    dropErrorMessage = "Please drop a .plist file (e.g. com.apple.wifi.known-networks.plist)."
+                    showDropError = true
+                }
+                return
+            }
+
+            // Start security-scoped access (granted by com.apple.security.files.user-selected.read-only)
+            let accessing = fileURL.startAccessingSecurityScopedResource()
+            defer { if accessing { fileURL.stopAccessingSecurityScopedResource() } }
+
+            guard let data = try? Data(contentsOf: fileURL) else {
+                DispatchQueue.main.async {
+                    dropErrorMessage = "Could not read \"\(fileURL.lastPathComponent)\". Make sure the file is readable."
+                    showDropError = true
+                }
+                return
+            }
+
+            let parsed = WiFiDataManager.shared.parseDroppedData(data)
+            DispatchQueue.main.async {
+                if parsed {
+                    wifidataArray = WiFiDataManager.shared.getWiFiDataList()
+                    reloadView.toggle()
+                } else {
+                    dropErrorMessage = "\"\(fileURL.lastPathComponent)\" does not appear to be a valid WiFi known-networks plist."
+                    showDropError = true
+                }
+            }
+        }
+        return true
+    }
+
     var body: some View {
         if wifidataArray.count == 0 && WiFiDataManager.shared.needsPassword() {
             HStack(alignment: .top, spacing: 8) {
@@ -90,45 +156,19 @@ struct WiFiListPane: View {
                         Text("")
                         Text("On macOS Big Sur and later, WiFi/Check requires Full Disk Access to read the WiFi Known Networks file.")
                         Text("")
-                        Text("Click 'Check Access' below. If access is denied, click 'Open System Settings' to grant permission.")
+                        Text("Click 'Open Plist File' to reveal the file in Finder, then drag and drop it onto this window to load it.")
                     }.padding()
                     VStack(alignment: .center) {
-                        if isLoading {
-                            ProgressView("Checking access...")
-                                .padding()
-                        } else {
-                            Button(action:{
-                                // Show loading state
-                                isLoading = true
-
-                                // Small delay to allow UI to update
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    // Check if app has Full Disk Access
-                                    if WiFiDataManager.shared.requestFilePermissions() {
-                                        // Access granted, data loaded
-                                        loadWiFiData()
-                                        reloadView.toggle()
-                                    } else {
-                                        // Full Disk Access not granted
-                                        showPermissionError = true
-                                    }
-                                    isLoading = false
-                                }
-                            }) {
-                                HStack {
-                                    Image(systemName: "checkmark.shield")
-                                    Text("Check Access")
-                                }
+                        Button(action:{
+                            WiFiDataManager.shared.revealKnownNetworksPlistInFinder()
+                        }) {
+                            HStack {
+                                Image(systemName: "doc.badge.magnifyingglass")
+                                Text("Open Plist File")
                             }
-                            .buttonStyle(WiFiButtonStyle())
-                            .accessibilityLabel("Check Full Disk Access permission")
                         }
-
-//                        HStack {
-//                            CheckboxView(checked: $savePasswordChecked)
-//                            Spacer()
-//                            Text("Save password to Keychain")
-//                        }
+                        .buttonStyle(WiFiButtonStyle())
+                        .accessibilityLabel("Open WiFi known networks plist file in Finder")
                     }
                     .alert(isPresented: $showPermissionError) {
                         Alert(
@@ -143,7 +183,22 @@ struct WiFiListPane: View {
                 }
                 Spacer()
             }
-            Spacer()
+            .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+                handleDrop(providers: providers)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.accentColor, lineWidth: 3)
+                    .opacity(isDropTargeted ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
+            )
+            .alert(isPresented: $showDropError) {
+                Alert(
+                    title: Text("Could Not Read File"),
+                    message: Text(dropErrorMessage),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
         } else {
             VStack(alignment: .leading) {
                 HStack {
@@ -182,6 +237,22 @@ struct WiFiListPane: View {
     //                }
                 }
                 .listStyle(SidebarListStyle())
+                .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+                    handleDrop(providers: providers)
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.accentColor, lineWidth: 3)
+                        .opacity(isDropTargeted ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
+                )
+                .alert(isPresented: $showDropError) {
+                    Alert(
+                        title: Text("Could Not Read File"),
+                        message: Text(dropErrorMessage),
+                        dismissButton: .default(Text("OK"))
+                    )
+                }
             }.onAppear {
                 loadWiFiData()
             }
@@ -238,6 +309,17 @@ struct WiFiListPane: View {
                         dismissButton: .default(Text("OK"))
                     )
                 }
+
+                Button(action: {
+                    WiFiDataManager.shared.revealKnownNetworksPlistInFinder()
+                }) {
+                    HStack {
+                        Image(systemName: "doc.badge.magnifyingglass")
+                        Text("Show Plist in Finder")
+                    }
+                }
+                .buttonStyle(WiFiButtonStyle())
+                .accessibilityLabel("Reveal WiFi known networks plist file in Finder")
             }
             Spacer()
         }

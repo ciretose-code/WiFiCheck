@@ -284,13 +284,13 @@ struct ChannelHistoryView: View {
 
 
 struct BSSIDListView: View {
-    var bssidData: [WiFiData.BSSIDData]
+    var bssidData: [WiFiData.BSSData]
     
     var body: some View {
         VStack(alignment: .leading) {
             Text("BSSID").bold()
             ForEach(bssidData) { b in
-                Text("\(b.LEAKY_AP_BSSID)")
+                Text("\(b.BSSID)")
             }
         }
     }

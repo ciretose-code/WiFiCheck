@@ -17,6 +17,7 @@
 		7B2086BD270A8C0E007A6500 /* sample.json in Resources */ = {isa = PBXBuildFile; fileRef = 7B2086BC270A8C0E007A6500 /* sample.json */; };
 		7B2086BF270A9154007A6500 /* WiFiDataList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2086BE270A9154007A6500 /* WiFiDataList.swift */; };
 		7B2086C1270A991A007A6500 /* WiFiDataDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2086C0270A991A007A6500 /* WiFiDataDetail.swift */; };
+		7B2D7D1A2F5672A800824A10 /* com.apple.wifi.known-networks.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7B2D7D192F5672A800824A10 /* com.apple.wifi.known-networks.plist */; };
 		7B3DEFDB26EBF0DC007BE881 /* WiFiCheckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3DEFDA26EBF0DC007BE881 /* WiFiCheckApp.swift */; };
 		7B3DEFDD26EBF0DC007BE881 /* WiFiListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3DEFDC26EBF0DC007BE881 /* WiFiListView.swift */; };
 		7B3DEFDF26EBF0DE007BE881 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B3DEFDE26EBF0DE007BE881 /* Assets.xcassets */; };
@@ -40,6 +41,7 @@
 		7B2086BC270A8C0E007A6500 /* sample.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sample.json; sourceTree = "<group>"; };
 		7B2086BE270A9154007A6500 /* WiFiDataList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiDataList.swift; sourceTree = "<group>"; };
 		7B2086C0270A991A007A6500 /* WiFiDataDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiDataDetail.swift; sourceTree = "<group>"; };
+		7B2D7D192F5672A800824A10 /* com.apple.wifi.known-networks.plist */ = {isa = PBXFileReference; lastKnownFileType = file.bplist; path = "com.apple.wifi.known-networks.plist"; sourceTree = "<group>"; };
 		7B3DEFD726EBF0DC007BE881 /* WiFiCheck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WiFiCheck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B3DEFDA26EBF0DC007BE881 /* WiFiCheckApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiCheckApp.swift; sourceTree = "<group>"; };
 		7B3DEFDC26EBF0DC007BE881 /* WiFiListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiListView.swift; sourceTree = "<group>"; };
@@ -85,6 +87,7 @@
 		7B2086B9270A8BC4007A6500 /* SampleData */ = {
 			isa = PBXGroup;
 			children = (
+				7B2D7D192F5672A800824A10 /* com.apple.wifi.known-networks.plist */,
 				7B2086BC270A8C0E007A6500 /* sample.json */,
 				7B0B6A8A272F4823006053B8 /* sample2.json */,
 			);
@@ -170,8 +173,9 @@
 		7B3DEFCF26EBF0DC007BE881 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1250;
-				LastUpgradeCheck = 1300;
+				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					7B3DEFD626EBF0DC007BE881 = {
 						CreatedOnToolsVersion = 12.5.1;
@@ -204,6 +208,7 @@
 				7B0B6A8B272F4823006053B8 /* sample2.json in Resources */,
 				7B3DEFE226EBF0DE007BE881 /* Preview Assets.xcassets in Resources */,
 				7B3DEFDF26EBF0DE007BE881 /* Assets.xcassets in Resources */,
+				7B2D7D1A2F5672A800824A10 /* com.apple.wifi.known-networks.plist in Resources */,
 				7B2086BD270A8C0E007A6500 /* sample.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -291,9 +296,12 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 69KBWN8S4J;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -313,6 +321,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -352,9 +361,12 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 69KBWN8S4J;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -367,6 +379,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
@@ -380,12 +393,14 @@
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_ENTITLEMENTS = WiFiCheck/WiFiCheck.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"WiFiCheck/Preview Content\"";
-				DEVELOPMENT_TEAM = 69KBWN8S4J;
+				DEVELOPMENT_TEAM = 6D39SX3E6V;
 				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				INFOPLIST_FILE = WiFiCheck/Info.plist;
@@ -416,12 +431,14 @@
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_ENTITLEMENTS = WiFiCheck/WiFiCheck.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"WiFiCheck/Preview Content\"";
-				DEVELOPMENT_TEAM = 69KBWN8S4J;
+				DEVELOPMENT_TEAM = 6D39SX3E6V;
 				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				INFOPLIST_FILE = WiFiCheck/Info.plist;

@@ -17,27 +17,42 @@ struct WiFiData: Hashable, Codable, Identifiable {
     var AddedAt: Date? = nil
     var CaptiveProfile: Array<CaptiveProfileData> = []
     
-    var PasswordSharingDisabled: Bool = true //something new?
+    var PasswordSharingDisabled: Bool = true
     var Hidden: Bool = false
     
     var JoinedBySystemAt: Date? = nil
+    var JoinedBySystemAtWeek: Int = -1
     var JoinedByUserAt: Date? = nil
     
-    var SSID: Data? = nil // Base64 Encoded SSID String
+    var SSID: Data? = nil
     var SupportedSecurityTypes: String = ""
     var WEPSubtype: String = ""
     var SystemMode: Bool = false
     var UpdatedAt: Date? = nil
-    
-//    var __OSSpecific__: Dictionary
-    var BSSIDList: Array<BSSIDData> = []
+
+    // New top-level fields from real plist
+    var BrokenBackhaulState: String = ""
+    var BrokenBackhaulStateUpdatedAt: Date? = nil
+    var CachedPrivateMACAddress: String = ""
+    var CachedPrivateMACAddressUpdatedAt: Date? = nil
+    var is2GHzBssPresent: Bool = false
+    var LastDisconnectReason: Int = -1
+    var LastDisconnectTimestamp: Date? = nil
+    var LastDiscoveredAt: Date? = nil
+    var Moving: Bool = false
+    var PersonalHotspot: Bool = false
+    var PrivateMACAddressEvaluatedAt: Date? = nil
+
+    // BSSList — top-level array in the real plist
+    var BSSList: Array<BSSData> = []
+
+    // __OSSpecific__ fields
     var ChannelHistory: Array<ChannelData> = []
     var CollocatedGroup: Array<CollocatedGroupData> = []
     var RoamingProfileType: String = ""
     var TemporarilyDisabled: Bool = false
     var UserPreferredOrderTimestamp: Date? = nil
-    var WasHiddenBefore: Date? = nil
-    
+
     var PreferredOrder: Int = Int.max
     
     enum SecurityType {
@@ -46,7 +61,7 @@ struct WiFiData: Hashable, Codable, Identifiable {
 
     struct CaptiveProfileData: Hashable, Codable, Identifiable {
         var id: Self { self }
-        var CaptiveNetwork: Int = 0
+        var CaptiveNetwork: Bool = false
         var CaptiveWebSheetLoginDate: Date? = nil
     }
 
@@ -62,17 +77,23 @@ struct WiFiData: Hashable, Codable, Identifiable {
                 return Utils.dateToString(Timestamp) ?? "Unknown"
             }
         }
-        
     }
 
-    struct BSSIDData: Hashable, Codable, Identifiable {
+    /// Represents a single BSS (Basic Service Set) entry from the BSSList array
+    struct BSSData: Hashable, Codable, Identifiable {
         var id: Self { self }
-        var LEAKY_AP_BSSID: String = ""
-        var LEAKY_AP_LEARNED_DATA: Data = Data() // No clue what this means yet
-        var Manufacturer: String = ""
-        var normalizedMAC: String? = nil
-        var normalizedOUI: String? = nil
-        var SSID: String = ""
+        var BSSID: String = ""
+        var Channel: Int = -1
+        var ChannelFlags: Int = -1
+        var LastAssociatedAt: Date? = nil
+        var AWDLRealTimeModeTimestamp: Date? = nil
+        var DHCPServerID: Data? = nil
+        var IPv4NetworkSignature: String = ""
+        var IPv6NetworkSignature: String = ""
+        var LocationLatitude: Double? = nil
+        var LocationLongitude: Double? = nil
+        var LocationAccuracy: Double? = nil
+        var LocationTimestamp: Date? = nil
     }
 
     struct CollocatedGroupData: Hashable, Codable, Identifiable {
@@ -157,7 +178,7 @@ struct WiFiData: Hashable, Codable, Identifiable {
               let cpd = CaptiveProfile.first else {
             return false
         }
-        return cpd.CaptiveNetwork != 0
+        return cpd.CaptiveNetwork
     }
     
     func captiveLogin() -> String {
