@@ -386,7 +386,7 @@ class WiFiDataManager {
         // base64 is used because the plist is a binary file; AppleScript returns a String
         // so we can't pass raw bytes safely. base64 round-trips cleanly.
         let escapedPath = wifiKnownNetworksPath.replacingOccurrences(of: "'", with: "'\\''")
-        let scriptSource = "do shell script \"base64 '\(escapedPath)'\" with administrator privileges"
+        let scriptSource = "do shell script \"base64 -i '\(escapedPath)'\" with administrator privileges"
 
         guard let script = NSAppleScript(source: scriptSource) else {
             Self.logger.error("loadWithAdminPrivileges: failed to create NSAppleScript")
