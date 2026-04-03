@@ -84,23 +84,22 @@ struct WiFiListPane: View {
     @State private var isDropTargeted = false
     @State private var showDropError = false
     @State private var dropErrorMessage = ""
-    @State private var isLoadingWithAdmin = false
+    @State private var accessCheckFailed = false
 
     func loadWiFiData() {
         wifidataArray = WiFiDataManager.shared.getWiFiDataList()
     }
 
-    /// Triggers the macOS admin password dialog and loads the WiFi plist if authorized.
-    @MainActor
-    func loadWithAdminPrivileges() {
-        isLoadingWithAdmin = true
-        let success = WiFiDataManager.shared.loadWithAdminPrivileges()
-        isLoadingWithAdmin = false
-        if success {
+    /// Called after the user grants Full Disk Access and clicks "Check Access".
+    /// Without app sandbox, TCC changes take effect immediately — no restart needed.
+    func recheckAccess() {
+        accessCheckFailed = false
+        if WiFiDataManager.shared.recheckAccess() {
             wifidataArray = WiFiDataManager.shared.getWiFiDataList()
             reloadView.toggle()
+        } else {
+            accessCheckFailed = true
         }
-        // On cancel/failure, stay on the permission screen — no error shown (user chose to cancel)
     }
 
     func handleDrop(providers: [NSItemProvider]) -> Bool {
@@ -108,8 +107,9 @@ struct WiFiListPane: View {
 
         provider.loadFileRepresentation(forTypeIdentifier: UTType.propertyList.identifier) { url, error in
             guard let fileURL = url, error == nil else {
-                // Read failed — check if it was the root-owned system WiFi plist.
-                // If so, silently escalate to admin auth instead of showing an error.
+                // Read failed — check if it was the system WiFi plist. That file is root-owned
+                // and TCC-protected; even root processes (like `do shell script`) cannot read it
+                // without Full Disk Access. Guide the user to the FDA screen instead.
                 provider.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
                     let originalURL: URL?
                     if let urlData = item as? Data {
@@ -122,7 +122,9 @@ struct WiFiListPane: View {
 
                     DispatchQueue.main.async {
                         if originalURL?.path == "/Library/Preferences/com.apple.wifi.known-networks.plist" {
-                            loadWithAdminPrivileges()
+                            // Show FDA instructions rather than a confusing generic error
+                            dropErrorMessage = "The system WiFi file requires Full Disk Access. Grant Full Disk Access to WiFiCheck in System Settings → Privacy & Security → Full Disk Access, then click \"Check Access\"."
+                            showDropError = true
                         } else {
                             dropErrorMessage = error?.localizedDescription ?? "Could not read the dropped file."
                             showDropError = true
@@ -156,29 +158,45 @@ struct WiFiListPane: View {
                 Text("WiFi/Check")
                     .font(.title)
                     .fontWeight(.semibold)
-                Text("The WiFi known-networks file is owned by root and requires administrator access to read.")
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: 380)
-                Button(action: {
-                    loadWithAdminPrivileges()
-                }) {
-                    HStack {
-                        if isLoadingWithAdmin {
-                            ProgressView().scaleEffect(0.7).padding(.trailing, 2)
-                        } else {
-                            Image(systemName: "key.fill")
-                        }
-                        Text(isLoadingWithAdmin ? "Waiting for authorization…" : "Load with Administrator Access")
-                    }
-                    .frame(minWidth: 260)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("WiFi/Check needs Full Disk Access to read the WiFi known-networks file.")
+                        .multilineTextAlignment(.leading)
+                    Text("1. Click Open Privacy Settings below")
+                    Text("2. Click the lock to unlock, then click +")
+                    Text("3. Navigate to and select WiFiCheck.app")
+                    Text("4. Return here and click Check Access")
                 }
-                .buttonStyle(WiFiButtonStyle())
-                .disabled(isLoadingWithAdmin)
-                .accessibilityLabel("Load WiFi data using administrator credentials")
-                Text("You will be prompted for your administrator password.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: 360)
+                HStack(spacing: 12) {
+                    Button(action: {
+                        WiFiDataManager.shared.openFullDiskAccessSettings()
+                    }) {
+                        HStack {
+                            Image(systemName: "lock.shield")
+                            Text("Open Privacy Settings")
+                        }
+                    }
+                    .buttonStyle(WiFiButtonStyle())
+                    .accessibilityLabel("Open Full Disk Access settings in System Settings")
+                    Button(action: {
+                        recheckAccess()
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Check Access")
+                        }
+                    }
+                    .buttonStyle(WiFiButtonStyle())
+                    .accessibilityLabel("Check whether Full Disk Access has been granted")
+                }
+                if accessCheckFailed {
+                    Text("Full Disk Access not yet granted. Grant access in System Settings and try again.")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 360)
+                }
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
