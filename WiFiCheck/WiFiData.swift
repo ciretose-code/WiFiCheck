@@ -10,8 +10,8 @@ import SwiftUI
 
 struct WiFiData: Hashable, Codable, Identifiable {
 
-    var id: Self { self }
-    
+    var id: String { WiFiID }
+
     var WiFiID: String = "InvalidID"
     var AddReason: String = ""
     var AddedAt: Date? = nil
@@ -124,7 +124,7 @@ struct WiFiData: Hashable, Codable, Identifiable {
     func securityType() -> SecurityType {
         if SupportedSecurityTypes.contains("WPA3") {
             return .wpa3
-        } else if (SupportedSecurityTypes.contains("WPA2") && !SupportedSecurityTypes.contains("WPA3")) {
+        } else if SupportedSecurityTypes.contains("WPA2") {
             return .wpa2
         } else if (SupportedSecurityTypes.contains("WPA")) {
             return .wpa
@@ -164,13 +164,6 @@ struct WiFiData: Hashable, Codable, Identifiable {
     
     func userPreferredOrderTimestamp() -> String {
         return Utils.dateToString(UserPreferredOrderTimestamp) ?? "Never from this Device"
-    }
-    
-    func userPreferredOrder() -> Int64 {
-        guard let addedDate = AddedAt else {
-            return 0
-        }
-        return addedDate.currentTimeMillis()
     }
     
     func isCaptive() -> Bool {

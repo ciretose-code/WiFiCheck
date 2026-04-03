@@ -41,6 +41,7 @@ class WiFiDataManager {
     
     let SSID = "SSID"
     let SupportedSecurityTypes = "SupportedSecurityTypes"
+    let PasswordSharingDisabled = "PasswordSharingDisabled"
     let WEPSubtype = "WEPSubtype"
     let SystemMode = "SystemMode"
     let UpdatedAt = "UpdatedAt"
@@ -246,9 +247,8 @@ class WiFiDataManager {
     ///
     /// **Format Details:**
     /// - Input: `"wifi.ssid.<hexdata>"`
-    /// - The hexdata section contains pairs of hex digits representing ASCII/Unicode characters
+    /// - The hexdata section contains pairs of hex digits representing UTF-8 bytes
     /// - Format: `<4D7946726565 57696669>` where spaces are optional separators
-    /// - Each pair of hex digits (e.g., "4D") represents one character
     ///
     /// **Example:**
     /// ```
@@ -257,64 +257,40 @@ class WiFiDataManager {
     /// Output: "MyFreeWifi"
     /// ```
     ///
-    /// **Algorithm:**
-    /// 1. Remove the "wifi.ssid." prefix (first 10 characters)
-    /// 2. Iterate through remaining characters
-    /// 3. Skip '<', '>', and space characters
-    /// 4. Collect hex digits in pairs (two characters at a time)
-    /// 5. Convert each hex pair to its corresponding Unicode character
-    /// 6. Build the final SSID string from the decoded characters
+    /// Bytes are accumulated as [UInt8] and decoded as UTF-8 at the end, so multi-byte
+    /// characters (e.g. Chinese, Arabic, emoji) are handled correctly.
     ///
     /// - Parameter appleWiFiID: The Apple plist key in format "wifi.ssid.<hexdata>"
     /// - Returns: The decoded SSID string, or the original input if not in Apple's format
     func parseWiFiSSID(_ appleWiFiID: String) -> String {
-        // Check if this is an Apple WiFi SSID format (starts with "wifi.ssid.")
-        if (appleWiFiID.hasPrefix("wifi.ssid.")) {
-            // Strip the "wifi.ssid." prefix (10 characters)
-            let index = appleWiFiID.index(appleWiFiID.startIndex, offsetBy: 10)
-            let preSSID = String(appleWiFiID[index...])
-            // preSSID now contains the hex-encoded data like: <4D7946726565 57696669>
+        guard appleWiFiID.hasPrefix("wifi.ssid.") else {
+            return appleWiFiID
+        }
 
-            var characters: [Character] = []  // Array to collect decoded characters (avoids O(n²) string concat)
-            var intSSID = ""                   // Temporary storage for hex pair (e.g., "4D")
-            var count = 0                      // Counter for hex digits (0, 1, or 2)
+        let preSSID = String(appleWiFiID.dropFirst(10))
+        var bytes = [UInt8]()
+        var hexBuf = ""
 
-            // Process each character in the hex string
-            for ch in preSSID {
-                count = count + 1
-
-                if (ch == "<") {
-                    // Opening angle bracket - marks start of hex data
-                    count = 0
-                } else if (ch == " ") {
-                    // Space separator - skip it
-                    count = 0
-                } else if (ch == ">") {
-                    // Closing angle bracket - marks end of hex data
-                    count = 0
-                } else {
-                    // Processing hex digits
-                    if count == 1 {
-                        // First hex digit of the pair
-                        intSSID = "\(ch)"
-                    } else if count == 2 {
-                        // Second hex digit of the pair - now convert to character
-                        intSSID = "\(intSSID)\(ch)"
-                        count = 0
-
-                        // Convert hex string to integer, then to Unicode character
-                        if let hexValue = Int(intSSID, radix: 16),
-                           let unicodeScalar = UnicodeScalar(hexValue) {
-                            characters.append(Character(unicodeScalar))
-                        }
-                        // Note: Invalid hex values are silently skipped
+        for ch in preSSID {
+            switch ch {
+            case "<", ">", " ":
+                hexBuf = ""
+            default:
+                hexBuf.append(ch)
+                if hexBuf.count == 2 {
+                    if let byte = UInt8(hexBuf, radix: 16) {
+                        bytes.append(byte)
                     }
+                    hexBuf = ""
                 }
             }
-            return String(characters)
         }
-        // Not in Apple's format - return as-is
-        return appleWiFiID
+
+        // Decode as UTF-8 first (handles multi-byte characters like emoji, CJK, etc.),
+        // fall back to Latin-1 for legacy non-UTF-8 SSIDs, then return the original.
+        return String(bytes: bytes, encoding: .utf8)
+            ?? String(bytes: bytes, encoding: .isoLatin1)
+            ?? appleWiFiID
     }
 
     func sortByPreferredOrder() -> [WiFiData] {
@@ -367,11 +343,7 @@ class WiFiDataManager {
     
     func needsPassword() -> Bool {
         if loadedFromDrop { return false }
-        let need = !FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath)
-        if !need {
-            reloadData()
-        }
-        return need
+        return !FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath)
     }
 
     /// Checks if the app has direct access to read the WiFi preferences file
@@ -458,6 +430,7 @@ class WiFiDataManager {
             wifidata.JoinedByUserAt = findDate(value[JoinedByUserAt])
             wifidata.SSID = findData(value[SSID])
             wifidata.SupportedSecurityTypes = findString(value[SupportedSecurityTypes])
+            wifidata.PasswordSharingDisabled = findBool(value[PasswordSharingDisabled])
             wifidata.WEPSubtype = findString(value[WEPSubtype])
             wifidata.SystemMode = findBool(value[SystemMode])
             wifidata.UpdatedAt = findDate(value[UpdatedAt])

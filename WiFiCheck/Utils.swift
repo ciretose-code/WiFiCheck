@@ -8,7 +8,6 @@
 import Foundation
 import Dispatch
 import SwiftUI
-import SecurityFoundation
 
 extension Date {
     func currentTimeMillis() -> Int64 {
@@ -127,18 +126,8 @@ class Utils {
     /// - Returns: Two-digit day string (e.g., "01", "15", "31"), or "??" if date is nil
     static func getDayString(_ d: Date?) -> String {
         let day = getDay(d)
-        var dayStr = ""
-        if day == 0 {
-            dayStr = "??"
-        }
-
-        if (day < 10) {
-            dayStr = "0\(day)"
-        } else {
-            dayStr = "\(day)"
-        }
-
-        return dayStr
+        guard day != 0 else { return "??" }
+        return day < 10 ? "0\(day)" : "\(day)"
     }
 
     /// Extracts the year component from a date
@@ -237,14 +226,17 @@ class Utils {
             throw RuntimeError(message: "\(error)", kind: .taskRun)
         }
 
-        // Set up timeout handler
+        // Set up timeout handler using a lock to safely share the flag across threads
         var didTimeout = false
+        let timeoutLock = NSLock()
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         timer.schedule(deadline: .now() + timeout)
         timer.setEventHandler {
             if task.isRunning {
                 task.terminate()
+                timeoutLock.lock()
                 didTimeout = true
+                timeoutLock.unlock()
             }
         }
         timer.resume()
@@ -254,7 +246,10 @@ class Utils {
         timer.cancel()
 
         // Check if process timed out
-        if didTimeout {
+        timeoutLock.lock()
+        let timedOut = didTimeout
+        timeoutLock.unlock()
+        if timedOut {
             throw RuntimeError(message: "Command timed out after \(timeout) seconds", kind: .taskRun)
         }
 

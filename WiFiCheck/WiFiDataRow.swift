@@ -86,10 +86,11 @@ struct WiFiDataRow: View {
 
 struct WiFiDataRow_Previews: PreviewProvider {
     static var previews: some View {
+        let list = WiFiDataManager.shared.getWiFiDataList()
         Group {
-            WiFiDataRow(wifidata: WiFiDataManager.shared.getWiFiDataList()[0])
-            WiFiDataRow(wifidata: WiFiDataManager.shared.getWiFiDataList()[1])
-            WiFiDataRow(wifidata: WiFiDataManager.shared.getWiFiDataList()[2])
+            if list.indices.contains(0) { WiFiDataRow(wifidata: list[0]) }
+            if list.indices.contains(1) { WiFiDataRow(wifidata: list[1]) }
+            if list.indices.contains(2) { WiFiDataRow(wifidata: list[2]) }
         }
         .previewLayout(.fixed(width:250, height: 70))
     }

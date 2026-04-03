@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 enum SortableMenu: String, CaseIterable, Identifiable {
     var id: String {
@@ -61,21 +62,28 @@ struct WiFiListView: View {
 }
 
 struct WiFiListPane: View {
-    
+
+    private enum DeleteAlert: Identifiable {
+        case confirm(WiFiData)
+        case result(success: Bool, message: String)
+        var id: String {
+            switch self {
+            case .confirm(let w): return "confirm-\(w.WiFiID)"
+            case .result(let s, let m): return "result-\(s)-\(m)"
+            }
+        }
+    }
+
     @State private var selectedSort = SortableMenu.preferredOrder
     @State private var wifidataArray = Array<WiFiData>()
     @State private var sortString = "Preferred"
     @State private var listSelection: WiFiData? = nil
-    @State private var showingAlert = false
+    @State private var activeDeleteAlert: DeleteAlert? = nil
     @State private var showPermissionError = false
-    @State private var showDeleteResult = false
-    @State private var deleteSuccess = false
-    @State private var deleteMessage = ""
     @State private var reloadView = false
     @State private var isDropTargeted = false
     @State private var showDropError = false
     @State private var dropErrorMessage = ""
-//    @State private var savePasswordChecked = false
     
     func loadWiFiData() {
         wifidataArray = WiFiDataManager.shared.getWiFiDataList()
@@ -84,8 +92,10 @@ struct WiFiListPane: View {
     func handleDrop(providers: [NSItemProvider]) -> Bool {
         guard let provider = providers.first else { return false }
 
-        provider.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, error in
-            guard error == nil else {
+        // loadFileRepresentation copies the file to a sandbox-accessible temp location
+        // and manages the sandbox extension internally — no "-20" extension error.
+        provider.loadFileRepresentation(forTypeIdentifier: UTType.propertyList.identifier) { url, error in
+            guard let fileURL = url, error == nil else {
                 DispatchQueue.main.async {
                     dropErrorMessage = error?.localizedDescription ?? "Could not read the dropped file."
                     showDropError = true
@@ -93,45 +103,7 @@ struct WiFiListPane: View {
                 return
             }
 
-            // The item is delivered as Data containing a file URL
-            let url: URL?
-            if let urlData = item as? Data {
-                url = URL(dataRepresentation: urlData, relativeTo: nil)
-            } else if let directURL = item as? URL {
-                url = directURL
-            } else {
-                url = nil
-            }
-
-            guard let fileURL = url else {
-                DispatchQueue.main.async {
-                    dropErrorMessage = "Could not resolve the dropped file path."
-                    showDropError = true
-                }
-                return
-            }
-
-            guard fileURL.pathExtension == "plist" else {
-                DispatchQueue.main.async {
-                    dropErrorMessage = "Please drop a .plist file (e.g. com.apple.wifi.known-networks.plist)."
-                    showDropError = true
-                }
-                return
-            }
-
-            // Start security-scoped access (granted by com.apple.security.files.user-selected.read-only)
-            let accessing = fileURL.startAccessingSecurityScopedResource()
-            defer { if accessing { fileURL.stopAccessingSecurityScopedResource() } }
-
-            guard let data = try? Data(contentsOf: fileURL) else {
-                DispatchQueue.main.async {
-                    dropErrorMessage = "Could not read \"\(fileURL.lastPathComponent)\". Make sure the file is readable."
-                    showDropError = true
-                }
-                return
-            }
-
-            let parsed = WiFiDataManager.shared.parseDroppedData(data)
+            let parsed = WiFiDataManager.shared.loadFromURL(fileURL)
             DispatchQueue.main.async {
                 if parsed {
                     wifidataArray = WiFiDataManager.shared.getWiFiDataList()
@@ -183,7 +155,7 @@ struct WiFiListPane: View {
                 }
                 Spacer()
             }
-            .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+            .onDrop(of: [UTType.propertyList], isTargeted: $isDropTargeted) { providers in
                 handleDrop(providers: providers)
             }
             .overlay(
@@ -237,7 +209,7 @@ struct WiFiListPane: View {
     //                }
                 }
                 .listStyle(SidebarListStyle())
-                .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+                .onDrop(of: [UTType.propertyList], isTargeted: $isDropTargeted) { providers in
                     handleDrop(providers: providers)
                 }
                 .overlay(
@@ -259,7 +231,9 @@ struct WiFiListPane: View {
             Divider()
             VStack {
                 Button(action:{
-                    showingAlert = true
+                    if let selection = listSelection {
+                        activeDeleteAlert = .confirm(selection)
+                    }
                 }) {
                     HStack {
                         Image(systemName: "trash")
@@ -268,46 +242,34 @@ struct WiFiListPane: View {
                 }
                 .disabled(listSelection == nil)
                 .accessibilityLabel(listSelection.map { "Remove \($0.ssidString())" } ?? "Remove WiFi network")
-                .alert(isPresented: $showingAlert) {
-                    if let selection = listSelection {
+                .buttonStyle(WiFiButtonStyle(delete: true, disabled: (listSelection == nil)))
+                .alert(item: $activeDeleteAlert) { alert in
+                    switch alert {
+                    case .confirm(let selection):
                         return Alert(
                             title: Text("Are you sure you want to remove \"\(selection.ssidString())\"?"),
                             message: Text("This will remove \"\(selection.ssidString())\" from your list of known WiFi Networks.  You can always rejoin this WiFi Network in the future."),
                             primaryButton: .destructive(Text("Delete")) {
                                 let result = NetworkSetup.shared.deleteNetwork(selection.ssidString())
                                 if result {
-                                    // Delete succeeded - remove from UI
                                     if let idx = wifidataArray.firstIndex(of: selection) {
                                         wifidataArray.remove(at: idx)
                                         listSelection = nil
                                     }
-                                    deleteSuccess = true
-                                    deleteMessage = "Successfully removed \"\(selection.ssidString())\""
+                                    activeDeleteAlert = .result(success: true, message: "Successfully removed \"\(selection.ssidString())\"")
                                 } else {
-                                    // Delete failed - show error
-                                    deleteSuccess = false
-                                    deleteMessage = "Failed to remove \"\(selection.ssidString())\". Please try again."
+                                    activeDeleteAlert = .result(success: false, message: "Failed to remove \"\(selection.ssidString())\". Please try again.")
                                 }
-                                showDeleteResult = true
                             },
                             secondaryButton: .cancel()
                         )
-                    } else {
-                        // This shouldn't happen, but provide a fallback alert
+                    case .result(let success, let message):
                         return Alert(
-                            title: Text("No Network Selected"),
-                            message: Text("Please select a network to remove."),
+                            title: Text(success ? "Success" : "Error"),
+                            message: Text(message),
                             dismissButton: .default(Text("OK"))
                         )
                     }
-                }
-                .buttonStyle(WiFiButtonStyle(delete: true, disabled: (listSelection == nil)))
-                .alert(isPresented: $showDeleteResult) {
-                    Alert(
-                        title: Text(deleteSuccess ? "Success" : "Error"),
-                        message: Text(deleteMessage),
-                        dismissButton: .default(Text("OK"))
-                    )
                 }
 
                 Button(action: {
@@ -330,13 +292,11 @@ struct WiFiListPane: View {
 struct WiFiDetailPane: View {
     var body: some View {
         VStack() {
-            if WiFiDataManager.shared.needsPassword() {
-                HStack() {
-                    Image(systemName: "arrow.left.circle.fill").font(.system(.title))
-                    Text("Select WiFi Network").font(.title)
-                }
-                .accessibilityLabel("Select a WiFi network from the list to view details")
+            HStack() {
+                Image(systemName: "arrow.left.circle.fill").font(.system(.title))
+                Text("Select WiFi Network").font(.title)
             }
+            .accessibilityLabel("Select a WiFi network from the list to view details")
         }.frame(minWidth: 400)
 
     }

@@ -18,11 +18,13 @@ struct WiFiDataDetail: View {
     @State private var pwdShown = false
     @State private var pwdText = "Show Password"
     @State private var pwdIcon = "lock"
+    @State private var cachedPassword: String? = nil
 
     // Password auto-hide timer
     @State private var passwordTimer: Timer?
     @State private var remainingSeconds: Int = Constants.passwordAutoHideDelay
     private let autoHideDelay: Int = Constants.passwordAutoHideDelay
+    private let currentYear = Calendar.current.component(.year, from: Date())
 
     var body: some View {
 
@@ -71,12 +73,10 @@ struct WiFiDataDetail: View {
                     Spacer()
                     VStack(alignment: .trailing) {
                         VStack(alignment: .trailing) {
-                            if (showPassword) {
-                                // Retrieve password using Result type
-                                switch KeychainAccess.getPassword(forNetwork: wifidata.ssidString()) {
-                                case .success(let password):
-                                    Text("\(password)").font(.system(.title, design: .monospaced))
-                                case .failure:
+                            if showPassword {
+                                if let password = cachedPassword, !password.isEmpty {
+                                    Text(password).font(.system(.title, design: .monospaced))
+                                } else {
                                     Text("**********").font(.system(.title, design: .monospaced))
                                         .foregroundColor(.secondary)
                                 }
@@ -142,6 +142,9 @@ struct WiFiDataDetail: View {
                         if (wifidata.CollocatedGroup.count > 0) {
                             CollocatedGroupView(collocatedGroups: wifidata.CollocatedGroup)
                         }
+                        if !wifidata.BSSList.isEmpty {
+                            BSSIDListView(bssidData: wifidata.BSSList)
+                        }
                         if (wifidata.isCaptive()) {
                             Text("Captive Portal Last Login").bold()
                             Text(wifidata.captiveLogin())
@@ -162,7 +165,7 @@ struct WiFiDataDetail: View {
             Spacer()
             VStack(alignment: .leading) {
                 Spacer()
-                Text("ciretose © 2021-\(Calendar.current.component(.year, from: Date()))")
+                Text("ciretose © 2021-\(currentYear)")
                     .foregroundColor(Color.gray)
             }
         }
@@ -176,18 +179,26 @@ struct WiFiDataDetail: View {
 
     /// Toggles password visibility and manages the auto-hide timer
     private func togglePasswordVisibility() {
-        showPassword.toggle()
-
         if showPassword {
-            // Password is now shown - start the auto-hide timer
+            // Password is now being hidden - cancel the timer and clear cached value
+            showPassword = false
+            pwdText = "Show Password"
+            pwdIcon = "lock"
+            cachedPassword = nil
+            stopPasswordTimer()
+        } else {
+            // Fetch the password once here (not in body) to avoid blocking the main thread
+            // on every render. cachedPassword is cleared when the password is hidden.
+            switch KeychainAccess.getPassword(forNetwork: wifidata.ssidString()) {
+            case .success(let password):
+                cachedPassword = password
+            case .failure:
+                cachedPassword = nil
+            }
+            showPassword = true
             pwdText = "Hide Password"
             pwdIcon = "lock.slash"
             startPasswordTimer()
-        } else {
-            // Password is now hidden - cancel the timer
-            pwdText = "Show Password"
-            pwdIcon = "lock"
-            stopPasswordTimer()
         }
     }
 
@@ -221,6 +232,7 @@ struct WiFiDataDetail: View {
         showPassword = false
         pwdText = "Show Password"
         pwdIcon = "lock"
+        cachedPassword = nil
         stopPasswordTimer()
     }
 }

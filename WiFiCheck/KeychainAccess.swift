@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Security
 
 
 class KeychainAccess {
@@ -67,47 +68,34 @@ class KeychainAccess {
     }
 
     static func readPassword(service: String, account: String) throws -> Data {
-        let query: [String: AnyObject] = [
-            // kSecAttrService,  kSecAttrAccount, and kSecClass
-            // uniquely identify the item to read in Keychain
+        var query: [String: AnyObject] = [
             kSecAttrService as String: service as AnyObject,
             kSecAttrAccount as String: account as AnyObject,
             kSecClass as String: kSecClassGenericPassword,
-            
-            // kSecMatchLimitOne indicates keychain should read
-            // only the most recent item matching this query
             kSecMatchLimit as String: kSecMatchLimitOne,
-
-            // kSecReturnData is set to kCFBooleanTrue in order
-            // to retrieve the data for the item
             kSecReturnData as String: kCFBooleanTrue
         ]
 
-        // SecItemCopyMatching will attempt to copy the item
-        // identified by query to the reference itemCopy
-        var itemCopy: AnyObject?
-        let status = SecItemCopyMatching(
-            query as CFDictionary,
-            &itemCopy
-        )
+        // WiFi passwords are stored in the System Keychain under the "AirPort" service.
+        // SecKeychainOpen is deprecated but remains the only direct way to target the
+        // System Keychain on macOS 11–12. macOS will prompt the user to authorize access.
+        var systemKeychain: SecKeychain?
+        if SecKeychainOpen("/Library/Keychains/System.keychain", &systemKeychain) == errSecSuccess,
+           let keychain = systemKeychain {
+            query[kSecMatchSearchList as String] = [keychain] as AnyObject
+        }
 
-        // errSecItemNotFound is a special status indicating the
-        // read item does not exist. Throw itemNotFound so the
-        // client can determine whether or not to handle
-        // this case
+        var itemCopy: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &itemCopy)
+
         guard status != errSecItemNotFound else {
             throw KeychainError.itemNotFound
         }
-        
-        // Any status other than errSecSuccess indicates the
-        // read operation failed.
+
         guard status == errSecSuccess else {
             throw KeychainError.unexpectedStatus(status)
         }
 
-        // This implementation of KeychainInterface requires all
-        // items to be saved and read as Data. Otherwise,
-        // invalidItemFormat is thrown
         guard let password = itemCopy as? Data else {
             throw KeychainError.invalidItemFormat
         }

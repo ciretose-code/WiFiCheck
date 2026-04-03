@@ -143,6 +143,7 @@ class NetworkSetup {
             var i = Constants.networkOrderIncrement
             for network in networks {
                 let n = network.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !n.isEmpty else { continue }
                 prefWiFi[n] = i
                 i += Constants.networkOrderIncrement
             }
@@ -156,22 +157,14 @@ class NetworkSetup {
     /// specified network from the user's saved networks. This removes the network's stored password
     /// from the keychain and prevents automatic reconnection.
     ///
-    /// **Security:** This method validates input to prevent command injection attacks by rejecting
-    /// network names containing shell metacharacters (`;|&$\`<>()[]{}*?~!`).
+    /// Arguments are passed directly to `Process` (not through a shell), so no shell injection
+    /// is possible and no character filtering is needed. Valid SSIDs containing parentheses,
+    /// asterisks, or other special characters are handled correctly.
     ///
     /// - Parameter network: The SSID of the network to remove
-    /// - Returns: `true` if the network was successfully removed, `false` if the operation failed,
-    ///            the network doesn't exist, or the network name contains invalid characters
+    /// - Returns: `true` if the network was successfully removed, `false` otherwise
     func deleteNetwork(_ network: String) -> Bool {
-        // Input validation to prevent command injection
-        // Network SSIDs should not contain shell metacharacters
-        let dangerousCharacters = CharacterSet(charactersIn: ";|&$`<>()[]{}*?~!")
-        if network.rangeOfCharacter(from: dangerousCharacters) != nil {
-            Self.logger.error("Invalid network name contains dangerous characters: \(network, privacy: .public)")
-            return false
-        }
-
-        // Additional validation: network name should not be empty
+        // Validate that the network name is not empty
         guard !network.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             Self.logger.error("Network name is empty")
             return false
