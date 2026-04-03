@@ -84,21 +84,50 @@ struct WiFiListPane: View {
     @State private var isDropTargeted = false
     @State private var showDropError = false
     @State private var dropErrorMessage = ""
-    
+    @State private var isLoadingWithAdmin = false
+
     func loadWiFiData() {
         wifidataArray = WiFiDataManager.shared.getWiFiDataList()
+    }
+
+    /// Triggers the macOS admin password dialog and loads the WiFi plist if authorized.
+    @MainActor
+    func loadWithAdminPrivileges() {
+        isLoadingWithAdmin = true
+        let success = WiFiDataManager.shared.loadWithAdminPrivileges()
+        isLoadingWithAdmin = false
+        if success {
+            wifidataArray = WiFiDataManager.shared.getWiFiDataList()
+            reloadView.toggle()
+        }
+        // On cancel/failure, stay on the permission screen — no error shown (user chose to cancel)
     }
 
     func handleDrop(providers: [NSItemProvider]) -> Bool {
         guard let provider = providers.first else { return false }
 
-        // loadFileRepresentation copies the file to a sandbox-accessible temp location
-        // and manages the sandbox extension internally — no "-20" extension error.
         provider.loadFileRepresentation(forTypeIdentifier: UTType.propertyList.identifier) { url, error in
             guard let fileURL = url, error == nil else {
-                DispatchQueue.main.async {
-                    dropErrorMessage = error?.localizedDescription ?? "Could not read the dropped file."
-                    showDropError = true
+                // Read failed — check if it was the root-owned system WiFi plist.
+                // If so, silently escalate to admin auth instead of showing an error.
+                provider.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
+                    let originalURL: URL?
+                    if let urlData = item as? Data {
+                        originalURL = URL(dataRepresentation: urlData, relativeTo: nil)
+                    } else if let directURL = item as? URL {
+                        originalURL = directURL
+                    } else {
+                        originalURL = nil
+                    }
+
+                    DispatchQueue.main.async {
+                        if originalURL?.path == "/Library/Preferences/com.apple.wifi.known-networks.plist" {
+                            loadWithAdminPrivileges()
+                        } else {
+                            dropErrorMessage = error?.localizedDescription ?? "Could not read the dropped file."
+                            showDropError = true
+                        }
+                    }
                 }
                 return
             }
@@ -119,42 +148,40 @@ struct WiFiListPane: View {
 
     var body: some View {
         if wifidataArray.count == 0 && WiFiDataManager.shared.needsPassword() {
-            HStack(alignment: .top, spacing: 8) {
-                VStack(alignment:.center) {
-                    VStack(alignment:.leading) {
-                        Text("WiFi/Check").font(.title)
-                        Divider()
-                        Text("WiFi/Check provides information about WiFi Network connections known to your Mac. This information comes from your Network System Preferences, hidden preferences files and command line utilities.")
-                        Text("")
-                        Text("On macOS Big Sur and later, WiFi/Check requires Full Disk Access to read the WiFi Known Networks file.")
-                        Text("")
-                        Text("Click 'Open Plist File' to reveal the file in Finder, then drag and drop it onto this window to load it.")
-                    }.padding()
-                    VStack(alignment: .center) {
-                        Button(action:{
-                            WiFiDataManager.shared.revealKnownNetworksPlistInFinder()
-                        }) {
-                            HStack {
-                                Image(systemName: "doc.badge.magnifyingglass")
-                                Text("Open Plist File")
-                            }
+            VStack(spacing: 20) {
+                Spacer()
+                Image(systemName: "wifi.exclamationmark")
+                    .font(.system(size: 56))
+                    .foregroundColor(.secondary)
+                Text("WiFi/Check")
+                    .font(.title)
+                    .fontWeight(.semibold)
+                Text("The WiFi known-networks file is owned by root and requires administrator access to read.")
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: 380)
+                Button(action: {
+                    loadWithAdminPrivileges()
+                }) {
+                    HStack {
+                        if isLoadingWithAdmin {
+                            ProgressView().scaleEffect(0.7).padding(.trailing, 2)
+                        } else {
+                            Image(systemName: "key.fill")
                         }
-                        .buttonStyle(WiFiButtonStyle())
-                        .accessibilityLabel("Open WiFi known networks plist file in Finder")
+                        Text(isLoadingWithAdmin ? "Waiting for authorization…" : "Load with Administrator Access")
                     }
-                    .alert(isPresented: $showPermissionError) {
-                        Alert(
-                            title: Text("Full Disk Access Required"),
-                            message: Text("WiFi/Check needs Full Disk Access to read WiFi preferences.\n\nSteps:\n1. Click 'Open System Settings' below\n2. Click the lock icon to unlock\n3. Click '+' button\n4. Select WiFi/Check.app from Applications\n5. Quit and relaunch WiFi/Check\n6. Click 'Check Access' again"),
-                            primaryButton: .default(Text("Open System Settings")) {
-                                WiFiDataManager.shared.openFullDiskAccessSettings()
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    }
+                    .frame(minWidth: 260)
                 }
+                .buttonStyle(WiFiButtonStyle())
+                .disabled(isLoadingWithAdmin)
+                .accessibilityLabel("Load WiFi data using administrator credentials")
+                Text("You will be prompted for your administrator password.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 Spacer()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onDrop(of: [UTType.propertyList], isTargeted: $isDropTargeted) { providers in
                 handleDrop(providers: providers)
             }

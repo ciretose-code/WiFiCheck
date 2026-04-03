@@ -376,6 +376,60 @@ class WiFiDataManager {
         NSWorkspace.shared.open(url)
     }
 
+    /// Reads the WiFi plist using an admin authorization dialog (standard macOS password prompt).
+    /// Uses AppleScript `do shell script ... with administrator privileges` to read the
+    /// root-owned file via base64, then decodes and parses it.
+    /// Must be called on the main thread — the auth dialog blocks until dismissed.
+    /// - Returns: `true` if data was loaded successfully, `false` if the user cancelled or an error occurred.
+    @MainActor @discardableResult
+    func loadWithAdminPrivileges() -> Bool {
+        // base64 is used because the plist is a binary file; AppleScript returns a String
+        // so we can't pass raw bytes safely. base64 round-trips cleanly.
+        let escapedPath = wifiKnownNetworksPath.replacingOccurrences(of: "'", with: "'\\''")
+        let scriptSource = "do shell script \"base64 '\(escapedPath)'\" with administrator privileges"
+
+        guard let script = NSAppleScript(source: scriptSource) else {
+            Self.logger.error("loadWithAdminPrivileges: failed to create NSAppleScript")
+            return false
+        }
+
+        var errorDict: NSDictionary?
+        let result = script.executeAndReturnError(&errorDict)
+
+        if let error = errorDict {
+            // Error -128 means the user clicked Cancel — don't log as an error
+            let code = (error[NSAppleScript.errorNumber] as? Int) ?? 0
+            if code == -128 {
+                Self.logger.info("loadWithAdminPrivileges: user cancelled authorization")
+            } else {
+                Self.logger.error("loadWithAdminPrivileges: AppleScript error \(code, privacy: .public): \(error.description, privacy: .public)")
+            }
+            return false
+        }
+
+        // Strip whitespace/newlines that base64 inserts every 76 chars
+        let base64String = (result.stringValue ?? "")
+            .components(separatedBy: .whitespacesAndNewlines)
+            .joined()
+
+        guard !base64String.isEmpty, let data = Data(base64Encoded: base64String) else {
+            Self.logger.error("loadWithAdminPrivileges: failed to decode base64 output")
+            return false
+        }
+
+        let parsed = parseWiFiData(from: data)
+        guard !parsed.isEmpty else {
+            Self.logger.warning("loadWithAdminPrivileges: no networks found in plist")
+            return false
+        }
+
+        wifidatalist = parsed
+        wifidatalist = sortByPreferredOrder()
+        loadedFromDrop = false
+        Self.logger.info("loadWithAdminPrivileges: loaded \(parsed.count, privacy: .public) networks")
+        return true
+    }
+
     /// Opens the WiFi known networks plist file in its default application.
     /// Falls back to revealing it in Finder if it cannot be opened directly.
     func openKnownNetworksPlist() {
