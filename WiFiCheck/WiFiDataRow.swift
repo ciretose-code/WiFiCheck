@@ -13,10 +13,6 @@ struct WiFiDataRow: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: "wifi")
-                .renderingMode(.template)
-                .foregroundColor(securityColor)
-                .help("Wi-Fi Network: \(wifidata.ssidString())")
             Image(systemName: securityIcon)
                 .renderingMode(.template)
                 .foregroundColor(securityColor)
