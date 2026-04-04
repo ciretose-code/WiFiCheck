@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import MapKit
 
 
 struct WiFiDataDetail: View {
@@ -341,6 +342,7 @@ struct CollocatedGroupView: View {
 
     var body: some View {
         VStack(alignment: .leading) {
+            Divider()
             Text("Networks At Same Location").bold()
             ForEach(collocatedGroups) { cgd in
                 Text("\(Image(systemName: "wifi")) \(String(cgd.ssid))")
@@ -471,17 +473,15 @@ struct BSSIDListView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    if !b.IPv4NetworkSignature.isEmpty {
-                        Text(b.IPv4NetworkSignature)
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                    }
+//                    if !b.IPv4NetworkSignature.isEmpty {
+//                        Text(b.IPv4NetworkSignature)
+//                            .font(.caption2)
+//                            .foregroundColor(.secondary)
+//                            .lineLimit(1)
+//                            .truncationMode(.tail)
+//                    }
                     if let lat = b.LocationLatitude, let lon = b.LocationLongitude {
-                        Text("📍 \(String(format: "%.4f", lat)), \(String(format: "%.4f", lon))")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        BSSLocationMapView(latitude: lat, longitude: lon, accuracy: b.LocationAccuracy)
                     }
                 }
                 .padding(.bottom, 4)
@@ -489,6 +489,104 @@ struct BSSIDListView: View {
                     Divider()
                 }
             }
+        }
+    }
+}
+
+
+struct BSSLocationMapView: View {
+    let latitude: Double
+    let longitude: Double
+    let accuracy: Double?
+
+    @State private var showExpanded = false
+
+    private var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Map(position: .constant(.region(MKCoordinateRegion(
+                center: coordinate,
+                latitudinalMeters: 500,
+                longitudinalMeters: 500
+            ))), interactionModes: []) {
+                Marker("", coordinate: coordinate)
+            }
+            .mapStyle(.standard(elevation: .flat))
+            .frame(width: 200, height: 130)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(alignment: Alignment.bottomTrailing) {
+                Button {
+                    showExpanded = true
+                } label: {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.caption)
+                        .padding(4)
+                        .background(.regularMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+                .buttonStyle(.plain)
+                .padding(4)
+            }
+
+            Text("\(String(format: "%.5f", latitude)), \(String(format: "%.5f", longitude))")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            if let acc = accuracy {
+                Text("± \(String(format: "%.0f", acc))m accuracy")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .sheet(isPresented: $showExpanded) {
+            LocationMapSheet(coordinate: coordinate, accuracy: accuracy)
+        }
+    }
+}
+
+
+struct LocationMapSheet: View {
+    let coordinate: CLLocationCoordinate2D
+    let accuracy: Double?
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Map(position: .constant(.region(MKCoordinateRegion(
+                center: coordinate,
+                latitudinalMeters: 800,
+                longitudinalMeters: 800
+            )))) {
+                Marker("Access Point", coordinate: coordinate)
+            }
+            .mapStyle(.standard)
+            .frame(minWidth: 520, minHeight: 420)
+
+            Divider()
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("📍 \(String(format: "%.6f", coordinate.latitude)), \(String(format: "%.6f", coordinate.longitude))")
+                        .font(.caption)
+                    if let acc = accuracy {
+                        Text("Accuracy: ± \(String(format: "%.0f", acc)) meters")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                Spacer()
+                Button("Open in Maps") {
+                    if let url = URL(string: "maps://?ll=\(coordinate.latitude),\(coordinate.longitude)&z=15") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                Button("Done") { dismiss() }
+                    .keyboardShortcut(.defaultAction)
+            }
+            .padding()
         }
     }
 }
