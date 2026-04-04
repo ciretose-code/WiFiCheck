@@ -366,7 +366,7 @@ class WiFiDataManager {
             return wifidatalist.count > 0
         }
 
-        Self.logger.warning("WiFi/Check does not have Full Disk Access")
+        Self.logger.warning("WiFiCheck does not have Full Disk Access")
         Self.logger.info("The WiFi preferences file is protected by System Integrity Protection.")
         Self.logger.info("To read WiFi history: sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist")
 
@@ -610,7 +610,7 @@ class WiFiDataManager {
         code: 100,
         userInfo: [NSLocalizedDescriptionKey:
             "The helper is registered and System Settings has been opened. " +
-            "Enable WiFi/Check under Privacy & Security → Login Items & Extensions, then click Install Helper again."]
+            "Enable WiFiCheck under Privacy & Security → Login Items & Extensions, then click Install Helper again."]
     )
 
     /// Unregister the daemon (for debugging / uninstall).
