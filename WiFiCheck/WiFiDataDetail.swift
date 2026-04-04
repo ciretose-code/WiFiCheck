@@ -162,12 +162,6 @@ struct WiFiDataDetail: View {
                 }
             }
             .padding()
-            Spacer()
-            VStack(alignment: .leading) {
-                Spacer()
-                Text("ciretose © 2021-\(currentYear)")
-                    .foregroundColor(Color.gray)
-            }
         }
         .onDisappear {
             // Clean up timer when view disappears
