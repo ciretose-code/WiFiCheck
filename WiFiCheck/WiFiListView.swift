@@ -77,6 +77,13 @@ struct WiFiListPane: View {
 
     @State private var selectedSort = SortableMenu.preferredOrder
     @State private var wifidataArray = Array<WiFiData>()
+    @State private var searchText = ""
+
+    var filteredNetworks: [WiFiData] {
+        guard !searchText.isEmpty else { return wifidataArray }
+        return wifidataArray.filter { $0.ssidString().localizedCaseInsensitiveContains(searchText) }
+    }
+
     @State private var sortString = "Preferred"
     @State private var listSelection: WiFiData? = nil
     @State private var activeDeleteAlert: DeleteAlert? = nil
@@ -251,13 +258,28 @@ struct WiFiListPane: View {
                 .pickerStyle(MenuPickerStyle())
             }
             Divider()
+            if !wifidataArray.isEmpty {
+                Group {
+                    if searchText.isEmpty {
+                        Text("\(wifidataArray.count) networks")
+                    } else {
+                        Text("\(filteredNetworks.count) of \(wifidataArray.count) networks")
+                    }
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 8)
+                .padding(.top, 2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
             List(selection: $listSelection) {
-                    ForEach(wifidataArray) { wifidata in
+                    ForEach(filteredNetworks) { wifidata in
                         NavigationLink(destination: WiFiDataDetail(wifidata: wifidata)){
                             WiFiDataRow(wifidata: wifidata)
                         }
                     }
             }
+            .searchable(text: $searchText, placement: .sidebar, prompt: "Search networks")
             .listStyle(SidebarListStyle())
             .onDrop(of: [UTType.propertyList], isTargeted: $isDropTargeted) { providers in
                 handleDrop(providers: providers)
