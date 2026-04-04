@@ -343,13 +343,18 @@ class WiFiDataManager {
     
     func needsPassword() -> Bool {
         if loadedFromDrop { return false }
-        return !FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath)
+        return !hasDirectAccess()
     }
 
-    /// Checks if the app has direct access to read the WiFi preferences file
-    /// - Returns: true if the app can read the file without admin privileges
+    /// Checks if the app can actually open the WiFi preferences file.
+    /// Uses a real open() attempt rather than access()/isReadableFile because the
+    /// file is chmod 600 root:wheel — access() checks DAC and always returns false
+    /// for non-root, even when Full Disk Access (MAC-layer override) has been granted.
+    /// - Returns: true if the file can be read (FDA granted)
     func hasDirectAccess() -> Bool {
-        return FileManager.default.isReadableFile(atPath: wifiKnownNetworksPath)
+        guard let fh = FileHandle(forReadingAtPath: wifiKnownNetworksPath) else { return false }
+        fh.closeFile()
+        return true
     }
 
 
