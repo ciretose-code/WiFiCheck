@@ -268,6 +268,28 @@ struct WiFiListPane: View {
                     .opacity(isDropTargeted ? 1 : 0)
                     .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
             )
+            .overlay(
+                Group {
+                    if wifidataArray.isEmpty {
+                        VStack(spacing: 12) {
+                            Image(systemName: "wifi.slash")
+                                .font(.system(size: 40))
+                                .foregroundColor(.secondary)
+                            Text("No Networks Loaded")
+                                .font(.headline)
+                            Text("Set up access to your WiFi history to get started.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: 220)
+                            Button("Open Setup") {
+                                NotificationCenter.default.post(name: .showSetupSheet, object: nil)
+                            }
+                            .buttonStyle(WiFiButtonStyle())
+                        }
+                    }
+                }
+            )
             .alert(isPresented: $showDropError) {
                 Alert(
                     title: Text("Could Not Read File"),
