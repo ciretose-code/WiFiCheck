@@ -38,10 +38,12 @@ enum SortableMenu: String, CaseIterable, Identifiable {
 
 
 struct WiFiListView: View {
+    @State private var wifidataArray = Array<WiFiData>()
+
     var body: some View {
         NavigationView {
-            WiFiListPane()
-            WiFiDetailPane()
+            WiFiListPane(sharedNetworks: $wifidataArray)
+            WiFiDetailPane(networks: wifidataArray)
         }.toolbar {
             ToolbarItem(placement: .navigation) {
                 Button(action: toggleSidebar, label: {
@@ -63,6 +65,7 @@ struct WiFiListView: View {
 }
 
 struct WiFiListPane: View {
+    @Binding var sharedNetworks: [WiFiData]
 
     private enum DeleteAlert: Identifiable {
         case confirm(WiFiData)
@@ -348,6 +351,9 @@ struct WiFiListPane: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .showSetupSheet)) { _ in
             showSetupSheet = true
+        }
+        .onChange(of: wifidataArray) {
+            sharedNetworks = wifidataArray
         }
         .onReceive(NotificationCenter.default.publisher(for: .showRemoveHelperSheet)) { _ in
             helperRemoved = false
@@ -741,8 +747,7 @@ struct RemoveHelperSheetView: View {
 
 
 struct WiFiDetailPane: View {
-
-    private var networks: [WiFiData] { WiFiDataManager.shared.getWiFiDataList() }
+    let networks: [WiFiData]
 
     private var mostRecentJoined: String {
         let dates = networks.compactMap { $0.JoinedBySystemAt }
