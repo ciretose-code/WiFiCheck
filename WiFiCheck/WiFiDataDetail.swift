@@ -261,6 +261,24 @@ struct CollocatedGroupView: View {
 
 struct ChannelHistoryView: View {
     var channelData: [WiFiData.ChannelData]
+
+    private func frequencyBand(for channel: Int) -> String {
+        switch channel {
+        case 1...13: return "2.4 GHz"
+        case 14: return "2.4 GHz"
+        case 36...177: return "5 GHz"
+        default: return "6 GHz"
+        }
+    }
+
+    private func bandColor(for channel: Int) -> Color {
+        switch channel {
+        case 1...14: return Color.orange
+        case 36...177: return Color(red: 0.1, green: 0.5, blue: 0.9)
+        default: return Color.purple
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading) {
             Text("Channel History").bold()
@@ -274,6 +292,16 @@ struct ChannelHistoryView: View {
                         .frame(width: 40, height: 26, alignment: .center)
                         .background(Color.black)
                         .clipShape(Capsule())
+                        .accessibilityLabel("Channel \(cd.Channel)")
+                    Text(frequencyBand(for: cd.Channel))
+                        .font(.caption)
+                        .bold()
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .frame(height: 26, alignment: .center)
+                        .background(bandColor(for: cd.Channel))
+                        .clipShape(Capsule())
+                        .accessibilityLabel(frequencyBand(for: cd.Channel))
                     Text("\(cd.joinedTime())")
                         .bold()
                         .textCase(.uppercase)
