@@ -500,9 +500,14 @@ struct BSSLocationMapView: View {
     let accuracy: Double?
 
     @State private var showExpanded = false
+    @State private var placeName: String? = nil
 
     private var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+
+    private var coordinateText: String {
+        "\(String(format: "%.5f", latitude)), \(String(format: "%.5f", longitude))"
     }
 
     var body: some View {
@@ -531,17 +536,34 @@ struct BSSLocationMapView: View {
                 .padding(4)
             }
 
-            Text("\(String(format: "%.5f", latitude)), \(String(format: "%.5f", longitude))")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            if let place = placeName {
+                Text(place)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else {
+                Text(coordinateText)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
             if let acc = accuracy {
                 Text("± \(String(format: "%.0f", acc))m accuracy")
                     .font(.caption2)
                     .foregroundColor(.secondary)
             }
         }
+        .onAppear {
+            let loc = CLLocation(latitude: latitude, longitude: longitude)
+            CLGeocoder().reverseGeocodeLocation(loc) { placemarks, _ in
+                guard let p = placemarks?.first else { return }
+                let parts = [p.locality, p.administrativeArea, p.country]
+                    .compactMap { $0 }
+                if !parts.isEmpty {
+                    placeName = parts.joined(separator: ", ")
+                }
+            }
+        }
         .sheet(isPresented: $showExpanded) {
-            LocationMapSheet(coordinate: coordinate, accuracy: accuracy)
+            LocationMapSheet(coordinate: coordinate, accuracy: accuracy, coordinateText: coordinateText)
         }
     }
 }
@@ -550,8 +572,10 @@ struct BSSLocationMapView: View {
 struct LocationMapSheet: View {
     let coordinate: CLLocationCoordinate2D
     let accuracy: Double?
+    let coordinateText: String
 
     @Environment(\.dismiss) private var dismiss
+    @State private var placeName: String? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -569,8 +593,13 @@ struct LocationMapSheet: View {
 
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("📍 \(String(format: "%.6f", coordinate.latitude)), \(String(format: "%.6f", coordinate.longitude))")
+                    if let place = placeName {
+                        Text("📍 \(place)")
+                            .font(.caption)
+                    }
+                    Text(coordinateText)
                         .font(.caption)
+                        .foregroundColor(placeName != nil ? .secondary : .primary)
                     if let acc = accuracy {
                         Text("Accuracy: ± \(String(format: "%.0f", acc)) meters")
                             .font(.caption2)
@@ -587,6 +616,14 @@ struct LocationMapSheet: View {
                     .keyboardShortcut(.defaultAction)
             }
             .padding()
+        }
+        .onAppear {
+            let loc = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+            CLGeocoder().reverseGeocodeLocation(loc) { placemarks, _ in
+                guard let p = placemarks?.first else { return }
+                let parts = [p.locality, p.administrativeArea, p.country].compactMap { $0 }
+                if !parts.isEmpty { placeName = parts.joined(separator: ", ") }
+            }
         }
     }
 }
