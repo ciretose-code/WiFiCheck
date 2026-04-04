@@ -39,33 +39,28 @@ enum SortableMenu: String, CaseIterable, Identifiable {
 
 struct WiFiListView: View {
     @State private var wifidataArray = Array<WiFiData>()
+    @State private var listSelection: WiFiData? = nil
 
     var body: some View {
-        NavigationView {
-            WiFiListPane(sharedNetworks: $wifidataArray)
-            WiFiDetailPane(networks: wifidataArray)
-        }.toolbar {
-            ToolbarItem(placement: .navigation) {
-                Button(action: toggleSidebar, label: {
-                    Image(systemName: "sidebar.leading")
+        NavigationSplitView(columnVisibility: .constant(.all)) {
+            WiFiListPane(sharedNetworks: $wifidataArray, listSelection: $listSelection)
+        } detail: {
+            if let selected = listSelection {
+                WiFiDataDetail(wifidata: selected, onDelete: {
+                    wifidataArray.removeAll { $0.id == selected.id }
+                    listSelection = nil
                 })
-                .padding(0)
-                .accessibilityLabel("Toggle sidebar")
+            } else {
+                WiFiDetailPane(networks: wifidataArray)
             }
         }
+        .navigationSplitViewStyle(.balanced)
     }
-    
-    private func toggleSidebar() {
-        #if os(iOS)
-        #else
-        NSApp.keyWindow?.firstResponder?.tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)), with: nil)
-        #endif
-    }
-    
 }
 
 struct WiFiListPane: View {
     @Binding var sharedNetworks: [WiFiData]
+    @Binding var listSelection: WiFiData?
 
     private enum DeleteAlert: Identifiable {
         case confirm(WiFiData)
@@ -79,16 +74,14 @@ struct WiFiListPane: View {
     }
 
     @AppStorage("selectedSort") private var selectedSort = SortableMenu.recentSystem
-    @State private var wifidataArray = Array<WiFiData>()
     @State private var searchText = ""
 
     var filteredNetworks: [WiFiData] {
-        guard !searchText.isEmpty else { return wifidataArray }
-        return wifidataArray.filter { $0.ssidString().localizedCaseInsensitiveContains(searchText) }
+        guard !searchText.isEmpty else { return sharedNetworks }
+        return sharedNetworks.filter { $0.ssidString().localizedCaseInsensitiveContains(searchText) }
     }
 
     @State private var sortString = "Preferred"
-    @State private var listSelection: WiFiData? = nil
     @State private var activeDeleteAlert: DeleteAlert? = nil
     @State private var showPermissionError = false
     @State private var reloadView = false
@@ -111,13 +104,13 @@ struct WiFiListPane: View {
         sortString = selectedSort.title
         switch selectedSort {
         case .preferredOrder:
-            wifidataArray = WiFiDataManager.shared.sortByPreferredOrder()
+            sharedNetworks = WiFiDataManager.shared.sortByPreferredOrder()
         case .recentUser:
-            wifidataArray = WiFiDataManager.shared.sortByRecentUser()
+            sharedNetworks = WiFiDataManager.shared.sortByRecentUser()
         case .recentSystem:
-            wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
+            sharedNetworks = WiFiDataManager.shared.sortByRecentSystem()
         case .alphabetical:
-            wifidataArray = WiFiDataManager.shared.sortByAlphabetical()
+            sharedNetworks = WiFiDataManager.shared.sortByAlphabetical()
         }
     }
 
@@ -139,7 +132,7 @@ struct WiFiListPane: View {
             return
         }
         if WiFiDataManager.shared.loadFromURL(fileURL) {
-            wifidataArray = WiFiDataManager.shared.getWiFiDataList()
+            sharedNetworks = WiFiDataManager.shared.getWiFiDataList()
             reloadView.toggle()
             showSetupSheet = false
         } else {
@@ -174,7 +167,7 @@ struct WiFiListPane: View {
                 WiFiDataManager.shared.loadViaHelper { networks, loadError in
                     helperInstalling = false
                     if let networks = networks, !networks.isEmpty {
-                        wifidataArray = networks
+                        sharedNetworks = networks
                         applySort()
                         reloadView.toggle()
                         showSetupSheet = false
@@ -238,7 +231,7 @@ struct WiFiListPane: View {
             let parsed = WiFiDataManager.shared.loadFromURL(fileURL)
             DispatchQueue.main.async {
                 if parsed {
-                    wifidataArray = WiFiDataManager.shared.getWiFiDataList()
+                    sharedNetworks = WiFiDataManager.shared.getWiFiDataList()
                     reloadView.toggle()
                 } else {
                     dropErrorMessage = "\"\(fileURL.lastPathComponent)\" does not appear to be a valid WiFi known-networks plist."
@@ -267,12 +260,12 @@ struct WiFiListPane: View {
                 .pickerStyle(MenuPickerStyle())
             }
             Divider()
-            if !wifidataArray.isEmpty {
+            if !sharedNetworks.isEmpty {
                 Group {
                     if searchText.isEmpty {
-                        Text("\(wifidataArray.count) networks")
+                        Text("\(sharedNetworks.count) networks")
                     } else {
-                        Text("\(filteredNetworks.count) of \(wifidataArray.count) networks")
+                        Text("\(filteredNetworks.count) of \(sharedNetworks.count) networks")
                     }
                 }
                 .font(.caption)
@@ -283,12 +276,7 @@ struct WiFiListPane: View {
             }
             List(selection: $listSelection) {
                     ForEach(filteredNetworks) { wifidata in
-                        NavigationLink(destination: WiFiDataDetail(wifidata: wifidata, onDelete: {
-                            wifidataArray.removeAll { $0.id == wifidata.id }
-                            listSelection = nil
-                        })){
-                            WiFiDataRow(wifidata: wifidata)
-                        }
+                        WiFiDataRow(wifidata: wifidata)
                     }
             }
             .searchable(text: $searchText, placement: .sidebar, prompt: "Search networks")
@@ -304,7 +292,7 @@ struct WiFiListPane: View {
             )
             .overlay(
                 Group {
-                    if wifidataArray.isEmpty {
+                    if sharedNetworks.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "wifi.slash")
                                 .font(.system(size: 40))
@@ -338,7 +326,7 @@ struct WiFiListPane: View {
             if WiFiDataManager.shared.helperIsRunning {
                 WiFiDataManager.shared.loadViaHelper { networks, _ in
                     if let networks = networks, !networks.isEmpty {
-                        wifidataArray = networks
+                        sharedNetworks = networks
                         applySort()
                         reloadView.toggle()
                     } else if WiFiDataManager.shared.needsPassword() {
@@ -354,9 +342,6 @@ struct WiFiListPane: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .showSetupSheet)) { _ in
             showSetupSheet = true
-        }
-        .onChange(of: wifidataArray) {
-            sharedNetworks = wifidataArray
         }
         .onReceive(NotificationCenter.default.publisher(for: .showRemoveHelperSheet)) { _ in
             helperRemoved = false
