@@ -352,10 +352,10 @@ struct SetupSheetView: View {
                 Text("WiFi/Check Setup")
                     .font(.title)
                     .fontWeight(.semibold)
-                Text("The system WiFi file is protected by macOS and requires root access to read.\nChoose how you'd like to grant access:")
+                Text("The system WiFi file is protected by macOS and requires elevated access to read. Choose an option below:")
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
-                    .frame(maxWidth: 500)
+                    .frame(maxWidth: 720)
             }
             .padding(.top, 36)
             .padding(.bottom, 28)
@@ -368,15 +368,22 @@ struct SetupSheetView: View {
                     badge: "1",
                     icon: "gearshape.2.fill",
                     title: "Install Helper",
-                    subtitle: "Automatic — reads directly, no manual steps",
+                    subtitle: "Automatic — reads directly on every launch",
                     recommended: true
                 ) {
                     VStack(spacing: 10) {
-                        Text("Installs a small privileged daemon that reads the WiFi file as root. Requires your admin password once. Works automatically on every launch after that.")
+                        Text("Installs a privileged background helper that reads the WiFi file as root. Three one-time steps:")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label("Enter your admin password when prompted", systemImage: "1.circle.fill")
+                            Label("Enable WiFiCheck in System Settings → Login Items", systemImage: "2.circle.fill")
+                            Label("Grant Full Disk Access to the helper binary", systemImage: "3.circle.fill")
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
 
                         if helperNeedsFDA {
                             HStack(alignment: .top, spacing: 6) {
@@ -502,7 +509,7 @@ struct SetupSheetView: View {
             .buttonStyle(.plain)
             .padding(.bottom, 24)
         }
-        .frame(minWidth: 600)
+        .frame(minWidth: 800)
         .alert(isPresented: $showError) {
             Alert(
                 title: Text("Could Not Read File"),
