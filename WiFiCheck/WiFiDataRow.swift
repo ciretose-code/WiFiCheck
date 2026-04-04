@@ -20,9 +20,11 @@ struct WiFiDataRow: View {
             HStack(spacing: 4) {
                 Image(systemName: "wifi")
                     .renderingMode(.template)
+                    .help("Wi-Fi Network: \(wifidata.ssidString())")
                 Image(systemName: securityIcon)
                     .renderingMode(.template)
                     .font(.caption)
+                    .help("Security: \(wifidata.getSecurityName())")
             }
         }
         .accentColor(securityColor)
