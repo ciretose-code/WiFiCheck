@@ -75,7 +75,7 @@ struct WiFiListPane: View {
         }
     }
 
-    @State private var selectedSort = SortableMenu.preferredOrder
+    @State private var selectedSort = SortableMenu.recentSystem
     @State private var wifidataArray = Array<WiFiData>()
     @State private var sortString = "Preferred"
     @State private var listSelection: WiFiData? = nil
@@ -98,7 +98,7 @@ struct WiFiListPane: View {
     static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
 
     func loadWiFiData() {
-        wifidataArray = WiFiDataManager.shared.getWiFiDataList()
+        wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
     }
 
     func copyCommandToClipboard() {
