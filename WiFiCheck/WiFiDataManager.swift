@@ -625,27 +625,27 @@ class WiFiDataManager {
     }
 
     /// Read the WiFi plist via the privileged helper over XPC.
-    /// Calls `completion` on the main thread with the parsed networks (or nil on error).
-    func loadViaHelper(completion: @escaping ([WiFiData]?) -> Void) {
+    /// Calls `completion` on the main thread with the parsed networks and any error.
+    func loadViaHelper(completion: @escaping ([WiFiData]?, Error?) -> Void) {
         let connection = NSXPCConnection(machServiceName: Self.kHelperMachService,
                                          options: .privileged)
         connection.remoteObjectInterface = NSXPCInterface(with: WiFiHelperProtocol.self)
 
-        // Guard against the completion being called more than once (timeout vs reply race).
+        // Guard against completion being called more than once (timeout vs reply race).
         var finished = false
-        let finish: ([WiFiData]?) -> Void = { result in
+        let finish: ([WiFiData]?, Error?) -> Void = { result, error in
             guard !finished else { return }
             finished = true
-            DispatchQueue.main.async { completion(result) }
+            DispatchQueue.main.async { completion(result, error) }
         }
 
         connection.invalidationHandler = {
             Self.logger.error("XPC connection invalidated")
-            finish(nil)
+            finish(nil, nil)
         }
         connection.interruptionHandler = {
             Self.logger.error("XPC connection interrupted")
-            finish(nil)
+            finish(nil, nil)
         }
         connection.resume()
 
@@ -654,17 +654,17 @@ class WiFiDataManager {
             if !finished {
                 Self.logger.error("XPC reply timed out after 15 s")
                 connection.invalidate()
-                finish(nil)
+                finish(nil, nil)
             }
         }
 
         guard let proxy = connection.remoteObjectProxyWithErrorHandler({ error in
             Self.logger.error("XPC proxy error: \(error.localizedDescription, privacy: .public)")
             connection.invalidate()
-            finish(nil)
+            finish(nil, error)
         }) as? WiFiHelperProtocol else {
             connection.invalidate()
-            finish(nil)
+            finish(nil, nil)
             return
         }
 
@@ -672,7 +672,7 @@ class WiFiDataManager {
             connection.invalidate()
             guard let data = data else {
                 Self.logger.error("Helper returned no data: \(error?.localizedDescription ?? "unknown", privacy: .public)")
-                finish(nil)
+                finish(nil, error)
                 return
             }
             let parsed = self.parseWiFiData(from: data)
@@ -681,7 +681,7 @@ class WiFiDataManager {
                 self.wifidatalist = self.sortByPreferredOrder()
                 self.loadedFromDrop = true
             }
-            finish(parsed.isEmpty ? nil : parsed)
+            finish(parsed.isEmpty ? nil : parsed, nil)
         }
     }
 

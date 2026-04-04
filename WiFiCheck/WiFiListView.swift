@@ -89,6 +89,7 @@ struct WiFiListPane: View {
     @State private var helperInstalling = false
     @State private var helperError: String? = nil
     @State private var helperNeedsApproval = false
+    @State private var helperNeedsFDA = false
 
     static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
 
@@ -123,17 +124,20 @@ struct WiFiListPane: View {
         helperInstalling = true
         helperError = nil
         helperNeedsApproval = false
+        helperNeedsFDA = false
         // installHelper must run on main thread (presents auth dialog)
         WiFiDataManager.shared.installHelper { success, error in
             if success {
-                WiFiDataManager.shared.loadViaHelper { networks in
+                WiFiDataManager.shared.loadViaHelper { networks, loadError in
                     helperInstalling = false
                     if let networks = networks, !networks.isEmpty {
                         wifidataArray = networks
                         reloadView.toggle()
                         showSetupSheet = false
+                    } else if Self.isPermissionError(loadError) {
+                        helperNeedsFDA = true
                     } else {
-                        helperError = "Helper installed but could not read WiFi data. Try restarting the helper."
+                        helperError = loadError?.localizedDescription ?? "Helper installed but could not read WiFi data."
                     }
                 }
             } else {
@@ -150,6 +154,14 @@ struct WiFiListPane: View {
                 }
             }
         }
+    }
+
+    /// Returns true when the error indicates a TCC/FDA permission denial.
+    private static func isPermissionError(_ error: Error?) -> Bool {
+        guard let err = error as NSError? else { return false }
+        // NSFileReadNoPermissionError (257) or EPERM/EACCES (1/13)
+        return err.domain == NSCocoaErrorDomain && err.code == NSFileReadNoPermissionError
+            || err.domain == NSPOSIXErrorDomain && (err.code == 1 || err.code == 13)
     }
 
     func handleDrop(providers: [NSItemProvider]) -> Bool {
@@ -205,13 +217,13 @@ struct WiFiListPane: View {
                         }.tag(sm)
                     }
                 }
-                .onChange(of: selectedSort) { sm in
-                    sortString = sm.title
-                    if sm == .preferredOrder {
+                .onChange(of: selectedSort) {
+                    sortString = selectedSort.title
+                    if selectedSort == .preferredOrder {
                         wifidataArray = WiFiDataManager.shared.sortByPreferredOrder()
-                    } else if sm == .recentUser {
+                    } else if selectedSort == .recentUser {
                         wifidataArray = WiFiDataManager.shared.sortByRecentUser()
-                    } else if sm == .recentSystem {
+                    } else if selectedSort == .recentSystem {
                         wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
                     } else {
                         wifidataArray = WiFiDataManager.shared.sortByAlphabetical()
@@ -248,7 +260,7 @@ struct WiFiListPane: View {
         .onAppear {
             // If helper is already running, load directly; otherwise show setup
             if WiFiDataManager.shared.helperIsRunning {
-                WiFiDataManager.shared.loadViaHelper { networks in
+                WiFiDataManager.shared.loadViaHelper { networks, _ in
                     if let networks = networks, !networks.isEmpty {
                         wifidataArray = networks
                         reloadView.toggle()
@@ -275,6 +287,7 @@ struct WiFiListPane: View {
                 helperInstalling: $helperInstalling,
                 helperError: $helperError,
                 helperNeedsApproval: $helperNeedsApproval,
+                helperNeedsFDA: $helperNeedsFDA,
                 showError: $showDropError,
                 errorMessage: $dropErrorMessage
             )
@@ -293,6 +306,7 @@ struct SetupSheetView: View {
     @Binding var helperInstalling: Bool
     @Binding var helperError: String?
     @Binding var helperNeedsApproval: Bool
+    @Binding var helperNeedsFDA: Bool
     @Binding var showError: Bool
     @Binding var errorMessage: String
 
@@ -332,7 +346,30 @@ struct SetupSheetView: View {
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        if helperNeedsApproval {
+                        if helperNeedsFDA {
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "lock.open.fill")
+                                    .foregroundColor(.orange)
+                                    .font(.caption)
+                                    .padding(.top, 1)
+                                Text("One more step — the helper needs **Full Disk Access**. In System Settings → Privacy & Security → Full Disk Access, click **+** and add:\n`WiFiCheck.app → Contents → Library → LaunchDaemons → com.ciretose.macos.tool.WiFiCheck.helper`")
+                                    .font(.caption)
+                                    .foregroundColor(.primary)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Button(action: {
+                                NSWorkspace.shared.open(
+                                    URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!)
+                            }) {
+                                HStack {
+                                    Image(systemName: "lock.open")
+                                    Text("Open Full Disk Access Settings")
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(WiFiButtonStyle())
+                        } else if helperNeedsApproval {
                             HStack(alignment: .top, spacing: 6) {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(.green)
@@ -367,9 +404,9 @@ struct SetupSheetView: View {
                                 if helperInstalling {
                                     ProgressView().scaleEffect(0.7).frame(width: 14, height: 14)
                                 } else {
-                                    Image(systemName: helperNeedsApproval ? "arrow.clockwise" : "lock.shield")
+                                    Image(systemName: helperNeedsApproval || helperNeedsFDA ? "arrow.clockwise" : "lock.shield")
                                 }
-                                Text(helperInstalling ? "Installing…" : helperNeedsApproval ? "Check Again" : "Install Helper")
+                                Text(helperInstalling ? "Installing…" : helperNeedsApproval || helperNeedsFDA ? "Check Again" : "Install Helper")
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -517,3 +554,4 @@ struct WiFiListView_Previews: PreviewProvider {
         WiFiListView()
     }
 }
+
