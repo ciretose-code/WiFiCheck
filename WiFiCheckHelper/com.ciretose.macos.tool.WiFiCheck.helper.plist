@@ -5,7 +5,7 @@
 	<key>Label</key>
 	<string>com.ciretose.macos.tool.WiFiCheck.helper</string>
 	<key>BundleProgram</key>
-	<string>Contents/MacOS/com.ciretose.macos.tool.WiFiCheck.helper</string>
+	<string>Contents/Library/LaunchDaemons/com.ciretose.macos.tool.WiFiCheck.helper</string>
 	<key>MachServices</key>
 	<dict>
 		<key>com.ciretose.macos.tool.WiFiCheck.helper</key>

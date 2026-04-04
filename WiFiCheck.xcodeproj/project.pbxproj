@@ -48,7 +48,7 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		258B3F104C2840E89F14D56D /* CopyFiles (Helper Binary) */ = {
 			isa = PBXCopyFilesBuildPhase;
-			dstPath = Contents/MacOS;
+			dstPath = Contents/Library/LaunchDaemons;
 			dstSubfolder = Wrapper;
 			files = (
 				E15064790C5349B7BEF8CC81 /* WiFiCheckHelper in CopyFiles (Helper Binary) */,
@@ -252,7 +252,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1250;
-				LastUpgradeCheck = 2630;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					7B3DEFD626EBF0DC007BE881 = {
 						CreatedOnToolsVersion = 12.5.1;
