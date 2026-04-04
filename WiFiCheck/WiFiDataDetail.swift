@@ -122,16 +122,19 @@ struct WiFiDataDetail: View {
                         }
                         Spacer()
                         VStack(alignment: .leading) {
-                            Label {
-                                Text(wifidata.getSecurityName())
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            } icon: {
+                            HStack(spacing: 4) {
                                 Image(systemName: "lock")
                                     .renderingMode(.template)
-                                    .foregroundColor(.secondary)
-                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                    .font(.caption)
+                                Text(wifidata.getSecurityName())
+                                    .font(.caption)
+                                    .foregroundColor(.white)
                             }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Utils.getSecurityColor(wifidata))
+                            .clipShape(Capsule())
                             .accessibilityLabel("Security: \(wifidata.getSecurityName())")
                             Spacer()
                             Label {
