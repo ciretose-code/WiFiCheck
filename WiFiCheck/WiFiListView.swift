@@ -75,8 +75,15 @@ struct WiFiListPane: View {
         }
     }
 
-    @AppStorage("selectedSort") private var selectedSort = SortableMenu.recentSystem
+    @State private var selectedSort = SortableMenu.preferredOrder
     @State private var wifidataArray = Array<WiFiData>()
+    @State private var searchText = ""
+
+    var filteredNetworks: [WiFiData] {
+        guard !searchText.isEmpty else { return wifidataArray }
+        return wifidataArray.filter { $0.ssidString().localizedCaseInsensitiveContains(searchText) }
+    }
+
     @State private var sortString = "Preferred"
     @State private var listSelection: WiFiData? = nil
     @State private var activeDeleteAlert: DeleteAlert? = nil
@@ -97,8 +104,22 @@ struct WiFiListPane: View {
 
     static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
 
+    func applySort() {
+        sortString = selectedSort.title
+        switch selectedSort {
+        case .preferredOrder:
+            wifidataArray = WiFiDataManager.shared.sortByPreferredOrder()
+        case .recentUser:
+            wifidataArray = WiFiDataManager.shared.sortByRecentUser()
+        case .recentSystem:
+            wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
+        case .alphabetical:
+            wifidataArray = WiFiDataManager.shared.sortByAlphabetical()
+        }
+    }
+
     func loadWiFiData() {
-        wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
+        applySort()
     }
 
     func copyCommandToClipboard() {
@@ -225,6 +246,7 @@ struct WiFiListPane: View {
     }
 
     var body: some View {
+        let networks = filteredNetworks
         VStack(alignment: .leading) {
             HStack {
                 Text("Sort:").padding(.leading, 3).foregroundColor(.secondary)
@@ -237,16 +259,7 @@ struct WiFiListPane: View {
                     }
                 }
                 .onChange(of: selectedSort) {
-                    sortString = selectedSort.title
-                    if selectedSort == .preferredOrder {
-                        wifidataArray = WiFiDataManager.shared.sortByPreferredOrder()
-                    } else if selectedSort == .recentUser {
-                        wifidataArray = WiFiDataManager.shared.sortByRecentUser()
-                    } else if selectedSort == .recentSystem {
-                        wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
-                    } else {
-                        wifidataArray = WiFiDataManager.shared.sortByAlphabetical()
-                    }
+                    applySort()
                 }
                 .pickerStyle(MenuPickerStyle())
             }
