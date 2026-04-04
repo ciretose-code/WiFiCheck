@@ -251,23 +251,26 @@ struct WiFiDataDetail: View {
                             CollocatedGroupView(collocatedGroups: wifidata.CollocatedGroup)
                         }
                         NetworkDetailsSection(wifidata: wifidata)
+                        if wifidata.isCaptive() {
+                            Divider()
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Captive Portal Last Login").bold()
+                                Text(wifidata.captiveLogin())
+                                    .bold()
+                                    .textCase(.uppercase)
+                                    .foregroundColor(.white)
+                                    .padding(0)
+                                    .frame(width: 200, height: 26, alignment: .center)
+                                    .background(Color(NSColor.systemBrown))
+                                    .clipShape(Capsule())
+                            }
+                        }
                     }
                     .fixedSize(horizontal: false, vertical: true)
                     Divider()
                     VStack(alignment: .leading) {
                         if !wifidata.BSSList.isEmpty {
                             BSSIDListView(bssidData: wifidata.BSSList)
-                        }
-                        if (wifidata.isCaptive()) {
-                            Text("Captive Portal Last Login").bold()
-                            Text(wifidata.captiveLogin())
-                                .bold()
-                                .textCase(.uppercase)
-                                .foregroundColor(.white)
-                                .padding(0)
-                                .frame(width: 200, height: 26, alignment: .center)
-                                .background(Color(NSColor.systemBrown))
-                                .clipShape(Capsule())
                         }
                         Spacer()
                     }
