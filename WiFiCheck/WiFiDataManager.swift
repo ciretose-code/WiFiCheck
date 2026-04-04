@@ -548,11 +548,29 @@ class WiFiDataManager {
     /// Must be called from the main thread — SMAppService presents UI.
     func installHelper(completion: @escaping (Bool, Error?) -> Void) {
         assert(Thread.isMainThread, "installHelper must be called on the main thread")
+
+        // Diagnostics — log exactly what the system will look for
+        let bundle = Bundle.main
+        let plistPath = bundle.bundleURL
+            .appendingPathComponent("Contents/Library/LaunchDaemons")
+            .appendingPathComponent(Self.kDaemonPlistName)
+        let plistExists = FileManager.default.fileExists(atPath: plistPath.path)
+        let helperPath = bundle.bundleURL
+            .appendingPathComponent("Contents/MacOS")
+            .appendingPathComponent("com.ciretose.macos.tool.WiFiCheck.helper")
+        let helperExists = FileManager.default.fileExists(atPath: helperPath.path)
+        Self.logger.info("Bundle path: \(bundle.bundlePath)")
+        Self.logger.info("Plist path:  \(plistPath.path) — exists: \(plistExists)")
+        Self.logger.info("Helper path: \(helperPath.path) — exists: \(helperExists)")
+        Self.logger.info("SMAppService status before register: \(String(describing: SMAppService.daemon(plistName: Self.kDaemonPlistName).status))")
+
         let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
         do {
             try service.register()
             completion(true, nil)
         } catch {
+            let nsErr = error as NSError
+            Self.logger.error("register() failed: \(nsErr.domain) \(nsErr.code) — \(nsErr.localizedDescription)")
             completion(false, error)
         }
     }
