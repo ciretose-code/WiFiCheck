@@ -84,22 +84,21 @@ struct WiFiListPane: View {
     @State private var isDropTargeted = false
     @State private var showDropError = false
     @State private var dropErrorMessage = ""
-    @State private var accessCheckFailed = false
+
+    static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist"
 
     func loadWiFiData() {
         wifidataArray = WiFiDataManager.shared.getWiFiDataList()
     }
 
-    /// Called after the user grants Full Disk Access and clicks "Check Access".
-    /// Without app sandbox, TCC changes take effect immediately — no restart needed.
-    func recheckAccess() {
-        accessCheckFailed = false
-        if WiFiDataManager.shared.recheckAccess() {
-            wifidataArray = WiFiDataManager.shared.getWiFiDataList()
-            reloadView.toggle()
-        } else {
-            accessCheckFailed = true
-        }
+    func copyCommandToClipboard() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(Self.sudoCommand, forType: .string)
+    }
+
+    func openDownloadsFolder() {
+        let downloads = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads")
+        NSWorkspace.shared.open(downloads)
     }
 
     func handleDrop(providers: [NSItemProvider]) -> Bool {
@@ -107,9 +106,6 @@ struct WiFiListPane: View {
 
         provider.loadFileRepresentation(forTypeIdentifier: UTType.propertyList.identifier) { url, error in
             guard let fileURL = url, error == nil else {
-                // Read failed — check if it was the system WiFi plist. That file is root-owned
-                // and TCC-protected; even root processes (like `do shell script`) cannot read it
-                // without Full Disk Access. Guide the user to the FDA screen instead.
                 provider.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
                     let originalURL: URL?
                     if let urlData = item as? Data {
@@ -122,13 +118,11 @@ struct WiFiListPane: View {
 
                     DispatchQueue.main.async {
                         if originalURL?.path == "/Library/Preferences/com.apple.wifi.known-networks.plist" {
-                            // Show FDA instructions rather than a confusing generic error
-                            dropErrorMessage = "The system WiFi file requires Full Disk Access. Grant Full Disk Access to WiFiCheck in System Settings → Privacy & Security → Full Disk Access, then click \"Check Access\"."
-                            showDropError = true
+                            dropErrorMessage = "That file is root-protected and cannot be read directly. Use the command below to copy it to your Downloads folder first."
                         } else {
                             dropErrorMessage = error?.localizedDescription ?? "Could not read the dropped file."
-                            showDropError = true
                         }
+                        showDropError = true
                     }
                 }
                 return
@@ -152,51 +146,55 @@ struct WiFiListPane: View {
         if wifidataArray.count == 0 && WiFiDataManager.shared.needsPassword() {
             VStack(spacing: 20) {
                 Spacer()
-                Image(systemName: "wifi.exclamationmark")
+                Image(systemName: "lock.rectangle.stack")
                     .font(.system(size: 56))
                     .foregroundColor(.secondary)
                 Text("WiFi/Check")
                     .font(.title)
                     .fontWeight(.semibold)
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("WiFi/Check needs Full Disk Access to read the WiFi known-networks file.")
-                        .multilineTextAlignment(.leading)
-                    Text("1. Click Open Privacy Settings below")
-                    Text("2. Click the lock to unlock, then click +")
-                    Text("3. Navigate to and select WiFiCheck.app")
-                    Text("4. Return here and click Check Access")
+                Text("The system WiFi file is protected by macOS and requires root access to read.\nCopy it to your Downloads folder using the command below, then drag it into this window.")
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: 400)
+
+                // Command box
+                HStack(spacing: 8) {
+                    Text(Self.sudoCommand)
+                        .font(.system(.body, design: .monospaced))
+                        .padding(10)
+                        .background(Color(NSColor.textBackgroundColor))
+                        .cornerRadius(6)
+                    Button(action: copyCommandToClipboard) {
+                        Image(systemName: "doc.on.doc")
+                    }
+                    .help("Copy command to clipboard")
                 }
-                .foregroundColor(.secondary)
-                .frame(maxWidth: 360)
+
                 HStack(spacing: 12) {
-                    Button(action: {
-                        WiFiDataManager.shared.openFullDiskAccessSettings()
-                    }) {
+                    Button(action: copyCommandToClipboard) {
                         HStack {
-                            Image(systemName: "lock.shield")
-                            Text("Open Privacy Settings")
+                            Image(systemName: "doc.on.doc")
+                            Text("Copy Command")
                         }
                     }
                     .buttonStyle(WiFiButtonStyle())
-                    .accessibilityLabel("Open Full Disk Access settings in System Settings")
-                    Button(action: {
-                        recheckAccess()
-                    }) {
+                    .accessibilityLabel("Copy the sudo command to the clipboard")
+
+                    Button(action: openDownloadsFolder) {
                         HStack {
-                            Image(systemName: "arrow.clockwise")
-                            Text("Check Access")
+                            Image(systemName: "folder")
+                            Text("Open Downloads")
                         }
                     }
                     .buttonStyle(WiFiButtonStyle())
-                    .accessibilityLabel("Check whether Full Disk Access has been granted")
+                    .accessibilityLabel("Open the Downloads folder in Finder")
                 }
-                if accessCheckFailed {
-                    Text("Full Disk Access not yet granted. Grant access in System Settings and try again.")
-                        .font(.caption)
-                        .foregroundColor(.red)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: 360)
-                }
+
+                Text("Paste the command into Terminal, press Return, then drag wifi-networks.plist from your Downloads folder here.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 400)
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

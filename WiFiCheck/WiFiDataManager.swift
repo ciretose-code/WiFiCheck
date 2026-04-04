@@ -88,18 +88,11 @@ class WiFiDataManager {
     private(set) var loadedFromDrop: Bool = false
 
     init() {
-        // Validate system paths exist
         validateSystemPaths()
-
-        // Self-install to ~/Applications so the user can grant FDA to a stable path.
-        // Only copies when running from DerivedData (Xcode dev builds).
-        installToUserApplicationsIfNeeded()
-
-        // Try to load WiFi data if accessible
         if hasDirectAccess() {
             reloadData()
         } else {
-            Self.logger.info("Unable to load WiFi preferences - user permissions required")
+            Self.logger.info("Unable to load WiFi preferences - root access required")
         }
     }
 
@@ -374,53 +367,9 @@ class WiFiDataManager {
 
         Self.logger.warning("WiFi/Check does not have Full Disk Access")
         Self.logger.info("The WiFi preferences file is protected by System Integrity Protection.")
-        Self.logger.info("To grant Full Disk Access: Open System Settings → Privacy & Security → Full Disk Access")
+        Self.logger.info("To read WiFi history: sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist")
 
         return false
-    }
-
-    /// Opens System Settings to the Full Disk Access pane
-    func openFullDiskAccessSettings() {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!
-        NSWorkspace.shared.open(url)
-    }
-
-    /// Copies the running app bundle to ~/Applications when running from DerivedData.
-    /// This gives the user a stable, predictable path to add in System Settings → Full Disk
-    /// Access. Because the copy comes from the live, fully-codesigned running process, TCC
-    /// will accept the grant for both this copy and the DerivedData copy (same team ID +
-    /// bundle ID). Only runs for Debug builds launched from DerivedData.
-    func installToUserApplicationsIfNeeded() {
-        let bundleURL = Bundle.main.bundleURL
-
-        // Only self-install when running from DerivedData (dev workflow)
-        guard bundleURL.path.contains("DerivedData") else { return }
-
-        let fm = FileManager.default
-        let userApps = fm.homeDirectoryForCurrentUser.appendingPathComponent("Applications")
-        let destURL = userApps.appendingPathComponent(bundleURL.lastPathComponent)
-
-        do {
-            try fm.createDirectory(at: userApps, withIntermediateDirectories: true)
-            if fm.fileExists(atPath: destURL.path) {
-                try fm.removeItem(at: destURL)
-            }
-            try fm.copyItem(at: bundleURL, to: destURL)
-            Self.logger.info("Dev install: copied app to \(destURL.path, privacy: .public)")
-        } catch {
-            Self.logger.warning("Dev install: could not copy to ~/Applications: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    /// Checks whether Full Disk Access has been granted since the last check and,
-    /// if so, loads the WiFi data. Because the app is not sandboxed, TCC changes
-    /// take effect immediately — no restart required.
-    /// - Returns: `true` if access was gained and data loaded.
-    @discardableResult
-    func recheckAccess() -> Bool {
-        guard hasDirectAccess() else { return false }
-        reloadData()
-        return wifidatalist.count > 0
     }
 
     /// Opens the WiFi known networks plist file in its default application.
