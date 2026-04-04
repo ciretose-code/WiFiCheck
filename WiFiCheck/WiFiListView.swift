@@ -90,6 +90,10 @@ struct WiFiListPane: View {
     @State private var helperError: String? = nil
     @State private var helperNeedsApproval = false
     @State private var helperNeedsFDA = false
+    @State private var showRemoveHelperSheet = false
+    @State private var helperRemoving = false
+    @State private var helperRemoveError: String? = nil
+    @State private var helperRemoved = false
 
     static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
 
@@ -120,8 +124,23 @@ struct WiFiListPane: View {
         }
     }
 
-    func installAndLoadViaHelper() {
-        helperInstalling = true
+    func removeHelper() {
+        helperRemoving = true
+        helperRemoveError = nil
+        helperRemoved = false
+        WiFiDataManager.shared.uninstallHelper { success, error in
+            DispatchQueue.main.async {
+                helperRemoving = false
+                if success {
+                    helperRemoved = true
+                } else {
+                    helperRemoveError = error?.localizedDescription ?? "Failed to remove helper."
+                }
+            }
+        }
+    }
+
+    func installAndLoadViaHelper() {        helperInstalling = true
         helperError = nil
         helperNeedsApproval = false
         helperNeedsFDA = false
@@ -278,6 +297,11 @@ struct WiFiListPane: View {
         .onReceive(NotificationCenter.default.publisher(for: .showSetupSheet)) { _ in
             showSetupSheet = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: .showRemoveHelperSheet)) { _ in
+            helperRemoved = false
+            helperRemoveError = nil
+            showRemoveHelperSheet = true
+        }
         .sheet(isPresented: $showSetupSheet) {
             SetupSheetView(
                 sudoCommand: WiFiListPane.sudoCommand,
@@ -290,6 +314,14 @@ struct WiFiListPane: View {
                 helperNeedsFDA: $helperNeedsFDA,
                 showError: $showDropError,
                 errorMessage: $dropErrorMessage
+            )
+        }
+        .sheet(isPresented: $showRemoveHelperSheet) {
+            RemoveHelperSheetView(
+                onRemove: removeHelper,
+                removing: $helperRemoving,
+                removed: $helperRemoved,
+                removeError: $helperRemoveError
             )
         }
             Spacer()
@@ -531,6 +563,120 @@ private struct OptionCard<Content: View>: View {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(recommended ? Color.accentColor.opacity(0.5) : Color.secondary.opacity(0.2), lineWidth: 1)
         )
+    }
+}
+
+
+struct RemoveHelperSheetView: View {
+    @Environment(\.dismiss) private var dismiss
+    let onRemove: () -> Void
+    @Binding var removing: Bool
+    @Binding var removed: Bool
+    @Binding var removeError: String?
+
+    var body: some View {
+        VStack(spacing: 24) {
+            // Header
+            VStack(spacing: 10) {
+                Image(systemName: removed ? "checkmark.circle.fill" : "trash.circle")
+                    .font(.system(size: 48))
+                    .foregroundColor(removed ? .green : .red)
+                Text(removed ? "Helper Removed" : "Remove Helper")
+                    .font(.title)
+                    .fontWeight(.semibold)
+            }
+            .padding(.top, 36)
+
+            if removed {
+                // Post-removal: FDA cleanup guidance
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Background Activity entry removed.", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.callout)
+
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("One manual step remaining", systemImage: "lock.fill")
+                            .font(.callout.bold())
+                        Text("The helper's **Full Disk Access** entry is managed by macOS and cannot be removed automatically. To fully clean up:")
+                            .font(.callout)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("1. Open **System Settings → Privacy & Security → Full Disk Access**\n2. Find `com.ciretose.macos.tool.WiFiCheck.helper`\n3. Click **–** to remove it")
+                            .font(.callout)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Button(action: {
+                        NSWorkspace.shared.open(
+                            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!)
+                    }) {
+                        HStack {
+                            Image(systemName: "lock.open")
+                            Text("Open Full Disk Access Settings")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(WiFiButtonStyle())
+                }
+                .padding()
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(10)
+                .frame(maxWidth: 480)
+
+            } else {
+                // Pre-removal: explanation + confirm
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("This will stop the privileged helper daemon and remove it from **Background Activity** (Login Items).")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Divider()
+
+                    Label("If you delete the app without removing the helper first, macOS will automatically remove the Background Activity entry, but the **Full Disk Access** entry in Privacy & Security will remain and must be removed manually.", systemImage: "info.circle")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let err = removeError {
+                        Label(err, systemImage: "xmark.octagon.fill")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding()
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(10)
+                .frame(maxWidth: 480)
+
+                Button(action: onRemove) {
+                    HStack {
+                        if removing {
+                            ProgressView().scaleEffect(0.7).frame(width: 14, height: 14)
+                        } else {
+                            Image(systemName: "trash")
+                        }
+                        Text(removing ? "Removing…" : "Remove Helper")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(WiFiButtonStyle(delete: true))
+                .disabled(removing)
+                .frame(maxWidth: 480)
+            }
+
+            Button(action: { dismiss() }) {
+                Text("Done")
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 24)
+        }
+        .padding(.horizontal, 40)
+        .frame(minWidth: 520)
     }
 }
 

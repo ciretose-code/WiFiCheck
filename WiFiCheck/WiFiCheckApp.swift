@@ -22,6 +22,9 @@ struct WiFiCheckApp: App {
                     NotificationCenter.default.post(name: .showSetupSheet, object: nil)
                 }
                 .keyboardShortcut(",", modifiers: [.command, .shift])
+                Button("Remove Helper…") {
+                    NotificationCenter.default.post(name: .showRemoveHelperSheet, object: nil)
+                }
             }
         }
     }
@@ -29,6 +32,7 @@ struct WiFiCheckApp: App {
 
 extension Notification.Name {
     static let showSetupSheet = Notification.Name("com.ciretose.WiFiCheck.showSetupSheet")
+    static let showRemoveHelperSheet = Notification.Name("com.ciretose.WiFiCheck.showRemoveHelperSheet")
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
