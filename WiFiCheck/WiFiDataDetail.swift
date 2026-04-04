@@ -275,6 +275,10 @@ struct WiFiDataDetail: View {
             // Clean up timer when view disappears
             stopPasswordTimer()
         }
+        .onChange(of: wifidata.WiFiID) {
+            // When the user selects a different network, immediately hide any visible password
+            hidePassword()
+        }
         .confirmationDialog(
             "Remove \"\(wifidata.ssidString())\"?",
             isPresented: $showDeleteConfirm,
