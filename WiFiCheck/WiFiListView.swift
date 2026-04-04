@@ -246,7 +246,6 @@ struct WiFiListPane: View {
     }
 
     var body: some View {
-        let networks = filteredNetworks
         VStack(alignment: .leading) {
             HStack {
                 Text("Sort:").padding(.leading, 3).foregroundColor(.secondary)
@@ -760,7 +759,7 @@ struct WiFiDetailPane: View {
 
                 Image(systemName: "wifi")
                     .font(.system(size: 60))
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
 
                 Text("WiFiCheck")
                     .font(.title)
@@ -811,7 +810,7 @@ private struct StatCard: View {
         VStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundStyle(.accent)
+                .foregroundStyle(Color.accentColor)
             Text(value)
                 .font(.title3)
                 .fontWeight(.semibold)
