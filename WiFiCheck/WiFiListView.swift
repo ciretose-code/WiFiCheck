@@ -75,7 +75,7 @@ struct WiFiListPane: View {
         }
     }
 
-    @State private var selectedSort = SortableMenu.preferredOrder
+    @AppStorage("selectedSort") private var selectedSort = SortableMenu.recentSystem
     @State private var wifidataArray = Array<WiFiData>()
     @State private var searchText = ""
 
