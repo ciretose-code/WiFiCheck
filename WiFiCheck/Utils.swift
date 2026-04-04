@@ -172,6 +172,16 @@ class Utils {
         return securityColor
     }
 
+    /// Returns the color for a WiFi channel's frequency band.
+    /// Uses NSColor-backed system colors so they adapt correctly in both light and dark mode.
+    static func getBandColor(for channel: Int) -> Color {
+        switch channel {
+        case 1...14:  return Color(NSColor.systemOrange)   // 2.4 GHz
+        case 36...177: return Color(NSColor.systemBlue)    // 5 GHz
+        default:      return Color(NSColor.systemPurple)   // 6 GHz
+        }
+    }
+
     /// Returns the color for a date box based on whether the date exists and the network's security
     ///
     /// - Parameters:

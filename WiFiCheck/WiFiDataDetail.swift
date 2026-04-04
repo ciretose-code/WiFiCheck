@@ -132,7 +132,7 @@ struct WiFiDataDetail: View {
                             Label(wifidata.hiddenStateText(), systemImage: wifidata.hiddenStateImage())
                                 .font(.caption).foregroundColor(.white)
                                 .padding(.horizontal, 8).padding(.vertical, 4)
-                                .background(wifidata.Hidden ? Color.black : Color.green)
+                                .background(wifidata.Hidden ? Color(NSColor.darkGray) : Color(NSColor.systemGreen))
                                 .clipShape(Capsule())
                                 .accessibilityLabel("Network visibility: \(wifidata.hiddenStateText())")
                             Spacer()
@@ -402,11 +402,7 @@ struct ChannelHistoryView: View {
     }
 
     private func bandColor(for channel: Int) -> Color {
-        switch channel {
-        case 1...14: return Color.orange
-        case 36...177: return Color.blue
-        default: return Color.purple
-        }
+        Utils.getBandColor(for: channel)
     }
 
     var body: some View {
@@ -482,7 +478,7 @@ struct BSSIDListView: View {
                             Text(frequencyBand(for: b.Channel))
                                 .font(.caption).foregroundColor(.white)
                                 .padding(.horizontal, 8).padding(.vertical, 4)
-                                .background(b.Channel <= 14 ? Color.orange : (b.Channel <= 177 ? Color(red: 0.1, green: 0.5, blue: 0.9) : Color.purple))
+                                .background(Utils.getBandColor(for: b.Channel))
                                 .clipShape(Capsule())
                         }
                     }

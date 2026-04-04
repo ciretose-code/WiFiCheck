@@ -41,18 +41,7 @@ struct WiFiDataRow: View {
 
     /// Returns the color for the security level
     private var securityColor: Color {
-        switch wifidata.securityType() {
-        case .wpa3:
-            return .green
-        case .wpa2, .wpa:
-            return Color(NSColor.systemTeal)
-        case .wep:
-            return .yellow
-        case .open:
-            return .red
-        case .unknown:
-            return .gray
-        }
+        Utils.getSecurityColor(wifidata)
     }
 
     /// Returns the security icon for visual distinction (helps colorblind users)
