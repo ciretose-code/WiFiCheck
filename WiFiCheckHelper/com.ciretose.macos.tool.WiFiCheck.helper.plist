@@ -11,5 +11,9 @@
 		<key>com.ciretose.macos.tool.WiFiCheck.helper</key>
 		<true/>
 	</dict>
+	<key>AssociatedBundleIdentifiers</key>
+	<array>
+		<string>com.ciretose.macos.tool.WiFiCheck</string>
+	</array>
 </dict>
 </plist>
