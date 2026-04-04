@@ -85,7 +85,7 @@ struct WiFiListPane: View {
     @State private var showDropError = false
     @State private var dropErrorMessage = ""
 
-    static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist"
+    static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
 
     func loadWiFiData() {
         wifidataArray = WiFiDataManager.shared.getWiFiDataList()
@@ -96,9 +96,21 @@ struct WiFiListPane: View {
         NSPasteboard.general.setString(Self.sudoCommand, forType: .string)
     }
 
-    func openDownloadsFolder() {
-        let downloads = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads")
-        NSWorkspace.shared.open(downloads)
+    func loadFromDownloads() {
+        let fileURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Downloads/wifi-networks.plist")
+        guard FileManager.default.isReadableFile(atPath: fileURL.path) else {
+            dropErrorMessage = "wifi-networks.plist not found in Downloads. Run the command above first."
+            showDropError = true
+            return
+        }
+        if WiFiDataManager.shared.loadFromURL(fileURL) {
+            wifidataArray = WiFiDataManager.shared.getWiFiDataList()
+            reloadView.toggle()
+        } else {
+            dropErrorMessage = "wifi-networks.plist doesn't appear to be a valid WiFi known-networks plist."
+            showDropError = true
+        }
     }
 
     func handleDrop(providers: [NSItemProvider]) -> Bool {
@@ -152,7 +164,7 @@ struct WiFiListPane: View {
                 Text("WiFi/Check")
                     .font(.title)
                     .fontWeight(.semibold)
-                Text("The system WiFi file is protected by macOS and requires root access to read.\nCopy it to your Downloads folder using the command below, then drag it into this window.")
+                Text("The system WiFi file is protected by macOS and requires root access to read.\nRun the command below in Terminal, then click Load WiFi Data.")
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: 400)
@@ -180,17 +192,17 @@ struct WiFiListPane: View {
                     .buttonStyle(WiFiButtonStyle())
                     .accessibilityLabel("Copy the sudo command to the clipboard")
 
-                    Button(action: openDownloadsFolder) {
+                    Button(action: loadFromDownloads) {
                         HStack {
-                            Image(systemName: "folder")
-                            Text("Open Downloads")
+                            Image(systemName: "arrow.down.circle")
+                            Text("Load WiFi Data")
                         }
                     }
                     .buttonStyle(WiFiButtonStyle())
-                    .accessibilityLabel("Open the Downloads folder in Finder")
+                    .accessibilityLabel("Load wifi-networks.plist from the Downloads folder")
                 }
 
-                Text("Paste the command into Terminal, press Return, then drag wifi-networks.plist from your Downloads folder here.")
+                Text("Paste the command into Terminal and press Return, then click Load WiFi Data.")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
