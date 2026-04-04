@@ -194,7 +194,7 @@ struct WiFiDataDetail: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will remove the network from your saved networks and delete its password from the Keychain. You can rejoin the network at any time.")
+            Text("This will remove \"\(wifidata.ssidString())\" from your known networks list. You can rejoin the network at any time.")
         }
         .alert("Remove Failed", isPresented: Binding(
             get: { deleteError != nil },
