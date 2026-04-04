@@ -84,6 +84,7 @@ struct WiFiListPane: View {
     @State private var isDropTargeted = false
     @State private var showDropError = false
     @State private var dropErrorMessage = ""
+    @State private var showSetupSheet = false
 
     static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
 
@@ -107,6 +108,7 @@ struct WiFiListPane: View {
         if WiFiDataManager.shared.loadFromURL(fileURL) {
             wifidataArray = WiFiDataManager.shared.getWiFiDataList()
             reloadView.toggle()
+            showSetupSheet = false
         } else {
             dropErrorMessage = "wifi-networks.plist doesn't appear to be a valid WiFi known-networks plist."
             showDropError = true
@@ -155,61 +157,40 @@ struct WiFiListPane: View {
     }
 
     var body: some View {
-        if wifidataArray.count == 0 && WiFiDataManager.shared.needsPassword() {
-            VStack(spacing: 20) {
-                Spacer()
-                Image(systemName: "lock.rectangle.stack")
-                    .font(.system(size: 56))
-                    .foregroundColor(.secondary)
-                Text("WiFi/Check")
-                    .font(.title)
-                    .fontWeight(.semibold)
-                Text("The system WiFi file is protected by macOS and requires root access to read.\nRun the command below in Terminal, then click Load WiFi Data.")
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: 400)
-
-                // Command box
-                HStack(spacing: 8) {
-                    Text(Self.sudoCommand)
-                        .font(.system(.body, design: .monospaced))
-                        .padding(10)
-                        .background(Color(NSColor.textBackgroundColor))
-                        .cornerRadius(6)
-                    Button(action: copyCommandToClipboard) {
-                        Image(systemName: "doc.on.doc")
+        VStack(alignment: .leading) {
+            HStack {
+                Text("Sort:").padding(.leading, 3).foregroundColor(.secondary)
+                Picker("", selection: $selectedSort) {
+                    ForEach(SortableMenu.allCases) { sm in
+                        HStack() {
+                            Image(systemName: sm.image).renderingMode(.template)
+                            Text(sm.title)
+                        }.tag(sm)
                     }
-                    .help("Copy command to clipboard")
                 }
-
-                HStack(spacing: 12) {
-                    Button(action: copyCommandToClipboard) {
-                        HStack {
-                            Image(systemName: "doc.on.doc")
-                            Text("Copy Command")
-                        }
+                .onChange(of: selectedSort) { sm in
+                    sortString = sm.title
+                    if sm == .preferredOrder {
+                        wifidataArray = WiFiDataManager.shared.sortByPreferredOrder()
+                    } else if sm == .recentUser {
+                        wifidataArray = WiFiDataManager.shared.sortByRecentUser()
+                    } else if sm == .recentSystem {
+                        wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
+                    } else {
+                        wifidataArray = WiFiDataManager.shared.sortByAlphabetical()
                     }
-                    .buttonStyle(WiFiButtonStyle())
-                    .accessibilityLabel("Copy the sudo command to the clipboard")
-
-                    Button(action: loadFromDownloads) {
-                        HStack {
-                            Image(systemName: "arrow.down.circle")
-                            Text("Load WiFi Data")
-                        }
-                    }
-                    .buttonStyle(WiFiButtonStyle())
-                    .accessibilityLabel("Load wifi-networks.plist from the Downloads folder")
                 }
-
-                Text("Paste the command into Terminal and press Return, then click Load WiFi Data.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 400)
-                Spacer()
+                .pickerStyle(MenuPickerStyle())
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Divider()
+            List(selection: $listSelection) {
+                    ForEach(wifidataArray) { wifidata in
+                        NavigationLink(destination: WiFiDataDetail(wifidata: wifidata)){
+                            WiFiDataRow(wifidata: wifidata)
+                        }
+                    }
+            }
+            .listStyle(SidebarListStyle())
             .onDrop(of: [UTType.propertyList], isTargeted: $isDropTargeted) { providers in
                 handleDrop(providers: providers)
             }
@@ -226,122 +207,92 @@ struct WiFiListPane: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
-        } else {
-            VStack(alignment: .leading) {
-                HStack {
-                    Text("Sort:").padding(.leading, 3).foregroundColor(.secondary)
-                    Picker("", selection: $selectedSort) {
-                        ForEach(SortableMenu.allCases) { sm in
-                            HStack() {
-                                Image(systemName: sm.image).renderingMode(.template)
-                                Text(sm.title)
-                            }.tag(sm)
-                        }
-                    }
-                    .onChange(of: selectedSort) { sm in
-                        sortString = sm.title
-                        if sm == .preferredOrder {
-                            wifidataArray = WiFiDataManager.shared.sortByPreferredOrder()
-                        } else if sm == .recentUser {
-                            wifidataArray = WiFiDataManager.shared.sortByRecentUser()
-                        } else if sm == .recentSystem {
-                            wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
-                        } else {
-                            // Alphabetical
-                            wifidataArray = WiFiDataManager.shared.sortByAlphabetical()
-                        }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                }
-                Divider()
-                List(selection: $listSelection) {
-    //                Section(header: Text("WiFi Networks: \(sortString)")) {
-                        ForEach(wifidataArray) { wifidata in
-                            NavigationLink(destination: WiFiDataDetail(wifidata: wifidata)){
-                                WiFiDataRow(wifidata: wifidata)
-                            }
-                        }
-    //                }
-                }
-                .listStyle(SidebarListStyle())
-                .onDrop(of: [UTType.propertyList], isTargeted: $isDropTargeted) { providers in
-                    handleDrop(providers: providers)
-                }
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.accentColor, lineWidth: 3)
-                        .opacity(isDropTargeted ? 1 : 0)
-                        .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
-                )
-                .alert(isPresented: $showDropError) {
-                    Alert(
-                        title: Text("Could Not Read File"),
-                        message: Text(dropErrorMessage),
-                        dismissButton: .default(Text("OK"))
-                    )
-                }
-            }.onAppear {
-                loadWiFiData()
+        }
+        .onAppear {
+            loadWiFiData()
+            if WiFiDataManager.shared.needsPassword() {
+                showSetupSheet = true
             }
-            Divider()
-            VStack {
-                Button(action:{
-                    if let selection = listSelection {
-                        activeDeleteAlert = .confirm(selection)
-                    }
-                }) {
-                    HStack {
-                        Image(systemName: "trash")
-                        Text("Remove WiFi")
-                    }
-                }
-                .disabled(listSelection == nil)
-                .accessibilityLabel(listSelection.map { "Remove \($0.ssidString())" } ?? "Remove WiFi network")
-                .buttonStyle(WiFiButtonStyle(delete: true, disabled: (listSelection == nil)))
-                .alert(item: $activeDeleteAlert) { alert in
-                    switch alert {
-                    case .confirm(let selection):
-                        return Alert(
-                            title: Text("Are you sure you want to remove \"\(selection.ssidString())\"?"),
-                            message: Text("This will remove \"\(selection.ssidString())\" from your list of known WiFi Networks.  You can always rejoin this WiFi Network in the future."),
-                            primaryButton: .destructive(Text("Delete")) {
-                                let result = NetworkSetup.shared.deleteNetwork(selection.ssidString())
-                                if result {
-                                    if let idx = wifidataArray.firstIndex(of: selection) {
-                                        wifidataArray.remove(at: idx)
-                                        listSelection = nil
-                                    }
-                                    activeDeleteAlert = .result(success: true, message: "Successfully removed \"\(selection.ssidString())\"")
-                                } else {
-                                    activeDeleteAlert = .result(success: false, message: "Failed to remove \"\(selection.ssidString())\". Please try again.")
-                                }
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    case .result(let success, let message):
-                        return Alert(
-                            title: Text(success ? "Success" : "Error"),
-                            message: Text(message),
-                            dismissButton: .default(Text("OK"))
-                        )
-                    }
-                }
+        }
+        .sheet(isPresented: $showSetupSheet) {
+            SetupSheetView(
+                sudoCommand: WiFiListPane.sudoCommand,
+                onCopy: copyCommandToClipboard,
+                onLoad: loadFromDownloads,
+                showError: $showDropError,
+                errorMessage: $dropErrorMessage
+            )
+        }
+            Spacer()
+    }
+}
 
-                Button(action: {
-                    WiFiDataManager.shared.revealKnownNetworksPlistInFinder()
-                }) {
+
+struct SetupSheetView: View {
+    let sudoCommand: String
+    let onCopy: () -> Void
+    let onLoad: () -> Void
+    @Binding var showError: Bool
+    @Binding var errorMessage: String
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "lock.rectangle.stack")
+                .font(.system(size: 56))
+                .foregroundColor(.secondary)
+
+            Text("WiFi/Check Setup")
+                .font(.title)
+                .fontWeight(.semibold)
+
+            Text("The system WiFi file is protected by macOS and requires root access to read.\nRun the command below in Terminal, then click Load WiFi Data.")
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: 440)
+
+            HStack(spacing: 8) {
+                Text(sudoCommand)
+                    .font(.system(.body, design: .monospaced))
+                    .padding(10)
+                    .background(Color(NSColor.textBackgroundColor))
+                    .cornerRadius(6)
+            }
+
+            HStack(spacing: 12) {
+                Button(action: onCopy) {
                     HStack {
-                        Image(systemName: "doc.badge.magnifyingglass")
-                        Text("Show Plist in Finder")
+                        Image(systemName: "doc.on.doc")
+                        Text("Copy Command")
                     }
                 }
                 .buttonStyle(WiFiButtonStyle())
-                .accessibilityLabel("Reveal WiFi known networks plist file in Finder")
+
+                Button(action: onLoad) {
+                    HStack {
+                        Image(systemName: "arrow.down.circle")
+                        Text("Load WiFi Data")
+                    }
+                }
+                .buttonStyle(WiFiButtonStyle())
             }
-            Spacer()
+
+            Text("Paste the command into Terminal and press Return, then click Load WiFi Data.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 440)
+        }
+        .padding(40)
+        .alert(isPresented: $showError) {
+            Alert(
+                title: Text("Could Not Read File"),
+                message: Text(errorMessage),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 }
+
 
 
 struct WiFiDetailPane: View {
