@@ -172,6 +172,7 @@ struct WiFiListPane: View {
                     helperInstalling = false
                     if let networks = networks, !networks.isEmpty {
                         wifidataArray = networks
+                        applySort()
                         reloadView.toggle()
                         showSetupSheet = false
                     } else if Self.isPermissionError(loadError) {
@@ -332,6 +333,7 @@ struct WiFiListPane: View {
                 WiFiDataManager.shared.loadViaHelper { networks, _ in
                     if let networks = networks, !networks.isEmpty {
                         wifidataArray = networks
+                        applySort()
                         reloadView.toggle()
                     } else if WiFiDataManager.shared.needsPassword() {
                         showSetupSheet = true
