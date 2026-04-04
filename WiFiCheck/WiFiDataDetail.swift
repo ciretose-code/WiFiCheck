@@ -24,7 +24,6 @@ struct WiFiDataDetail: View {
     @State private var passwordTimer: Timer?
     @State private var remainingSeconds: Int = Constants.passwordAutoHideDelay
     private let autoHideDelay: Int = Constants.passwordAutoHideDelay
-    private let currentYear = Calendar.current.component(.year, from: Date())
 
     var body: some View {
 

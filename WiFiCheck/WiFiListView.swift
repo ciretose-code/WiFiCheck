@@ -77,6 +77,13 @@ struct WiFiListPane: View {
 
     @AppStorage("selectedSort") private var selectedSort = SortableMenu.recentSystem
     @State private var wifidataArray = Array<WiFiData>()
+    @State private var searchText = ""
+
+    var filteredNetworks: [WiFiData] {
+        guard !searchText.isEmpty else { return wifidataArray }
+        return wifidataArray.filter { $0.ssidString().localizedCaseInsensitiveContains(searchText) }
+    }
+
     @State private var sortString = "Preferred"
     @State private var listSelection: WiFiData? = nil
     @State private var activeDeleteAlert: DeleteAlert? = nil
@@ -97,8 +104,22 @@ struct WiFiListPane: View {
 
     static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
 
+    func applySort() {
+        sortString = selectedSort.title
+        switch selectedSort {
+        case .preferredOrder:
+            wifidataArray = WiFiDataManager.shared.sortByPreferredOrder()
+        case .recentUser:
+            wifidataArray = WiFiDataManager.shared.sortByRecentUser()
+        case .recentSystem:
+            wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
+        case .alphabetical:
+            wifidataArray = WiFiDataManager.shared.sortByAlphabetical()
+        }
+    }
+
     func loadWiFiData() {
-        wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
+        applySort()
     }
 
     func copyCommandToClipboard() {
@@ -237,27 +258,33 @@ struct WiFiListPane: View {
                     }
                 }
                 .onChange(of: selectedSort) {
-                    sortString = selectedSort.title
-                    if selectedSort == .preferredOrder {
-                        wifidataArray = WiFiDataManager.shared.sortByPreferredOrder()
-                    } else if selectedSort == .recentUser {
-                        wifidataArray = WiFiDataManager.shared.sortByRecentUser()
-                    } else if selectedSort == .recentSystem {
-                        wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
-                    } else {
-                        wifidataArray = WiFiDataManager.shared.sortByAlphabetical()
-                    }
+                    applySort()
                 }
                 .pickerStyle(MenuPickerStyle())
             }
             Divider()
+            if !wifidataArray.isEmpty {
+                Group {
+                    if searchText.isEmpty {
+                        Text("\(wifidataArray.count) networks")
+                    } else {
+                        Text("\(filteredNetworks.count) of \(wifidataArray.count) networks")
+                    }
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 8)
+                .padding(.top, 2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
             List(selection: $listSelection) {
-                    ForEach(wifidataArray) { wifidata in
+                    ForEach(filteredNetworks) { wifidata in
                         NavigationLink(destination: WiFiDataDetail(wifidata: wifidata)){
                             WiFiDataRow(wifidata: wifidata)
                         }
                     }
             }
+            .searchable(text: $searchText, placement: .sidebar, prompt: "Search networks")
             .listStyle(SidebarListStyle())
             .onDrop(of: [UTType.propertyList], isTargeted: $isDropTargeted) { providers in
                 handleDrop(providers: providers)
@@ -267,6 +294,28 @@ struct WiFiListPane: View {
                     .stroke(Color.accentColor, lineWidth: 3)
                     .opacity(isDropTargeted ? 1 : 0)
                     .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
+            )
+            .overlay(
+                Group {
+                    if wifidataArray.isEmpty {
+                        VStack(spacing: 12) {
+                            Image(systemName: "wifi.slash")
+                                .font(.system(size: 40))
+                                .foregroundColor(.secondary)
+                            Text("No Networks Loaded")
+                                .font(.headline)
+                            Text("Set up access to your WiFi history to get started.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: 220)
+                            Button("Open Setup") {
+                                NotificationCenter.default.post(name: .showSetupSheet, object: nil)
+                            }
+                            .buttonStyle(WiFiButtonStyle())
+                        }
+                    }
+                }
             )
             .alert(isPresented: $showDropError) {
                 Alert(
@@ -690,15 +739,89 @@ struct RemoveHelperSheetView: View {
 
 
 struct WiFiDetailPane: View {
-    var body: some View {
-        VStack() {
-            HStack() {
-                Image(systemName: "arrow.left.circle.fill").font(.system(.title))
-                Text("Select WiFi Network").font(.title)
-            }
-            .accessibilityLabel("Select a WiFi network from the list to view details")
-        }.frame(minWidth: 400)
 
+    private var networks: [WiFiData] { WiFiDataManager.shared.getWiFiDataList() }
+
+    private var mostRecentJoined: String {
+        let dates = networks.compactMap { $0.JoinedBySystemAt }
+        guard let latest = dates.max() else { return "None" }
+        return Utils.relativeDateToString(latest) ?? Utils.dateToString(latest) ?? "Unknown"
+    }
+
+    private var wpa3Count: Int { networks.filter { $0.securityType() == .wpa3 }.count }
+    private var wpa2Count: Int { networks.filter { $0.securityType() == .wpa2 }.count }
+    private var openCount: Int { networks.filter { $0.securityType() == .open }.count }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                Spacer(minLength: 30)
+
+                Image(systemName: "wifi")
+                    .font(.system(size: 60))
+                    .foregroundStyle(Color.accentColor)
+
+                Text("WiFiCheck")
+                    .font(.title)
+                    .fontWeight(.semibold)
+
+                Text("Your WiFi network history")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Divider()
+                    .padding(.horizontal, 40)
+
+                if networks.isEmpty {
+                    Text("Load your WiFi history to get started")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                } else {
+                    LazyVGrid(
+                        columns: [GridItem(.flexible()), GridItem(.flexible())],
+                        alignment: .center,
+                        spacing: 16
+                    ) {
+                        StatCard(label: "Total Networks", value: "\(networks.count)", icon: "list.bullet.rectangle")
+                        StatCard(label: "Most Recently Joined", value: mostRecentJoined, icon: "clock")
+                        StatCard(label: "WPA3", value: "\(wpa3Count)", icon: "lock.shield")
+                        StatCard(label: "WPA2", value: "\(wpa2Count)", icon: "lock")
+                        StatCard(label: "Open Networks", value: "\(openCount)", icon: "lock.open")
+                    }
+                    .padding(.horizontal, 30)
+                }
+
+                Spacer(minLength: 30)
+            }
+        }
+        .frame(minWidth: 400)
+        .accessibilityLabel("No network selected. Summary of WiFi history shown.")
+    }
+}
+
+private struct StatCard: View {
+    let label: String
+    let value: String
+    let icon: String
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(Color.accentColor)
+            Text(value)
+                .font(.title3)
+                .fontWeight(.semibold)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
     }
 }
 
