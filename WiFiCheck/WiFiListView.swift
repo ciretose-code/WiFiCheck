@@ -352,8 +352,8 @@ struct SetupSheetView: View {
                 Text("WiFi/Check Setup")
                     .font(.title)
                     .fontWeight(.semibold)
-                Text("The system WiFi file is protected by macOS and requires elevated access to read. Choose an option below:")
-                    .multilineTextAlignment(.center)
+                Text("The system WiFi file is protected by macOS and requires elevated access to read. You have two options: Option 1: The \"automagic\" solution, which requires you to grant WiFi/Check Full Disk Access and run a priveleged process in the background; Option 2: The \"one time manual\" solution, which you copy the necessary file in the Terminal and load it into the app.  If this is your first time, go with Option 2 to get a feel for what the app does.")
+                    .multilineTextAlignment(.leading)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: 720)
             }
@@ -379,7 +379,7 @@ struct SetupSheetView: View {
                             .fixedSize(horizontal: false, vertical: true)
                         VStack(alignment: .leading, spacing: 4) {
                             Label("Enter your admin password when prompted", systemImage: "1.circle.fill")
-                            Label("Enable WiFiCheck in System Settings → Login Items", systemImage: "2.circle.fill")
+                            Label("Enable WiFi/Check in System Settings → Login Items → App Background Activity", systemImage: "2.circle.fill")
                             Label("Grant Full Disk Access to the helper binary", systemImage: "3.circle.fill")
                         }
                         .font(.caption)
@@ -391,7 +391,7 @@ struct SetupSheetView: View {
                                     .foregroundColor(.orange)
                                     .font(.caption)
                                     .padding(.top, 1)
-                                Text("One more step — the helper needs **Full Disk Access**. In System Settings → Privacy & Security → Full Disk Access, click **+** and add:\n`WiFiCheck.app → Contents → Library → LaunchDaemons → com.ciretose.macos.tool.WiFiCheck.helper`")
+                                Text("One more step — the helper needs **Full Disk Access**. In System Settings → Privacy & Security → Full Disk Access, click **+** and add:\n`WiFi/Check.app → Contents → Library → LaunchDaemons → com.ciretose.macos.tool.WiFiCheck.helper`")
                                     .font(.caption)
                                     .foregroundColor(.primary)
                                     .multilineTextAlignment(.leading)
@@ -414,7 +414,7 @@ struct SetupSheetView: View {
                                     .foregroundColor(.green)
                                     .font(.caption)
                                     .padding(.top, 1)
-                                Text("Helper registered! System Settings opened — enable WiFiCheck under **Privacy & Security → Login Items & Extensions**, then click below.")
+                                Text("Helper registered! System Settings opened — enable WiFi/Check under **Privacy & Security → Login Items & Extensions**, then click below.")
                                     .font(.caption)
                                     .foregroundColor(.primary)
                                     .multilineTextAlignment(.leading)
