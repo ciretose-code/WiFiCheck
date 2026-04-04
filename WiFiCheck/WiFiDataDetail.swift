@@ -63,6 +63,12 @@ struct WiFiDataDetail: View {
     @State private var remainingSeconds: Int = Constants.passwordAutoHideDelay
     private let autoHideDelay: Int = Constants.passwordAutoHideDelay
 
+    private var timerColor: Color {
+        if remainingSeconds <= 5  { return .red }
+        if remainingSeconds <= 10 { return .orange }
+        return .secondary
+    }
+
     @ViewBuilder
     private var badgeView: some View {
         let hasBadges = wifidata.PersonalHotspot || wifidata.TemporarilyDisabled ||
@@ -154,7 +160,8 @@ struct WiFiDataDetail: View {
                                     // Show countdown timer when password is visible
                                     Text("Auto-hide in \(remainingSeconds)s")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(timerColor)
+                                        .animation(.easeInOut, value: timerColor)
                                 } else {
                                     Text("**********").font(.system(.title, design: .monospaced))
                                 }
@@ -215,21 +222,21 @@ struct WiFiDataDetail: View {
                 HStack {
                     if let discovered = wifidata.LastDiscoveredAt {
                         VStack(alignment: .center) {
-                            Text("Last Discovered").font(.headline)
+                            Text("Last Discovered").font(.subheadline).foregroundColor(.secondary)
                             WiFiDateBox(date: discovered, color: Utils.getDateBoxColor(wifidata, wifidata.LastDiscoveredAt))
                         }
                         Spacer()
                     }
                     if let updated = wifidata.UpdatedAt {
                         VStack(alignment: .center) {
-                            Text("Profile Updated").font(.headline)
+                            Text("Profile Updated").font(.subheadline).foregroundColor(.secondary)
                             WiFiDateBox(date: updated, color: Utils.getDateBoxColor(wifidata, wifidata.UpdatedAt))
                         }
                         Spacer()
                     }
                     if wifidata.LastDisconnectTimestamp != nil {
                         VStack(alignment: .center) {
-                            Text("Last Disconnect").font(.headline)
+                            Text("Last Disconnect").font(.subheadline).foregroundColor(.secondary)
                             WiFiDateBox(date: wifidata.LastDisconnectTimestamp, color: Utils.getDateBoxColor(wifidata, wifidata.LastDisconnectTimestamp))
                             Text(wifidata.disconnectReasonText())
                                 .font(.caption)
@@ -648,34 +655,36 @@ struct NetworkDetailsSection: View {
             Divider()
             VStack(alignment: .leading, spacing: 4) {
                 Text("Network Details").bold()
-                if hasRoaming {
-                    HStack {
-                        Text("Roaming Profile").foregroundColor(.secondary).frame(width: 160, alignment: .leading)
-                        Text(wifidata.RoamingProfileType).bold()
+                Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
+                    if hasRoaming {
+                        GridRow {
+                            Text("Roaming Profile").foregroundColor(.secondary)
+                            Text(wifidata.RoamingProfileType).bold()
+                        }
                     }
-                }
-                if hasPrivateMAC {
-                    HStack {
-                        Text("Private MAC Address").foregroundColor(.secondary).frame(width: 160, alignment: .leading)
-                        Text(wifidata.CachedPrivateMACAddress).bold()
+                    if hasPrivateMAC {
+                        GridRow {
+                            Text("Private MAC Address").foregroundColor(.secondary)
+                            Text(wifidata.CachedPrivateMACAddress).bold()
+                        }
                     }
-                }
-                if hasMACEval {
-                    HStack {
-                        Text("MAC Evaluation State").foregroundColor(.secondary).frame(width: 160, alignment: .leading)
-                        Text(wifidata.PrivateMACAddressEvaluationState).bold()
+                    if hasMACEval {
+                        GridRow {
+                            Text("MAC Evaluation State").foregroundColor(.secondary)
+                            Text(wifidata.PrivateMACAddressEvaluationState).bold()
+                        }
                     }
-                }
-                if hasBrokenBackhaul {
-                    HStack {
-                        Text("Backhaul State").foregroundColor(.secondary).frame(width: 160, alignment: .leading)
-                        Text(wifidata.BrokenBackhaulState).bold()
+                    if hasBrokenBackhaul {
+                        GridRow {
+                            Text("Backhaul State").foregroundColor(.secondary)
+                            Text(wifidata.BrokenBackhaulState).bold()
+                        }
                     }
-                }
-                if hasPreferredNames {
-                    HStack {
-                        Text("Preferred Names").foregroundColor(.secondary).frame(width: 160, alignment: .leading)
-                        Text(wifidata.UserPreferredNetworkNames.joined(separator: ", ")).bold()
+                    if hasPreferredNames {
+                        GridRow {
+                            Text("Preferred Names").foregroundColor(.secondary)
+                            Text(wifidata.UserPreferredNetworkNames.joined(separator: ", ")).bold()
+                        }
                     }
                 }
             }

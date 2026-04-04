@@ -60,10 +60,10 @@ struct WiFiButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundColor(.white)
-            .padding(EdgeInsets(top:2, leading: 10, bottom: 2, trailing: 10))
+            .padding(EdgeInsets(top: 4, leading: 10, bottom: 4, trailing: 10))
             .font(.subheadline)
             .background(delete ? (disabled ? Color.gray : Color.red) : (disabled ? Color.gray : Color.accentColor))
-            .brightness(configuration.isPressed ? -0.2 : 0)
+            .opacity(configuration.isPressed ? 0.75 : 1.0)
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 }
