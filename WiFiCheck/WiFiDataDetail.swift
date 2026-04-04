@@ -208,16 +208,15 @@ struct WiFiDataDetail: View {
                     }
                 }
                 Divider()
-                HStack {
-                    VStack(alignment: .trailing) {
-                        if (wifidata.ChannelHistory.count > 0) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading) {
+                        if wifidata.ChannelHistory.count > 0 {
                             ChannelHistoryView(channelData: wifidata.ChannelHistory)
-                            Spacer()
                         }
+                        NetworkDetailsSection(wifidata: wifidata)
                     }
-                    if (wifidata.ChannelHistory.count > 0) {
-                        Divider()
-                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    Divider()
                     VStack(alignment: .leading) {
                         if (wifidata.CollocatedGroup.count > 0) {
                             CollocatedGroupView(collocatedGroups: wifidata.CollocatedGroup)
@@ -240,8 +239,6 @@ struct WiFiDataDetail: View {
                     }
                     Spacer()
                 }
-                // Network Details section
-                NetworkDetailsSection(wifidata: wifidata)
             }
             .padding()
         }
