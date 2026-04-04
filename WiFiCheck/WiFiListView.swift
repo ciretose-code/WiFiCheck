@@ -277,6 +277,7 @@ struct WiFiListPane: View {
             List(selection: $listSelection) {
                     ForEach(filteredNetworks) { wifidata in
                         WiFiDataRow(wifidata: wifidata)
+                            .tag(wifidata)
                     }
             }
             .searchable(text: $searchText, placement: .sidebar, prompt: "Search networks")
