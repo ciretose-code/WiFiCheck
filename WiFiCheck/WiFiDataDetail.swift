@@ -148,31 +148,33 @@ struct WiFiDataDetail: View {
                     Spacer()
                     VStack(alignment: .trailing) {
                         VStack(alignment: .trailing) {
-                            if showPassword {
-                                if let password = cachedPassword, !password.isEmpty {
-                                    Text(password).font(.system(.title, design: .monospaced))
+                            if wifidata.securityType() != .open {
+                                if showPassword {
+                                    if let password = cachedPassword, !password.isEmpty {
+                                        Text(password).font(.system(.title, design: .monospaced))
+                                    } else {
+                                        Text("**********").font(.system(.title, design: .monospaced))
+                                            .foregroundColor(.secondary)
+                                    }
+                                    // Show countdown timer when password is visible
+                                    Text("Auto-hide in \(remainingSeconds)s")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
                                 } else {
                                     Text("**********").font(.system(.title, design: .monospaced))
-                                        .foregroundColor(.secondary)
                                 }
-                                // Show countdown timer when password is visible
-                                Text("Auto-hide in \(remainingSeconds)s")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            } else {
-                                Text("**********").font(.system(.title, design: .monospaced))
-                            }
-                            Button(action:{
-                                togglePasswordVisibility()
-                            }) {
-                                HStack {
-                                    Image(systemName: pwdIcon)
-                                    Text(pwdText)
+                                Button(action:{
+                                    togglePasswordVisibility()
+                                }) {
+                                    HStack {
+                                        Image(systemName: pwdIcon)
+                                        Text(pwdText)
+                                    }
                                 }
+                                .buttonStyle(WiFiButtonStyle())
+                                .accessibilityLabel(showPassword ? "Hide network password" : "Show network password")
+                                Spacer().frame(height: 8)
                             }
-                            .buttonStyle(WiFiButtonStyle(disabled: (wifidata.securityType() == .open)))
-                            .accessibilityLabel(showPassword ? "Hide network password" : "Show network password")
-                            Spacer().frame(height: 8)
                             Button(action: { showDeleteConfirm = true }) {
                                 HStack {
                                     Image(systemName: "minus.circle")
@@ -473,7 +475,7 @@ struct BSSIDListView: View {
                             .font(.system(.body, design: .monospaced))
                             .bold()
                         if b.Channel > 0 {
-                            Text("Ch \(b.Channel)")
+                            Text("\(b.Channel)")
                                 .font(.caption).foregroundColor(.white)
                                 .padding(.horizontal, 8).padding(.vertical, 4)
                                 .background(Color.black)
