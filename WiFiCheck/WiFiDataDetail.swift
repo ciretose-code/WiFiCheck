@@ -472,7 +472,7 @@ struct BSSIDListView: View {
             ForEach(bssidData) { (b: WiFiData.BSSData) in
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
-                        Text(b.BSSID)
+                        Text(b.BSSID.uppercased())
                             .font(.system(.body, design: .monospaced))
                             .bold()
                         if b.Channel > 0 {
@@ -665,7 +665,7 @@ struct NetworkDetailsSection: View {
                     if hasPrivateMAC {
                         GridRow {
                             Text("Private MAC Address").foregroundColor(.secondary)
-                            Text(wifidata.CachedPrivateMACAddress).bold()
+                            Text(wifidata.CachedPrivateMACAddress.uppercased()).bold()
                         }
                     }
                     if hasMACEval {
