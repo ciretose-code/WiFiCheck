@@ -75,7 +75,7 @@ struct WiFiListPane: View {
         }
     }
 
-    @State private var selectedSort = SortableMenu.recentSystem
+    @State private var selectedSort = SortableMenu.preferredOrder
     @State private var wifidataArray = Array<WiFiData>()
     @State private var searchText = ""
 
@@ -104,8 +104,22 @@ struct WiFiListPane: View {
 
     static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
 
+    func applySort() {
+        sortString = selectedSort.title
+        switch selectedSort {
+        case .preferredOrder:
+            wifidataArray = WiFiDataManager.shared.sortByPreferredOrder()
+        case .recentUser:
+            wifidataArray = WiFiDataManager.shared.sortByRecentUser()
+        case .recentSystem:
+            wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
+        case .alphabetical:
+            wifidataArray = WiFiDataManager.shared.sortByAlphabetical()
+        }
+    }
+
     func loadWiFiData() {
-        wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
+        applySort()
     }
 
     func copyCommandToClipboard() {
@@ -245,16 +259,7 @@ struct WiFiListPane: View {
                     }
                 }
                 .onChange(of: selectedSort) {
-                    sortString = selectedSort.title
-                    if selectedSort == .preferredOrder {
-                        wifidataArray = WiFiDataManager.shared.sortByPreferredOrder()
-                    } else if selectedSort == .recentUser {
-                        wifidataArray = WiFiDataManager.shared.sortByRecentUser()
-                    } else if selectedSort == .recentSystem {
-                        wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
-                    } else {
-                        wifidataArray = WiFiDataManager.shared.sortByAlphabetical()
-                    }
+                    applySort()
                 }
                 .pickerStyle(MenuPickerStyle())
             }
@@ -264,7 +269,7 @@ struct WiFiListPane: View {
                     if searchText.isEmpty {
                         Text("\(wifidataArray.count) networks")
                     } else {
-                        Text("\(networks.count) of \(wifidataArray.count) networks")
+                        Text("\(filteredNetworks.count) of \(wifidataArray.count) networks")
                     }
                 }
                 .font(.caption)
@@ -274,7 +279,7 @@ struct WiFiListPane: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             List(selection: $listSelection) {
-                    ForEach(networks) { wifidata in
+                    ForEach(filteredNetworks) { wifidata in
                         NavigationLink(destination: WiFiDataDetail(wifidata: wifidata)){
                             WiFiDataRow(wifidata: wifidata)
                         }
