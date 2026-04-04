@@ -329,7 +329,7 @@ struct ChannelHistoryView: View {
                         .bold()
                         .foregroundColor(.white)
                         .padding(.horizontal, 8)
-                        .frame(height: 26, alignment: .center)
+                        .frame(minWidth: 70, height: 26, alignment: .center)
                         .background(bandColor(for: cd.Channel))
                         .clipShape(Capsule())
                         .accessibilityLabel(frequencyBand(for: cd.Channel))
