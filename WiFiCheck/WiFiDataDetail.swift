@@ -314,7 +314,7 @@ struct ChannelHistoryView: View {
         VStack(alignment: .leading) {
             Text("Channel History").bold()
             Spacer()
-            ForEach(channelData) { cd in
+            ForEach(channelData) { (cd: WiFiData.ChannelData) in
                 HStack() {
                     Text("\(cd.Channel)")
                         .bold()
@@ -329,7 +329,7 @@ struct ChannelHistoryView: View {
                         .bold()
                         .foregroundColor(.white)
                         .padding(.horizontal, 8)
-                        .frame(minWidth: 70, height: 26, alignment: .center)
+                        .frame(minWidth: 70, minHeight: 26, maxHeight: 26, alignment: .center)
                         .background(bandColor(for: cd.Channel))
                         .clipShape(Capsule())
                         .accessibilityLabel(frequencyBand(for: cd.Channel))
