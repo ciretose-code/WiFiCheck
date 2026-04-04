@@ -549,31 +549,56 @@ class WiFiDataManager {
     func installHelper(completion: @escaping (Bool, Error?) -> Void) {
         assert(Thread.isMainThread, "installHelper must be called on the main thread")
 
-        // Diagnostics — log exactly what the system will look for
-        let bundle = Bundle.main
-        let plistPath = bundle.bundleURL
-            .appendingPathComponent("Contents/Library/LaunchDaemons")
-            .appendingPathComponent(Self.kDaemonPlistName)
-        let plistExists = FileManager.default.fileExists(atPath: plistPath.path)
-        let helperPath = bundle.bundleURL
-            .appendingPathComponent("Contents/MacOS")
-            .appendingPathComponent("com.ciretose.macos.tool.WiFiCheck.helper")
-        let helperExists = FileManager.default.fileExists(atPath: helperPath.path)
-        Self.logger.info("Bundle path: \(bundle.bundlePath)")
-        Self.logger.info("Plist path:  \(plistPath.path) — exists: \(plistExists)")
-        Self.logger.info("Helper path: \(helperPath.path) — exists: \(helperExists)")
-        Self.logger.info("SMAppService status before register: \(String(describing: SMAppService.daemon(plistName: Self.kDaemonPlistName).status))")
-
         let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
+        Self.logger.info("SMAppService status before register: \(String(describing: service.status))")
+
+        // Already running — nothing to do.
+        if service.status == .enabled {
+            completion(true, nil)
+            return
+        }
+
+        // Previously registered but awaiting user approval in System Settings.
+        // Don't call register() again — that fails with error 1.
+        if service.status == .requiresApproval {
+            Self.logger.info("Service requiresApproval — opening System Settings")
+            SMAppService.openSystemSettingsLoginItems()
+            completion(false, Self.requiresApprovalError)
+            return
+        }
+
         do {
             try service.register()
-            completion(true, nil)
+            if service.status == .requiresApproval {
+                Self.logger.info("Registered — requiresApproval, opening System Settings")
+                SMAppService.openSystemSettingsLoginItems()
+                completion(false, Self.requiresApprovalError)
+            } else {
+                completion(true, nil)
+            }
         } catch {
             let nsErr = error as NSError
-            Self.logger.error("register() failed: \(nsErr.domain) \(nsErr.code) — \(nsErr.localizedDescription)")
-            completion(false, error)
+            // Even on throw, the registration may have succeeded but needs approval.
+            if service.status == .requiresApproval {
+                Self.logger.info("register() threw but status is requiresApproval — opening System Settings")
+                SMAppService.openSystemSettingsLoginItems()
+                completion(false, Self.requiresApprovalError)
+            } else {
+                Self.logger.error("register() failed: \(nsErr.domain) \(nsErr.code) — \(nsErr.localizedDescription)")
+                completion(false, error)
+            }
         }
     }
+
+    /// Sentinel error used to signal that the daemon is registered but needs
+    /// user approval in System Settings → Privacy & Security → Login Items.
+    static let requiresApprovalError = NSError(
+        domain: "com.ciretose.wificheck.helperInstall",
+        code: 100,
+        userInfo: [NSLocalizedDescriptionKey:
+            "The helper is registered and System Settings has been opened. " +
+            "Enable WiFiCheck under Privacy & Security → Login Items & Extensions, then click Install Helper again."]
+    )
 
     /// Unregister the daemon (for debugging / uninstall).
     func uninstallHelper(completion: @escaping (Bool, Error?) -> Void) {

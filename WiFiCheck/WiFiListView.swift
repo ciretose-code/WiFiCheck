@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import ServiceManagement
 
 enum SortableMenu: String, CaseIterable, Identifiable {
     var id: String {
@@ -87,6 +88,7 @@ struct WiFiListPane: View {
     @State private var showSetupSheet = false
     @State private var helperInstalling = false
     @State private var helperError: String? = nil
+    @State private var helperNeedsApproval = false
 
     static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
 
@@ -120,6 +122,7 @@ struct WiFiListPane: View {
     func installAndLoadViaHelper() {
         helperInstalling = true
         helperError = nil
+        helperNeedsApproval = false
         // installHelper must run on main thread (presents auth dialog)
         WiFiDataManager.shared.installHelper { success, error in
             if success {
@@ -135,7 +138,12 @@ struct WiFiListPane: View {
                 }
             } else {
                 helperInstalling = false
-                if let err = error as NSError? {
+                let nsErr = error as NSError?
+                if nsErr?.domain == WiFiDataManager.requiresApprovalError.domain &&
+                   nsErr?.code == WiFiDataManager.requiresApprovalError.code {
+                    helperNeedsApproval = true
+                    helperError = nil
+                } else if let err = nsErr {
                     helperError = "\(err.localizedDescription) (\(err.domain) \(err.code))"
                 } else {
                     helperError = error?.localizedDescription ?? "Installation failed."
@@ -266,6 +274,7 @@ struct WiFiListPane: View {
                 onInstallHelper: installAndLoadViaHelper,
                 helperInstalling: $helperInstalling,
                 helperError: $helperError,
+                helperNeedsApproval: $helperNeedsApproval,
                 showError: $showDropError,
                 errorMessage: $dropErrorMessage
             )
@@ -283,6 +292,7 @@ struct SetupSheetView: View {
     let onInstallHelper: () -> Void
     @Binding var helperInstalling: Bool
     @Binding var helperError: String?
+    @Binding var helperNeedsApproval: Bool
     @Binding var showError: Bool
     @Binding var errorMessage: String
 
@@ -322,7 +332,29 @@ struct SetupSheetView: View {
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        if let err = helperError {
+                        if helperNeedsApproval {
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                                    .font(.caption)
+                                    .padding(.top, 1)
+                                Text("Helper registered! System Settings opened — enable WiFiCheck under **Privacy & Security → Login Items & Extensions**, then click below.")
+                                    .font(.caption)
+                                    .foregroundColor(.primary)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Button(action: {
+                                SMAppService.openSystemSettingsLoginItems()
+                            }) {
+                                HStack {
+                                    Image(systemName: "gearshape")
+                                    Text("Open System Settings")
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(WiFiButtonStyle())
+                        } else if let err = helperError {
                             Text(err)
                                 .font(.caption)
                                 .foregroundColor(.red)
@@ -335,9 +367,9 @@ struct SetupSheetView: View {
                                 if helperInstalling {
                                     ProgressView().scaleEffect(0.7).frame(width: 14, height: 14)
                                 } else {
-                                    Image(systemName: "lock.shield")
+                                    Image(systemName: helperNeedsApproval ? "arrow.clockwise" : "lock.shield")
                                 }
-                                Text(helperInstalling ? "Installing…" : "Install Helper")
+                                Text(helperInstalling ? "Installing…" : helperNeedsApproval ? "Check Again" : "Install Helper")
                             }
                             .frame(maxWidth: .infinity)
                         }
