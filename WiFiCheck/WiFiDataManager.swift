@@ -676,12 +676,10 @@ class WiFiDataManager {
                 return
             }
             let parsed = self.parseWiFiData(from: data)
-            if !parsed.isEmpty {
-                self.wifidatalist = parsed
-                self.wifidatalist = self.sortByPreferredOrder()
-                self.loadedFromDrop = true
-            }
-            finish(parsed.isEmpty ? nil : parsed, nil)
+            self.wifidatalist = parsed
+            self.wifidatalist = self.sortByPreferredOrder()
+            self.loadedFromDrop = true
+            finish(parsed, nil)
         }
     }
 
