@@ -382,7 +382,15 @@ struct SetupSheetView: View {
                 }
             }
             .padding(.horizontal, 32)
-            .padding(.bottom, 32)
+            .padding(.bottom, 8)
+
+            // Quit button
+            Button(action: { NSApp.terminate(nil) }) {
+                Text("Quit WiFi/Check")
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 24)
         }
         .frame(minWidth: 600)
         .alert(isPresented: $showError) {
