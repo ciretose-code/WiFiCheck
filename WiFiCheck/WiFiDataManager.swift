@@ -550,21 +550,27 @@ class WiFiDataManager {
         assert(Thread.isMainThread, "installHelper must be called on the main thread")
 
         let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
-        Self.logger.info("SMAppService status before register: \(String(describing: service.status))")
+        let currentStatus = service.status
+        Self.logger.info("SMAppService status before register: \(String(describing: currentStatus))")
 
-        // Already running — nothing to do.
-        if service.status == .enabled {
+        // Already running and the helper binary is where we expect it — nothing to do.
+        if currentStatus == .enabled && helperBinaryExists {
             completion(true, nil)
             return
         }
 
-        // Previously registered but awaiting user approval in System Settings.
-        // Don't call register() again — that fails with error 1.
-        if service.status == .requiresApproval {
-            Self.logger.info("Service requiresApproval — opening System Settings")
-            SMAppService.openSystemSettingsLoginItems()
-            completion(false, Self.requiresApprovalError)
-            return
+        // If a stale registration exists (enabled with missing binary, or requiresApproval
+        // from a prior install with a different bundle layout), unregister first so
+        // register() installs the current bundle's plist fresh.
+        if currentStatus == .enabled || currentStatus == .requiresApproval {
+            Self.logger.info("Stale registration detected (status=\(currentStatus.rawValue)) — unregistering first")
+            do {
+                try service.unregister()
+                Self.logger.info("Unregistered OK")
+            } catch {
+                // Unregister failing is non-fatal; attempt register() regardless.
+                Self.logger.warning("Unregister failed (non-fatal): \(error.localizedDescription, privacy: .public)")
+            }
         }
 
         do {
@@ -578,7 +584,6 @@ class WiFiDataManager {
             }
         } catch {
             let nsErr = error as NSError
-            // Even on throw, the registration may have succeeded but needs approval.
             if service.status == .requiresApproval {
                 Self.logger.info("register() threw but status is requiresApproval — opening System Settings")
                 SMAppService.openSystemSettingsLoginItems()
@@ -588,6 +593,14 @@ class WiFiDataManager {
                 completion(false, error)
             }
         }
+    }
+
+    /// `true` when the helper binary exists at the expected bundle-relative path.
+    private var helperBinaryExists: Bool {
+        let url = Bundle.main.bundleURL
+            .appendingPathComponent("Contents/Library/LaunchDaemons")
+            .appendingPathComponent(Self.kHelperMachService)
+        return FileManager.default.fileExists(atPath: url.path)
     }
 
     /// Sentinel error used to signal that the daemon is registered but needs
@@ -617,19 +630,41 @@ class WiFiDataManager {
         let connection = NSXPCConnection(machServiceName: Self.kHelperMachService,
                                          options: .privileged)
         connection.remoteObjectInterface = NSXPCInterface(with: WiFiHelperProtocol.self)
+
+        // Guard against the completion being called more than once (timeout vs reply race).
+        var finished = false
+        let finish: ([WiFiData]?) -> Void = { result in
+            guard !finished else { return }
+            finished = true
+            DispatchQueue.main.async { completion(result) }
+        }
+
         connection.invalidationHandler = {
             Self.logger.error("XPC connection invalidated")
-            DispatchQueue.main.async { completion(nil) }
+            finish(nil)
+        }
+        connection.interruptionHandler = {
+            Self.logger.error("XPC connection interrupted")
+            finish(nil)
         }
         connection.resume()
+
+        // 15-second safety net so the spinner can never hang forever.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+            if !finished {
+                Self.logger.error("XPC reply timed out after 15 s")
+                connection.invalidate()
+                finish(nil)
+            }
+        }
 
         guard let proxy = connection.remoteObjectProxyWithErrorHandler({ error in
             Self.logger.error("XPC proxy error: \(error.localizedDescription, privacy: .public)")
             connection.invalidate()
-            DispatchQueue.main.async { completion(nil) }
+            finish(nil)
         }) as? WiFiHelperProtocol else {
             connection.invalidate()
-            DispatchQueue.main.async { completion(nil) }
+            finish(nil)
             return
         }
 
@@ -637,7 +672,7 @@ class WiFiDataManager {
             connection.invalidate()
             guard let data = data else {
                 Self.logger.error("Helper returned no data: \(error?.localizedDescription ?? "unknown", privacy: .public)")
-                DispatchQueue.main.async { completion(nil) }
+                finish(nil)
                 return
             }
             let parsed = self.parseWiFiData(from: data)
@@ -646,7 +681,7 @@ class WiFiDataManager {
                 self.wifidatalist = self.sortByPreferredOrder()
                 self.loadedFromDrop = true
             }
-            DispatchQueue.main.async { completion(parsed.isEmpty ? nil : parsed) }
+            finish(parsed.isEmpty ? nil : parsed)
         }
     }
 
