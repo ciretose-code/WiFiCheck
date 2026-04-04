@@ -12,36 +12,34 @@ struct WiFiDataRow: View {
     var wifidata: WiFiData
 
     var body: some View {
-        Label {
+        HStack(spacing: 6) {
+            Image(systemName: "wifi")
+                .renderingMode(.template)
+                .foregroundColor(securityColor)
+                .help("Wi-Fi Network: \(wifidata.ssidString())")
+            Image(systemName: securityIcon)
+                .renderingMode(.template)
+                .foregroundColor(securityColor)
+                .font(.caption)
+                .help("Security: \(wifidata.getSecurityName())")
+            if wifidata.PersonalHotspot {
+                Image(systemName: "personalhotspot")
+                    .renderingMode(.template)
+                    .foregroundColor(.orange)
+                    .font(.caption)
+                    .help("Personal Hotspot")
+            }
+            if wifidata.TemporarilyDisabled {
+                Image(systemName: "wifi.slash")
+                    .renderingMode(.template)
+                    .foregroundColor(.red)
+                    .font(.caption)
+                    .help("Temporarily Disabled")
+            }
             Text(wifidata.ssidString())
                 .font(.body)
                 .foregroundColor(.primary)
-        } icon: {
-            HStack(spacing: 4) {
-                Image(systemName: "wifi")
-                    .renderingMode(.template)
-                    .help("Wi-Fi Network: \(wifidata.ssidString())")
-                Image(systemName: securityIcon)
-                    .renderingMode(.template)
-                    .font(.caption)
-                    .help("Security: \(wifidata.getSecurityName())")
-                if wifidata.PersonalHotspot {
-                    Image(systemName: "personalhotspot")
-                        .renderingMode(.template)
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                        .help("Personal Hotspot")
-                }
-                if wifidata.TemporarilyDisabled {
-                    Image(systemName: "wifi.slash")
-                        .renderingMode(.template)
-                        .font(.caption)
-                        .foregroundColor(.red)
-                        .help("Temporarily Disabled")
-                }
-            }
         }
-        .accentColor(securityColor)
         .accessibilityLabel(accessibilityDescription)
     }
 
