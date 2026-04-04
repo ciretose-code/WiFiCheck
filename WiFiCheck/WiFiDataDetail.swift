@@ -215,8 +215,9 @@ struct WiFiDataDetail: View {
                         }
                     }
                 }
-                Divider().padding(.vertical, 4)
-                HStack {
+                if wifidata.LastDiscoveredAt != nil || wifidata.UpdatedAt != nil || wifidata.LastDisconnectTimestamp != nil {
+                    Divider().padding(.vertical, 4)
+                    HStack {
                     if let discovered = wifidata.LastDiscoveredAt {
                         VStack(alignment: .center) {
                             Text("Last Discovered").font(.subheadline).foregroundColor(.secondary)
@@ -241,6 +242,7 @@ struct WiFiDataDetail: View {
                         }
                     }
                 }
+                }
                 Divider()
                 HStack(alignment: .top) {
                     VStack(alignment: .leading) {
@@ -264,12 +266,12 @@ struct WiFiDataDetail: View {
                         }
                     }
                     .fixedSize(horizontal: false, vertical: true)
-                    Divider()
-                    VStack(alignment: .leading) {
-                        if !wifidata.BSSList.isEmpty {
+                    if !wifidata.BSSList.isEmpty {
+                        Divider()
+                        VStack(alignment: .leading) {
                             BSSIDListView(bssidData: wifidata.BSSList)
+                            Spacer()
                         }
-                        Spacer()
                     }
                     Spacer()
                 }
