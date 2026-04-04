@@ -75,33 +75,13 @@ struct WiFiListPane: View {
         }
     }
 
-    private enum FilterCache {
-        static var lastSearchText = ""
-        static var lastWiFiDataArray = Array<WiFiData>()
-        static var lastFilteredNetworks = Array<WiFiData>()
-    }
-
     @State private var selectedSort = SortableMenu.preferredOrder
     @State private var wifidataArray = Array<WiFiData>()
     @State private var searchText = ""
 
     var filteredNetworks: [WiFiData] {
         guard !searchText.isEmpty else { return wifidataArray }
-
-        if FilterCache.lastSearchText == searchText,
-           FilterCache.lastWiFiDataArray == wifidataArray {
-            return FilterCache.lastFilteredNetworks
-        }
-
-        let filtered = wifidataArray.filter {
-            $0.ssidString().localizedCaseInsensitiveContains(searchText)
-        }
-
-        FilterCache.lastSearchText = searchText
-        FilterCache.lastWiFiDataArray = wifidataArray
-        FilterCache.lastFilteredNetworks = filtered
-
-        return filtered
+        return wifidataArray.filter { $0.ssidString().localizedCaseInsensitiveContains(searchText) }
     }
 
     @State private var sortString = "Preferred"
@@ -252,6 +232,7 @@ struct WiFiListPane: View {
     }
 
     var body: some View {
+        let networks = filteredNetworks
         VStack(alignment: .leading) {
             HStack {
                 Text("Sort:").padding(.leading, 3).foregroundColor(.secondary)
@@ -283,7 +264,7 @@ struct WiFiListPane: View {
                     if searchText.isEmpty {
                         Text("\(wifidataArray.count) networks")
                     } else {
-                        Text("\(filteredNetworks.count) of \(wifidataArray.count) networks")
+                        Text("\(networks.count) of \(wifidataArray.count) networks")
                     }
                 }
                 .font(.caption)
@@ -293,7 +274,7 @@ struct WiFiListPane: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             List(selection: $listSelection) {
-                    ForEach(filteredNetworks) { wifidata in
+                    ForEach(networks) { wifidata in
                         NavigationLink(destination: WiFiDataDetail(wifidata: wifidata)){
                             WiFiDataRow(wifidata: wifidata)
                         }
