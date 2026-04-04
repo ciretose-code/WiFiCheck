@@ -9,12 +9,21 @@ import SwiftUI
 
 @main
 struct WiFiCheckApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
         WindowGroup {
             ContentView().frame(minWidth: 600)
-        }.commands {
+        }
+        .commands {
             SidebarCommands()
         }
+    }
+}
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return true
     }
 }
 
