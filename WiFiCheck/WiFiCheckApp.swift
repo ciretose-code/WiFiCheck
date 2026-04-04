@@ -17,6 +17,17 @@ struct WiFiCheckApp: App {
         }
         .commands {
             SidebarCommands()
+            CommandGroup(replacing: .newItem) {
+                Button("Open Plist File…") {
+                    NotificationCenter.default.post(name: .openWiFiFile, object: nil)
+                }
+                .keyboardShortcut("o", modifiers: .command)
+                Divider()
+                Button("Load Real WiFi Data") {
+                    NotificationCenter.default.post(name: .loadRealWiFiData, object: nil)
+                }
+                .keyboardShortcut("r", modifiers: [.command, .shift])
+            }
             CommandGroup(after: .appInfo) {
                 Button("Setup…") {
                     NotificationCenter.default.post(name: .showSetupSheet, object: nil)
@@ -33,6 +44,8 @@ struct WiFiCheckApp: App {
 extension Notification.Name {
     static let showSetupSheet = Notification.Name("com.ciretose.WiFiCheck.showSetupSheet")
     static let showRemoveHelperSheet = Notification.Name("com.ciretose.WiFiCheck.showRemoveHelperSheet")
+    static let openWiFiFile = Notification.Name("com.ciretose.WiFiCheck.openWiFiFile")
+    static let loadRealWiFiData = Notification.Name("com.ciretose.WiFiCheck.loadRealWiFiData")
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {

@@ -118,6 +118,42 @@ struct WiFiListPane: View {
         applySort()
     }
 
+    func openWiFiFilePicker() {
+        let panel = NSOpenPanel()
+        panel.title = "Open WiFi Networks Plist"
+        panel.message = "Select a WiFi known-networks plist file"
+        panel.allowedContentTypes = [.propertyList]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            if WiFiDataManager.shared.loadFromURL(url) {
+                sharedNetworks = WiFiDataManager.shared.getWiFiDataList()
+                applySort()
+                reloadView.toggle()
+            } else {
+                dropErrorMessage = "\"\(url.lastPathComponent)\" does not appear to be a valid WiFi known-networks plist."
+                showDropError = true
+            }
+        }
+    }
+
+    func loadRealWiFiData() {
+        if WiFiDataManager.shared.helperIsRunning {
+            WiFiDataManager.shared.loadViaHelper { networks, _ in
+                if let networks = networks, !networks.isEmpty {
+                    sharedNetworks = networks
+                    applySort()
+                    reloadView.toggle()
+                } else {
+                    showSetupSheet = true
+                }
+            }
+        } else {
+            showSetupSheet = true
+        }
+    }
+
     func copyCommandToClipboard() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(Self.sudoCommand, forType: .string)
@@ -348,6 +384,12 @@ struct WiFiListPane: View {
             helperRemoved = false
             helperRemoveError = nil
             showRemoveHelperSheet = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openWiFiFile)) { _ in
+            openWiFiFilePicker()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .loadRealWiFiData)) { _ in
+            loadRealWiFiData()
         }
         .sheet(isPresented: $showSetupSheet) {
             SetupSheetView(
