@@ -8,6 +8,7 @@
 import Foundation
 import AppKit
 import os.log
+import ServiceManagement
 
 class WiFiDataManager {
 
@@ -528,5 +529,84 @@ class WiFiDataManager {
 
         return parseWiFiData(from: _data)
     }
-    
+
+    // MARK: - Privileged Helper (SMAppService / Option 1)
+
+    private static let kHelperMachService = "com.ciretose.macos.tool.WiFiCheck.helper"
+    private static let kDaemonPlistName   = "com.ciretose.macos.tool.WiFiCheck.helper.plist"
+
+    /// Current registration status of the privileged daemon.
+    var helperStatus: SMAppService.Status {
+        SMAppService.daemon(plistName: Self.kDaemonPlistName).status
+    }
+
+    /// Whether the privileged helper is installed and running.
+    var helperIsRunning: Bool { helperStatus == .enabled }
+
+    /// Register the daemon with the system (shows macOS admin-auth sheet).
+    /// Calls `completion` on the main thread with success/failure.
+    func installHelper(completion: @escaping (Bool, Error?) -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
+            do {
+                try service.register()
+                DispatchQueue.main.async { completion(true, nil) }
+            } catch {
+                DispatchQueue.main.async { completion(false, error) }
+            }
+        }
+    }
+
+    /// Unregister the daemon (for debugging / uninstall).
+    func uninstallHelper(completion: @escaping (Bool, Error?) -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
+            do {
+                try service.unregister()
+                DispatchQueue.main.async { completion(true, nil) }
+            } catch {
+                DispatchQueue.main.async { completion(false, error) }
+            }
+        }
+    }
+
+    /// Read the WiFi plist via the privileged helper over XPC.
+    /// Calls `completion` on the main thread with the parsed networks (or nil on error).
+    func loadViaHelper(completion: @escaping ([WiFiData]?) -> Void) {
+        let connection = NSXPCConnection(machServiceName: Self.kHelperMachService,
+                                         options: .privileged)
+        connection.remoteObjectInterface = NSXPCInterface(with: WiFiHelperProtocol.self)
+        connection.invalidationHandler = {
+            Self.logger.error("XPC connection invalidated")
+            DispatchQueue.main.async { completion(nil) }
+        }
+        connection.resume()
+
+        guard let proxy = connection.remoteObjectProxyWithErrorHandler({ error in
+            Self.logger.error("XPC proxy error: \(error.localizedDescription, privacy: .public)")
+            connection.invalidate()
+            DispatchQueue.main.async { completion(nil) }
+        }) as? WiFiHelperProtocol else {
+            connection.invalidate()
+            DispatchQueue.main.async { completion(nil) }
+            return
+        }
+
+        proxy.readWifiPlist { data, error in
+            connection.invalidate()
+            guard let data = data else {
+                Self.logger.error("Helper returned no data: \(error?.localizedDescription ?? "unknown", privacy: .public)")
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+            let parsed = self.parseWiFiData(from: data)
+            if !parsed.isEmpty {
+                self.wifidatalist = parsed
+                self.wifidatalist = self.sortByPreferredOrder()
+                self.loadedFromDrop = true
+            }
+            DispatchQueue.main.async { completion(parsed.isEmpty ? nil : parsed) }
+        }
+    }
+
 }
