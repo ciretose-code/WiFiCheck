@@ -213,14 +213,14 @@ struct WiFiDataDetail: View {
                         if wifidata.ChannelHistory.count > 0 {
                             ChannelHistoryView(channelData: wifidata.ChannelHistory)
                         }
+                        if wifidata.CollocatedGroup.count > 0 {
+                            CollocatedGroupView(collocatedGroups: wifidata.CollocatedGroup)
+                        }
                         NetworkDetailsSection(wifidata: wifidata)
                     }
                     .fixedSize(horizontal: false, vertical: true)
                     Divider()
                     VStack(alignment: .leading) {
-                        if (wifidata.CollocatedGroup.count > 0) {
-                            CollocatedGroupView(collocatedGroups: wifidata.CollocatedGroup)
-                        }
                         if !wifidata.BSSList.isEmpty {
                             BSSIDListView(bssidData: wifidata.BSSList)
                         }
