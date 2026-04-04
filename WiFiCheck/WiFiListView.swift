@@ -75,7 +75,7 @@ struct WiFiListPane: View {
         }
     }
 
-    @State private var selectedSort = SortableMenu.recentSystem
+    @AppStorage("selectedSort") private var selectedSort = SortableMenu.recentSystem
     @State private var wifidataArray = Array<WiFiData>()
     @State private var sortString = "Preferred"
     @State private var listSelection: WiFiData? = nil
@@ -277,6 +277,7 @@ struct WiFiListPane: View {
             }
         }
         .onAppear {
+            sortString = selectedSort.title
             // If helper is already running, load directly; otherwise show setup
             if WiFiDataManager.shared.helperIsRunning {
                 WiFiDataManager.shared.loadViaHelper { networks, _ in
