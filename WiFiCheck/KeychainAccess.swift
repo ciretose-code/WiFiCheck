@@ -68,7 +68,7 @@ class KeychainAccess {
     }
 
     static func readPassword(service: String, account: String) throws -> Data {
-        var query: [String: AnyObject] = [
+        let query: [String: AnyObject] = [
             kSecAttrService as String: service as AnyObject,
             kSecAttrAccount as String: account as AnyObject,
             kSecClass as String: kSecClassGenericPassword,
@@ -76,14 +76,7 @@ class KeychainAccess {
             kSecReturnData as String: kCFBooleanTrue
         ]
 
-        // WiFi passwords are stored in the System Keychain under the "AirPort" service.
-        // SecKeychainOpen is deprecated but remains the only direct way to target the
-        // System Keychain on macOS 11–12. macOS will prompt the user to authorize access.
-        var systemKeychain: SecKeychain?
-        if SecKeychainOpen("/Library/Keychains/System.keychain", &systemKeychain) == errSecSuccess,
-           let keychain = systemKeychain {
-            query[kSecMatchSearchList as String] = [keychain] as AnyObject
-        }
+        // Using default keychain search list; explicit targeting of System Keychain with SecKeychainOpen is no longer needed or recommended.
 
         var itemCopy: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &itemCopy)
@@ -130,3 +123,4 @@ class KeychainAccess {
     }
 
 }
+

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import ServiceManagement
 
 enum SortableMenu: String, CaseIterable, Identifiable {
     var id: String {
@@ -85,6 +86,14 @@ struct WiFiListPane: View {
     @State private var showDropError = false
     @State private var dropErrorMessage = ""
     @State private var showSetupSheet = false
+    @State private var helperInstalling = false
+    @State private var helperError: String? = nil
+    @State private var helperNeedsApproval = false
+    @State private var helperNeedsFDA = false
+    @State private var showRemoveHelperSheet = false
+    @State private var helperRemoving = false
+    @State private var helperRemoveError: String? = nil
+    @State private var helperRemoved = false
 
     static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
 
@@ -113,6 +122,65 @@ struct WiFiListPane: View {
             dropErrorMessage = "wifi-networks.plist doesn't appear to be a valid WiFi known-networks plist."
             showDropError = true
         }
+    }
+
+    func removeHelper() {
+        helperRemoving = true
+        helperRemoveError = nil
+        helperRemoved = false
+        WiFiDataManager.shared.uninstallHelper { success, error in
+            DispatchQueue.main.async {
+                helperRemoving = false
+                if success {
+                    helperRemoved = true
+                } else {
+                    helperRemoveError = error?.localizedDescription ?? "Failed to remove helper."
+                }
+            }
+        }
+    }
+
+    func installAndLoadViaHelper() {        helperInstalling = true
+        helperError = nil
+        helperNeedsApproval = false
+        helperNeedsFDA = false
+        // installHelper must run on main thread (presents auth dialog)
+        WiFiDataManager.shared.installHelper { success, error in
+            if success {
+                WiFiDataManager.shared.loadViaHelper { networks, loadError in
+                    helperInstalling = false
+                    if let networks = networks, !networks.isEmpty {
+                        wifidataArray = networks
+                        reloadView.toggle()
+                        showSetupSheet = false
+                    } else if Self.isPermissionError(loadError) {
+                        helperNeedsFDA = true
+                    } else {
+                        helperError = loadError?.localizedDescription ?? "Helper installed but could not read WiFi data."
+                    }
+                }
+            } else {
+                helperInstalling = false
+                let nsErr = error as NSError?
+                if nsErr?.domain == WiFiDataManager.requiresApprovalError.domain &&
+                   nsErr?.code == WiFiDataManager.requiresApprovalError.code {
+                    helperNeedsApproval = true
+                    helperError = nil
+                } else if let err = nsErr {
+                    helperError = "\(err.localizedDescription) (\(err.domain) \(err.code))"
+                } else {
+                    helperError = error?.localizedDescription ?? "Installation failed."
+                }
+            }
+        }
+    }
+
+    /// Returns true when the error indicates a TCC/FDA permission denial.
+    private static func isPermissionError(_ error: Error?) -> Bool {
+        guard let err = error as NSError? else { return false }
+        // NSFileReadNoPermissionError (257) or EPERM/EACCES (1/13)
+        return err.domain == NSCocoaErrorDomain && err.code == NSFileReadNoPermissionError
+            || err.domain == NSPOSIXErrorDomain && (err.code == 1 || err.code == 13)
     }
 
     func handleDrop(providers: [NSItemProvider]) -> Bool {
@@ -168,13 +236,13 @@ struct WiFiListPane: View {
                         }.tag(sm)
                     }
                 }
-                .onChange(of: selectedSort) { sm in
-                    sortString = sm.title
-                    if sm == .preferredOrder {
+                .onChange(of: selectedSort) {
+                    sortString = selectedSort.title
+                    if selectedSort == .preferredOrder {
                         wifidataArray = WiFiDataManager.shared.sortByPreferredOrder()
-                    } else if sm == .recentUser {
+                    } else if selectedSort == .recentUser {
                         wifidataArray = WiFiDataManager.shared.sortByRecentUser()
-                    } else if sm == .recentSystem {
+                    } else if selectedSort == .recentSystem {
                         wifidataArray = WiFiDataManager.shared.sortByRecentSystem()
                     } else {
                         wifidataArray = WiFiDataManager.shared.sortByAlphabetical()
@@ -209,18 +277,51 @@ struct WiFiListPane: View {
             }
         }
         .onAppear {
-            loadWiFiData()
-            if WiFiDataManager.shared.needsPassword() {
-                showSetupSheet = true
+            // If helper is already running, load directly; otherwise show setup
+            if WiFiDataManager.shared.helperIsRunning {
+                WiFiDataManager.shared.loadViaHelper { networks, _ in
+                    if let networks = networks, !networks.isEmpty {
+                        wifidataArray = networks
+                        reloadView.toggle()
+                    } else if WiFiDataManager.shared.needsPassword() {
+                        showSetupSheet = true
+                    }
+                }
+            } else {
+                loadWiFiData()
+                if WiFiDataManager.shared.needsPassword() {
+                    showSetupSheet = true
+                }
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showSetupSheet)) { _ in
+            showSetupSheet = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showRemoveHelperSheet)) { _ in
+            helperRemoved = false
+            helperRemoveError = nil
+            showRemoveHelperSheet = true
         }
         .sheet(isPresented: $showSetupSheet) {
             SetupSheetView(
                 sudoCommand: WiFiListPane.sudoCommand,
                 onCopy: copyCommandToClipboard,
                 onLoad: loadFromDownloads,
+                onInstallHelper: installAndLoadViaHelper,
+                helperInstalling: $helperInstalling,
+                helperError: $helperError,
+                helperNeedsApproval: $helperNeedsApproval,
+                helperNeedsFDA: $helperNeedsFDA,
                 showError: $showDropError,
                 errorMessage: $dropErrorMessage
+            )
+        }
+        .sheet(isPresented: $showRemoveHelperSheet) {
+            RemoveHelperSheetView(
+                onRemove: removeHelper,
+                removing: $helperRemoving,
+                removed: $helperRemoved,
+                removeError: $helperRemoveError
             )
         }
             Spacer()
@@ -229,60 +330,186 @@ struct WiFiListPane: View {
 
 
 struct SetupSheetView: View {
+    @Environment(\.dismiss) private var dismiss
     let sudoCommand: String
     let onCopy: () -> Void
     let onLoad: () -> Void
+    let onInstallHelper: () -> Void
+    @Binding var helperInstalling: Bool
+    @Binding var helperError: String?
+    @Binding var helperNeedsApproval: Bool
+    @Binding var helperNeedsFDA: Bool
     @Binding var showError: Bool
     @Binding var errorMessage: String
 
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "lock.rectangle.stack")
-                .font(.system(size: 56))
-                .foregroundColor(.secondary)
-
-            Text("WiFi/Check Setup")
-                .font(.title)
-                .fontWeight(.semibold)
-
-            Text("The system WiFi file is protected by macOS and requires root access to read.\nRun the command below in Terminal, then click Load WiFi Data.")
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-                .frame(maxWidth: 440)
-
-            HStack(spacing: 8) {
-                Text(sudoCommand)
-                    .font(.system(.body, design: .monospaced))
-                    .padding(10)
-                    .background(Color(NSColor.textBackgroundColor))
-                    .cornerRadius(6)
+        VStack(spacing: 0) {
+            // Header
+            VStack(spacing: 12) {
+                Image(systemName: "lock.rectangle.stack")
+                    .font(.system(size: 48))
+                    .foregroundColor(.secondary)
+                Text("WiFiCheck Setup")
+                    .font(.title)
+                    .fontWeight(.semibold)
+                Text("The system WiFi file is protected by macOS and requires elevated access to read.")
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: 720)
             }
+            .padding(.top, 36)
+            .padding(.bottom, 28)
 
-            HStack(spacing: 12) {
-                Button(action: onCopy) {
-                    HStack {
-                        Image(systemName: "doc.on.doc")
-                        Text("Copy Command")
+            // Two option cards side by side
+            HStack(alignment: .top, spacing: 16) {
+
+                // Option 1: Privileged Helper
+                OptionCard(
+                    badge: "1",
+                    icon: "gearshape.2.fill",
+                    title: "Install Helper",
+                    subtitle: "Automatic — reads directly on every launch",
+                    recommended: true
+                ) {
+                    VStack(spacing: 10) {
+                        Text("Installs a privileged background helper that reads the WiFi file as root. Three one-time steps:")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label("Enter your admin password if prompted", systemImage: "1.circle.fill")
+                            Label("Enable WiFiCheck in System Settings → Login Items → App Background Activity", systemImage: "2.circle.fill")
+                            Label("Grant Full Disk Access to the helper binary", systemImage: "3.circle.fill")
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                        if helperNeedsFDA {
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "lock.open.fill")
+                                    .foregroundColor(.orange)
+                                    .font(.caption)
+                                    .padding(.top, 1)
+                                Text("One more step — the helper needs **Full Disk Access**. In System Settings → Privacy & Security → Full Disk Access, click **+** and add:\n`WiFiCheck.app`")
+                                    .font(.caption)
+                                    .foregroundColor(.primary)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Button(action: {
+                                NSWorkspace.shared.open(
+                                    URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!)
+                            }) {
+                                HStack {
+                                    Image(systemName: "lock.open")
+                                    Text("Open Full Disk Access Settings")
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(WiFiButtonStyle())
+                        } else if helperNeedsApproval {
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                                    .font(.caption)
+                                    .padding(.top, 1)
+                                Text("Helper registered! System Settings opened — enable WiFiCheck under **Privacy & Security → Login Items & Extensions**, then click below.")
+                                    .font(.caption)
+                                    .foregroundColor(.primary)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Button(action: {
+                                SMAppService.openSystemSettingsLoginItems()
+                            }) {
+                                HStack {
+                                    Image(systemName: "gearshape")
+                                    Text("Open System Settings")
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(WiFiButtonStyle())
+                        } else if let err = helperError {
+                            Text(err)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Button(action: onInstallHelper) {
+                            HStack {
+                                if helperInstalling {
+                                    ProgressView().scaleEffect(0.7).frame(width: 14, height: 14)
+                                } else {
+                                    Image(systemName: helperNeedsApproval || helperNeedsFDA ? "arrow.clockwise" : "lock.shield")
+                                }
+                                Text(helperInstalling ? "Installing…" : helperNeedsApproval || helperNeedsFDA ? "Check Again" : "Install Helper")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(WiFiButtonStyle())
+                        .disabled(helperInstalling)
                     }
                 }
-                .buttonStyle(WiFiButtonStyle())
 
-                Button(action: onLoad) {
-                    HStack {
-                        Image(systemName: "arrow.down.circle")
-                        Text("Load WiFi Data")
+                // Option 2: Manual sudo copy
+                OptionCard(
+                    badge: "2",
+                    icon: "terminal",
+                    title: "Terminal Command",
+                    subtitle: "Manual — run once in Terminal",
+                    recommended: false
+                ) {
+                    VStack(spacing: 10) {
+                        Text("Run the command below in Terminal. It copies the WiFi file to your Downloads folder where the app can read it.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(sudoCommand)
+                            .font(.system(.caption, design: .monospaced))
+                            .padding(8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(NSColor.textBackgroundColor))
+                            .cornerRadius(5)
+
+                        HStack(spacing: 8) {
+                            Button(action: onCopy) {
+                                HStack {
+                                    Image(systemName: "doc.on.doc")
+                                    Text("Copy Command")
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(WiFiButtonStyle())
+
+                            Button(action: onLoad) {
+                                HStack {
+                                    Image(systemName: "arrow.down.circle")
+                                    Text("Load File")
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(WiFiButtonStyle())
+                        }
                     }
                 }
-                .buttonStyle(WiFiButtonStyle())
             }
+            .padding(.horizontal, 32)
+            .padding(.bottom, 8)
 
-            Text("Paste the command into Terminal and press Return, then click Load WiFi Data.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 440)
+            // Dismiss button — use ⌘Q to quit, or File > Setup to return here
+            Button(action: { dismiss() }) {
+                Text("Dismiss")
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 24)
         }
-        .padding(40)
+        .frame(minWidth: 800)
         .alert(isPresented: $showError) {
             Alert(
                 title: Text("Could Not Read File"),
@@ -293,6 +520,172 @@ struct SetupSheetView: View {
     }
 }
 
+private struct OptionCard<Content: View>: View {
+    let badge: String
+    let icon: String
+    let title: String
+    let subtitle: String
+    let recommended: Bool
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(recommended ? Color.accentColor : Color.secondary.opacity(0.25))
+                        .frame(width: 24, height: 24)
+                    Text(badge)
+                        .font(.caption.bold())
+                        .foregroundColor(recommended ? .white : .primary)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Image(systemName: icon)
+                            .font(.headline)
+                        Text(title)
+                            .font(.headline)
+                        if recommended {
+                            Text("Recommended")
+                                .font(.caption2.bold())
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(Color.accentColor.opacity(0.15))
+                                .foregroundColor(.accentColor)
+                                .cornerRadius(4)
+                        }
+                    }
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            content
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(recommended ? Color.accentColor.opacity(0.5) : Color.secondary.opacity(0.2), lineWidth: 1)
+        )
+    }
+}
+
+
+struct RemoveHelperSheetView: View {
+    @Environment(\.dismiss) private var dismiss
+    let onRemove: () -> Void
+    @Binding var removing: Bool
+    @Binding var removed: Bool
+    @Binding var removeError: String?
+
+    var body: some View {
+        VStack(spacing: 24) {
+            // Header
+            VStack(spacing: 10) {
+                Image(systemName: removed ? "checkmark.circle.fill" : "trash.circle")
+                    .font(.system(size: 48))
+                    .foregroundColor(removed ? .green : .red)
+                Text(removed ? "Helper Removed" : "Remove Helper")
+                    .font(.title)
+                    .fontWeight(.semibold)
+            }
+            .padding(.top, 36)
+
+            if removed {
+                // Post-removal: FDA cleanup guidance
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Background Activity entry removed.", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.callout)
+
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("One manual step remaining", systemImage: "lock.fill")
+                            .font(.callout.bold())
+                        Text("The helper's **Full Disk Access** entry is managed by macOS and cannot be removed automatically. To fully clean up:")
+                            .font(.callout)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("1. Open **System Settings → Privacy & Security → Full Disk Access**\n2. Find `com.ciretose.macos.tool.WiFiCheck.helper`\n3. Click **–** to remove it")
+                            .font(.callout)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Button(action: {
+                        NSWorkspace.shared.open(
+                            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!)
+                    }) {
+                        HStack {
+                            Image(systemName: "lock.open")
+                            Text("Open Full Disk Access Settings")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(WiFiButtonStyle())
+                }
+                .padding()
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(10)
+                .frame(maxWidth: 480)
+
+            } else {
+                // Pre-removal: explanation + confirm
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("This will stop the privileged helper daemon and remove it from **Background Activity** (Login Items).")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Divider()
+
+                    Label("If you delete the app without removing the helper first, macOS will automatically remove the Background Activity entry, but the **Full Disk Access** entry in Privacy & Security will remain and must be removed manually.", systemImage: "info.circle")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let err = removeError {
+                        Label(err, systemImage: "xmark.octagon.fill")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding()
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(10)
+                .frame(maxWidth: 480)
+
+                Button(action: onRemove) {
+                    HStack {
+                        if removing {
+                            ProgressView().scaleEffect(0.7).frame(width: 14, height: 14)
+                        } else {
+                            Image(systemName: "trash")
+                        }
+                        Text(removing ? "Removing…" : "Remove Helper")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(WiFiButtonStyle(delete: true))
+                .disabled(removing)
+                .frame(maxWidth: 480)
+            }
+
+            Button(action: { dismiss() }) {
+                Text("Done")
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 24)
+        }
+        .padding(.horizontal, 40)
+        .frame(minWidth: 520)
+    }
+}
 
 
 struct WiFiDetailPane: View {
@@ -314,3 +707,4 @@ struct WiFiListView_Previews: PreviewProvider {
         WiFiListView()
     }
 }
+

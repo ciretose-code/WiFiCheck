@@ -245,10 +245,7 @@ struct CollocatedGroupView: View {
         VStack(alignment: .leading) {
             Text("Networks At Same Location").bold()
             ForEach(collocatedGroups) { cgd in
-                (
-                    Text(Image(systemName: "wifi")) +
-                    Text(" \(String(cgd.ssid))")
-                )
+                Text("\(Image(systemName: "wifi")) \(String(cgd.ssid))")
                 .bold()
                 .foregroundColor(.white)
                 .padding(.leading, 20)
@@ -313,3 +310,4 @@ struct WiFiDataDetail_Previews: PreviewProvider {
         WiFiDataDetail(wifidata: WiFiDataManager.shared.getWiFiDataList().first ?? WiFiData())
     }
 }
+

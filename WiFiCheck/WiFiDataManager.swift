@@ -8,6 +8,7 @@
 import Foundation
 import AppKit
 import os.log
+import ServiceManagement
 
 class WiFiDataManager {
 
@@ -365,7 +366,7 @@ class WiFiDataManager {
             return wifidatalist.count > 0
         }
 
-        Self.logger.warning("WiFi/Check does not have Full Disk Access")
+        Self.logger.warning("WiFiCheck does not have Full Disk Access")
         Self.logger.info("The WiFi preferences file is protected by System Integrity Protection.")
         Self.logger.info("To read WiFi history: sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist")
 
@@ -528,5 +529,158 @@ class WiFiDataManager {
 
         return parseWiFiData(from: _data)
     }
-    
+
+    // MARK: - Privileged Helper (SMAppService / Option 1)
+
+    private static let kHelperMachService = "com.ciretose.macos.tool.WiFiCheck.helper"
+    private static let kDaemonPlistName   = "com.ciretose.macos.tool.WiFiCheck.helper.plist"
+
+    /// Current registration status of the privileged daemon.
+    var helperStatus: SMAppService.Status {
+        SMAppService.daemon(plistName: Self.kDaemonPlistName).status
+    }
+
+    /// Whether the privileged helper is installed and running.
+    var helperIsRunning: Bool { helperStatus == .enabled }
+
+    /// Register the daemon with the system (shows macOS admin-auth sheet).
+    /// Calls `completion` on the main thread with success/failure.
+    /// Must be called from the main thread — SMAppService presents UI.
+    func installHelper(completion: @escaping (Bool, Error?) -> Void) {
+        assert(Thread.isMainThread, "installHelper must be called on the main thread")
+
+        let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
+        let currentStatus = service.status
+        Self.logger.info("SMAppService status before register: \(String(describing: currentStatus))")
+
+        // Already running and the helper binary is where we expect it — nothing to do.
+        if currentStatus == .enabled && helperBinaryExists {
+            completion(true, nil)
+            return
+        }
+
+        // If a stale registration exists (enabled with missing binary, or requiresApproval
+        // from a prior install with a different bundle layout), unregister first so
+        // register() installs the current bundle's plist fresh.
+        if currentStatus == .enabled || currentStatus == .requiresApproval {
+            Self.logger.info("Stale registration detected (status=\(currentStatus.rawValue)) — unregistering first")
+            do {
+                try service.unregister()
+                Self.logger.info("Unregistered OK")
+            } catch {
+                // Unregister failing is non-fatal; attempt register() regardless.
+                Self.logger.warning("Unregister failed (non-fatal): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        do {
+            try service.register()
+            if service.status == .requiresApproval {
+                Self.logger.info("Registered — requiresApproval, opening System Settings")
+                SMAppService.openSystemSettingsLoginItems()
+                completion(false, Self.requiresApprovalError)
+            } else {
+                completion(true, nil)
+            }
+        } catch {
+            let nsErr = error as NSError
+            if service.status == .requiresApproval {
+                Self.logger.info("register() threw but status is requiresApproval — opening System Settings")
+                SMAppService.openSystemSettingsLoginItems()
+                completion(false, Self.requiresApprovalError)
+            } else {
+                Self.logger.error("register() failed: \(nsErr.domain) \(nsErr.code) — \(nsErr.localizedDescription)")
+                completion(false, error)
+            }
+        }
+    }
+
+    /// `true` when the helper binary exists at the expected bundle-relative path.
+    private var helperBinaryExists: Bool {
+        let url = Bundle.main.bundleURL
+            .appendingPathComponent("Contents/Library/LaunchDaemons")
+            .appendingPathComponent(Self.kHelperMachService)
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+
+    /// Sentinel error used to signal that the daemon is registered but needs
+    /// user approval in System Settings → Privacy & Security → Login Items.
+    static let requiresApprovalError = NSError(
+        domain: "com.ciretose.wificheck.helperInstall",
+        code: 100,
+        userInfo: [NSLocalizedDescriptionKey:
+            "The helper is registered and System Settings has been opened. " +
+            "Enable WiFiCheck under Privacy & Security → Login Items & Extensions, then click Install Helper again."]
+    )
+
+    /// Unregister the daemon (for debugging / uninstall).
+    func uninstallHelper(completion: @escaping (Bool, Error?) -> Void) {
+        let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
+        do {
+            try service.unregister()
+            completion(true, nil)
+        } catch {
+            completion(false, error)
+        }
+    }
+
+    /// Read the WiFi plist via the privileged helper over XPC.
+    /// Calls `completion` on the main thread with the parsed networks and any error.
+    func loadViaHelper(completion: @escaping ([WiFiData]?, Error?) -> Void) {
+        let connection = NSXPCConnection(machServiceName: Self.kHelperMachService,
+                                         options: .privileged)
+        connection.remoteObjectInterface = NSXPCInterface(with: WiFiHelperProtocol.self)
+
+        // Guard against completion being called more than once (timeout vs reply race).
+        var finished = false
+        let finish: ([WiFiData]?, Error?) -> Void = { result, error in
+            guard !finished else { return }
+            finished = true
+            DispatchQueue.main.async { completion(result, error) }
+        }
+
+        connection.invalidationHandler = {
+            Self.logger.error("XPC connection invalidated")
+            finish(nil, nil)
+        }
+        connection.interruptionHandler = {
+            Self.logger.error("XPC connection interrupted")
+            finish(nil, nil)
+        }
+        connection.resume()
+
+        // 15-second safety net so the spinner can never hang forever.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+            if !finished {
+                Self.logger.error("XPC reply timed out after 15 s")
+                connection.invalidate()
+                finish(nil, nil)
+            }
+        }
+
+        guard let proxy = connection.remoteObjectProxyWithErrorHandler({ error in
+            Self.logger.error("XPC proxy error: \(error.localizedDescription, privacy: .public)")
+            connection.invalidate()
+            finish(nil, error)
+        }) as? WiFiHelperProtocol else {
+            connection.invalidate()
+            finish(nil, nil)
+            return
+        }
+
+        proxy.readWifiPlist { data, error in
+            connection.invalidate()
+            guard let data = data else {
+                Self.logger.error("Helper returned no data: \(error?.localizedDescription ?? "unknown", privacy: .public)")
+                finish(nil, error)
+                return
+            }
+            let parsed = self.parseWiFiData(from: data)
+            self.wifidatalist = parsed
+            self.wifidatalist = self.sortByPreferredOrder()
+            self.loadedFromDrop = true
+            finish(parsed, nil)
+        }
+    }
+
 }
