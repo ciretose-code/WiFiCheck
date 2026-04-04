@@ -255,6 +255,9 @@ struct WiFiListPane: View {
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .showSetupSheet)) { _ in
+            showSetupSheet = true
+        }
         .sheet(isPresented: $showSetupSheet) {
             SetupSheetView(
                 sudoCommand: WiFiListPane.sudoCommand,
@@ -273,6 +276,7 @@ struct WiFiListPane: View {
 
 
 struct SetupSheetView: View {
+    @Environment(\.dismiss) private var dismiss
     let sudoCommand: String
     let onCopy: () -> Void
     let onLoad: () -> Void
@@ -389,9 +393,9 @@ struct SetupSheetView: View {
             .padding(.horizontal, 32)
             .padding(.bottom, 8)
 
-            // Quit button
-            Button(action: { DispatchQueue.main.async { NSApp.terminate(nil) } }) {
-                Text("Quit WiFi/Check")
+            // Dismiss button — use ⌘Q to quit, or File > Setup to return here
+            Button(action: { dismiss() }) {
+                Text("Dismiss")
                     .foregroundColor(.secondary)
             }
             .buttonStyle(.plain)

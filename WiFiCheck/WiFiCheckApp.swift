@@ -17,8 +17,18 @@ struct WiFiCheckApp: App {
         }
         .commands {
             SidebarCommands()
+            CommandGroup(after: .appInfo) {
+                Button("Setup…") {
+                    NotificationCenter.default.post(name: .showSetupSheet, object: nil)
+                }
+                .keyboardShortcut(",", modifiers: [.command, .shift])
+            }
         }
     }
+}
+
+extension Notification.Name {
+    static let showSetupSheet = Notification.Name("com.ciretose.WiFiCheck.showSetupSheet")
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
