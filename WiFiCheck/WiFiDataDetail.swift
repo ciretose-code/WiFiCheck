@@ -403,7 +403,7 @@ struct ChannelHistoryView: View {
     private func bandColor(for channel: Int) -> Color {
         switch channel {
         case 1...14: return Color.orange
-        case 36...177: return Color(red: 0.1, green: 0.5, blue: 0.9)
+        case 36...177: return Color.blue
         default: return Color.purple
         }
     }
@@ -418,6 +418,7 @@ struct ChannelHistoryView: View {
                         .font(.caption).bold()
                         .foregroundColor(.white)
                         .padding(.horizontal, 8).padding(.vertical, 4)
+                        .frame(minWidth: 36)
                         .background(Color.black)
                         .clipShape(Capsule())
                         .accessibilityLabel("Channel \(cd.Channel)")
@@ -425,6 +426,7 @@ struct ChannelHistoryView: View {
                         .font(.caption).bold()
                         .foregroundColor(.white)
                         .padding(.horizontal, 8).padding(.vertical, 4)
+                        .frame(minWidth: 62)
                         .background(bandColor(for: cd.Channel))
                         .clipShape(Capsule())
                         .accessibilityLabel(frequencyBand(for: cd.Channel))
