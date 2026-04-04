@@ -545,8 +545,7 @@ struct BSSLocationMapView: View {
                 Marker("", coordinate: coordinate)
             }
             .mapStyle(.standard(elevation: .flat))
-            .frame(maxWidth: .infinity)
-            .aspectRatio(200.0/130.0, contentMode: .fit)
+            .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 120)
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .overlay(alignment: Alignment.bottomTrailing) {
                 Button {
