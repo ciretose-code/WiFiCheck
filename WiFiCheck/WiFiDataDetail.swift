@@ -20,6 +20,10 @@ struct WiFiDataDetail: View {
     @State private var pwdIcon = "lock"
     @State private var cachedPassword: String? = nil
 
+    @State private var showDeleteConfirm = false
+    @State private var deleteError: String? = nil
+    var onDelete: (() -> Void)? = nil
+
     // Password auto-hide timer
     @State private var passwordTimer: Timer?
     @State private var remainingSeconds: Int = Constants.passwordAutoHideDelay
@@ -96,6 +100,15 @@ struct WiFiDataDetail: View {
                             }
                             .buttonStyle(WiFiButtonStyle(disabled: (wifidata.securityType() == .open)))
                             .accessibilityLabel(showPassword ? "Hide network password" : "Show network password")
+                            Spacer().frame(height: 8)
+                            Button(action: { showDeleteConfirm = true }) {
+                                HStack {
+                                    Image(systemName: "minus.circle")
+                                    Text("Remove Network")
+                                }
+                            }
+                            .buttonStyle(WiFiButtonStyle(delete: true))
+                            .accessibilityLabel("Remove \(wifidata.ssidString()) from known networks")
                         }
                     }
                 }
@@ -165,6 +178,31 @@ struct WiFiDataDetail: View {
         .onDisappear {
             // Clean up timer when view disappears
             stopPasswordTimer()
+        }
+        .confirmationDialog(
+            "Remove \"\(wifidata.ssidString())\"?",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Remove Network", role: .destructive) {
+                let success = NetworkSetup.shared.deleteNetwork(wifidata.ssidString())
+                if success {
+                    onDelete?()
+                } else {
+                    deleteError = "Could not remove \"\(wifidata.ssidString())\". Make sure the network exists in your preferred networks list."
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will remove the network from your saved networks and delete its password from the Keychain. You can rejoin the network at any time.")
+        }
+        .alert("Remove Failed", isPresented: Binding(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button("OK", role: .cancel) { deleteError = nil }
+        } message: {
+            Text(deleteError ?? "")
         }
     }
 

@@ -283,7 +283,10 @@ struct WiFiListPane: View {
             }
             List(selection: $listSelection) {
                     ForEach(filteredNetworks) { wifidata in
-                        NavigationLink(destination: WiFiDataDetail(wifidata: wifidata)){
+                        NavigationLink(destination: WiFiDataDetail(wifidata: wifidata, onDelete: {
+                            loadWiFiData()
+                            listSelection = nil
+                        })){
                             WiFiDataRow(wifidata: wifidata)
                         }
                     }
