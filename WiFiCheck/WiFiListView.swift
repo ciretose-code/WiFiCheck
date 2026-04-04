@@ -120,6 +120,7 @@ struct WiFiListPane: View {
     func installAndLoadViaHelper() {
         helperInstalling = true
         helperError = nil
+        // installHelper must run on main thread (presents auth dialog)
         WiFiDataManager.shared.installHelper { success, error in
             if success {
                 WiFiDataManager.shared.loadViaHelper { networks in
@@ -134,7 +135,11 @@ struct WiFiListPane: View {
                 }
             } else {
                 helperInstalling = false
-                helperError = error?.localizedDescription ?? "Installation failed."
+                if let err = error as NSError? {
+                    helperError = "\(err.localizedDescription) (\(err.domain) \(err.code))"
+                } else {
+                    helperError = error?.localizedDescription ?? "Installation failed."
+                }
             }
         }
     }
@@ -385,7 +390,7 @@ struct SetupSheetView: View {
             .padding(.bottom, 8)
 
             // Quit button
-            Button(action: { NSApp.terminate(nil) }) {
+            Button(action: { DispatchQueue.main.async { NSApp.terminate(nil) } }) {
                 Text("Quit WiFi/Check")
                     .foregroundColor(.secondary)
             }

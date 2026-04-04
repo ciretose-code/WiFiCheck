@@ -545,28 +545,26 @@ class WiFiDataManager {
 
     /// Register the daemon with the system (shows macOS admin-auth sheet).
     /// Calls `completion` on the main thread with success/failure.
+    /// Must be called from the main thread — SMAppService presents UI.
     func installHelper(completion: @escaping (Bool, Error?) -> Void) {
-        DispatchQueue.global(qos: .userInitiated).async {
-            let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
-            do {
-                try service.register()
-                DispatchQueue.main.async { completion(true, nil) }
-            } catch {
-                DispatchQueue.main.async { completion(false, error) }
-            }
+        assert(Thread.isMainThread, "installHelper must be called on the main thread")
+        let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
+        do {
+            try service.register()
+            completion(true, nil)
+        } catch {
+            completion(false, error)
         }
     }
 
     /// Unregister the daemon (for debugging / uninstall).
     func uninstallHelper(completion: @escaping (Bool, Error?) -> Void) {
-        DispatchQueue.global(qos: .userInitiated).async {
-            let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
-            do {
-                try service.unregister()
-                DispatchQueue.main.async { completion(true, nil) }
-            } catch {
-                DispatchQueue.main.async { completion(false, error) }
-            }
+        let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
+        do {
+            try service.unregister()
+            completion(true, nil)
+        } catch {
+            completion(false, error)
         }
     }
 
