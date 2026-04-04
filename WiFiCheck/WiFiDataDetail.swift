@@ -547,6 +547,7 @@ struct BSSLocationMapView: View {
             .mapStyle(.standard(elevation: .flat))
             .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 120)
             .clipShape(RoundedRectangle(cornerRadius: 8))
+            .allowsHitTesting(false)
             .overlay(alignment: Alignment.bottomTrailing) {
                 Button {
                     showExpanded = true
