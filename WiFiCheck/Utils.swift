@@ -182,18 +182,28 @@ class Utils {
         }
     }
 
-    /// Returns the color for a date box based on whether the date exists and the network's security
+    /// Returns a date box color that fades from the system accent color toward gray as the date ages.
     ///
-    /// - Parameters:
-    ///   - wifidata: The WiFi network data
-    ///   - d: The date to check, or nil
-    /// - Returns: Gray if date is nil, otherwise the security color for the network
-    static func getDateBoxColor(_ wifidata: WiFiData, _ d: Date?) -> Color {
-        if d == nil {
-            return Color.gray
-        } else {
-            return getSecurityColor(wifidata)
+    /// - Parameter date: The date to evaluate, or nil for "never"
+    /// - Returns: Full accent color for recent dates, blending toward gray for older dates
+    static func getDateBoxColor(for date: Date?) -> Color {
+        guard let date = date else {
+            return Color(NSColor.systemGray)
         }
+        let days = Date().timeIntervalSince(date) / 86400
+        let fraction: Double
+        switch days {
+        case ..<7:    fraction = 0.0
+        case ..<30:   fraction = 0.15
+        case ..<90:   fraction = 0.35
+        case ..<180:  fraction = 0.55
+        case ..<365:  fraction = 0.75
+        default:      fraction = 0.90
+        }
+        guard let blended = NSColor.controlAccentColor.blended(withFraction: fraction, of: NSColor.systemGray) else {
+            return fraction > 0.5 ? Color(NSColor.systemGray) : Color.accentColor
+        }
+        return Color(blended)
     }
     
     /// Executes a command-line utility and returns its output

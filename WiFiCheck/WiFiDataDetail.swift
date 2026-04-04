@@ -200,11 +200,11 @@ struct WiFiDataDetail: View {
                         Text("Last Joined from this Mac").font(.headline)
                         HStack {
                             VStack{
-                                WiFiDateBox(date: wifidata.JoinedBySystemAt, color: Color.accentColor)
+                                WiFiDateBox(date: wifidata.JoinedBySystemAt, color: Utils.getDateBoxColor(for: wifidata.JoinedBySystemAt))
                                 Text("Automatically").foregroundColor(.secondary)
                             }
                             VStack {
-                                WiFiDateBox(date: wifidata.JoinedByUserAt, color: Color.accentColor)
+                                WiFiDateBox(date: wifidata.JoinedByUserAt, color: Utils.getDateBoxColor(for: wifidata.JoinedByUserAt))
                                 Text("Manually").foregroundColor(.secondary)
                             }
                         }
@@ -213,7 +213,7 @@ struct WiFiDataDetail: View {
                     VStack(alignment: .trailing) {
                         VStack(alignment: .center) {
                             Text("Added").font(.headline)
-                            WiFiDateBox(date: wifidata.AddedAt, color: Color.accentColor)
+                            WiFiDateBox(date: wifidata.AddedAt, color: Utils.getDateBoxColor(for: wifidata.AddedAt))
                             Text("\(wifidata.AddReason)").foregroundColor(.secondary)
                         }
                     }
@@ -223,21 +223,21 @@ struct WiFiDataDetail: View {
                     if let discovered = wifidata.LastDiscoveredAt {
                         VStack(alignment: .center) {
                             Text("Last Discovered").font(.subheadline).foregroundColor(.secondary)
-                            WiFiDateBox(date: discovered, color: Utils.getDateBoxColor(wifidata, wifidata.LastDiscoveredAt))
+                            WiFiDateBox(date: discovered, color: Utils.getDateBoxColor(for: wifidata.LastDiscoveredAt))
                         }
                         Spacer()
                     }
                     if let updated = wifidata.UpdatedAt {
                         VStack(alignment: .center) {
                             Text("Profile Updated").font(.subheadline).foregroundColor(.secondary)
-                            WiFiDateBox(date: updated, color: Utils.getDateBoxColor(wifidata, wifidata.UpdatedAt))
+                            WiFiDateBox(date: updated, color: Utils.getDateBoxColor(for: wifidata.UpdatedAt))
                         }
                         Spacer()
                     }
                     if wifidata.LastDisconnectTimestamp != nil {
                         VStack(alignment: .center) {
                             Text("Last Disconnect").font(.subheadline).foregroundColor(.secondary)
-                            WiFiDateBox(date: wifidata.LastDisconnectTimestamp, color: Utils.getDateBoxColor(wifidata, wifidata.LastDisconnectTimestamp))
+                            WiFiDateBox(date: wifidata.LastDisconnectTimestamp, color: Utils.getDateBoxColor(for: wifidata.LastDisconnectTimestamp))
                             Text(wifidata.disconnectReasonText())
                                 .font(.caption)
                                 .foregroundColor(.secondary)
