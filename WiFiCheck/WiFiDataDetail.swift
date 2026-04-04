@@ -7,7 +7,40 @@
 
 import SwiftUI
 import MapKit
+import CoreLocation
 
+
+// MARK: - Geocode Cache
+
+final class GeocodeCache {
+    static let shared = GeocodeCache()
+    private init() {}
+
+    private var cache: [String: String] = [:]
+
+    private func key(lat: Double, lon: Double) -> String {
+        // 4 decimal places ≈ 11 m resolution — more than enough for city-level results
+        String(format: "%.4f,%.4f", lat, lon)
+    }
+
+    /// Returns a cached place name immediately, or performs a reverse geocode and caches the result.
+    /// Completion is always called on the main queue.
+    func resolve(lat: Double, lon: Double, completion: @escaping (String?) -> Void) {
+        let k = key(lat: lat, lon: lon)
+        if let cached = cache[k] {
+            completion(cached)
+            return
+        }
+        CLGeocoder().reverseGeocodeLocation(CLLocation(latitude: lat, longitude: lon)) { [self] placemarks, _ in
+            let parts = [placemarks?.first?.locality,
+                         placemarks?.first?.administrativeArea,
+                         placemarks?.first?.country].compactMap { $0 }
+            let name = parts.isEmpty ? nil : parts.joined(separator: ", ")
+            if let name { self.cache[k] = name }
+            DispatchQueue.main.async { completion(name) }
+        }
+    }
+}
 
 struct WiFiDataDetail: View {
     var wifidata: WiFiData = WiFiDataManager.shared.getWiFiDataList().first ?? WiFiData()
@@ -164,11 +197,11 @@ struct WiFiDataDetail: View {
                         Text("Last Joined from this Mac").font(.headline)
                         HStack {
                             VStack{
-                                WiFiDateBox(date: wifidata.JoinedBySystemAt, color: Utils.getDateBoxColor(wifidata, wifidata.JoinedBySystemAt))
+                                WiFiDateBox(date: wifidata.JoinedBySystemAt, color: Color.accentColor)
                                 Text("Automatically").foregroundColor(.secondary)
                             }
                             VStack {
-                                WiFiDateBox(date: wifidata.JoinedByUserAt, color: Utils.getDateBoxColor(wifidata, wifidata.JoinedByUserAt))
+                                WiFiDateBox(date: wifidata.JoinedByUserAt, color: Color.accentColor)
                                 Text("Manually").foregroundColor(.secondary)
                             }
                         }
@@ -176,8 +209,8 @@ struct WiFiDataDetail: View {
                     Spacer()
                     VStack(alignment: .trailing) {
                         VStack(alignment: .center) {
-                            Text("Added On").font(.headline)
-                                WiFiDateBox(date: wifidata.AddedAt, color: Utils.getDateBoxColor(wifidata, wifidata.AddedAt))
+                            Text("Added").font(.headline)
+                            WiFiDateBox(date: wifidata.AddedAt, color: Color.accentColor)
                             Text("\(wifidata.AddReason)").foregroundColor(.secondary)
                         }
                     }
@@ -187,21 +220,21 @@ struct WiFiDataDetail: View {
                     if let discovered = wifidata.LastDiscoveredAt {
                         VStack(alignment: .center) {
                             Text("Last Discovered").font(.headline)
-                            WiFiDateBox(date: discovered, color: .secondary)
+                            WiFiDateBox(date: discovered, color: Utils.getDateBoxColor(wifidata, wifidata.LastDiscoveredAt))
                         }
                         Spacer()
                     }
                     if let updated = wifidata.UpdatedAt {
                         VStack(alignment: .center) {
                             Text("Profile Updated").font(.headline)
-                            WiFiDateBox(date: updated, color: .secondary)
+                            WiFiDateBox(date: updated, color: Utils.getDateBoxColor(wifidata, wifidata.UpdatedAt))
                         }
                         Spacer()
                     }
                     if wifidata.LastDisconnectTimestamp != nil {
                         VStack(alignment: .center) {
                             Text("Last Disconnect").font(.headline)
-                            WiFiDateBox(date: wifidata.LastDisconnectTimestamp, color: .secondary)
+                            WiFiDateBox(date: wifidata.LastDisconnectTimestamp, color: Utils.getDateBoxColor(wifidata, wifidata.LastDisconnectTimestamp))
                             Text(wifidata.disconnectReasonText())
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -552,18 +585,12 @@ struct BSSLocationMapView: View {
             }
         }
         .onAppear {
-            let loc = CLLocation(latitude: latitude, longitude: longitude)
-            CLGeocoder().reverseGeocodeLocation(loc) { placemarks, _ in
-                guard let p = placemarks?.first else { return }
-                let parts = [p.locality, p.administrativeArea, p.country]
-                    .compactMap { $0 }
-                if !parts.isEmpty {
-                    placeName = parts.joined(separator: ", ")
-                }
+            GeocodeCache.shared.resolve(lat: latitude, lon: longitude) { name in
+                placeName = name
             }
         }
         .sheet(isPresented: $showExpanded) {
-            LocationMapSheet(coordinate: coordinate, accuracy: accuracy, coordinateText: coordinateText)
+            LocationMapSheet(coordinate: coordinate, accuracy: accuracy, coordinateText: coordinateText, placeName: placeName)
         }
     }
 }
@@ -573,9 +600,9 @@ struct LocationMapSheet: View {
     let coordinate: CLLocationCoordinate2D
     let accuracy: Double?
     let coordinateText: String
+    let placeName: String?
 
     @Environment(\.dismiss) private var dismiss
-    @State private var placeName: String? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -616,14 +643,6 @@ struct LocationMapSheet: View {
                     .keyboardShortcut(.defaultAction)
             }
             .padding()
-        }
-        .onAppear {
-            let loc = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-            CLGeocoder().reverseGeocodeLocation(loc) { placemarks, _ in
-                guard let p = placemarks?.first else { return }
-                let parts = [p.locality, p.administrativeArea, p.country].compactMap { $0 }
-                if !parts.isEmpty { placeName = parts.joined(separator: ", ") }
-            }
         }
     }
 }
@@ -683,4 +702,3 @@ struct WiFiDataDetail_Previews: PreviewProvider {
         WiFiDataDetail(wifidata: WiFiDataManager.shared.getWiFiDataList().first ?? WiFiData())
     }
 }
-
