@@ -45,9 +45,6 @@ final class GeocodeCache {
 struct WiFiDataDetail: View {
     var wifidata: WiFiData = WiFiDataManager.shared.getWiFiDataList().first ?? WiFiData()
 
-    var circleSize: CGFloat = 26.0
-    var circleColor: Color = Color(white:0.4, opacity: 0.2)
-
     @State private var showPassword = false
     @State private var pwdShown = false
     @State private var pwdText = "Show Password"
@@ -261,7 +258,7 @@ struct WiFiDataDetail: View {
                                 Text(wifidata.captiveLogin())
                                     .font(.caption).foregroundColor(.white)
                                     .padding(.horizontal, 8).padding(.vertical, 4)
-                                    .background(Color(NSColor.systemBrown))
+                                    .background(Color(NSColor.systemIndigo))
                                     .clipShape(Capsule())
                             }
                         }
@@ -546,7 +543,8 @@ struct BSSLocationMapView: View {
                 Marker("", coordinate: coordinate)
             }
             .mapStyle(.standard(elevation: .flat))
-            .frame(width: 200, height: 130)
+            .frame(maxWidth: .infinity)
+            .aspectRatio(200.0/130.0, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .overlay(alignment: Alignment.bottomTrailing) {
                 Button {
@@ -607,7 +605,7 @@ struct LocationMapSheet: View {
                 Marker("Access Point", coordinate: coordinate)
             }
             .mapStyle(.standard)
-            .frame(minWidth: 520, minHeight: 420)
+            .frame(minWidth: 400, minHeight: 320)
 
             Divider()
 

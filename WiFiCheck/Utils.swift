@@ -146,7 +146,7 @@ class Utils {
     /// Color mapping:
     /// - WPA3: Green (most secure)
     /// - WPA2/WPA: Teal (secure)
-    /// - WEP: Yellow (weak security)
+    /// - WEP: Orange (weak security)
     /// - Open: Red (no security)
     /// - Unknown: Gray
     ///
@@ -157,17 +157,17 @@ class Utils {
         var securityColor: Color = Color.gray
         switch stype {
         case .wpa3:
-            securityColor = Color.green
+            securityColor = Color(NSColor.systemGreen)
         case .wpa2:
             securityColor = Color(NSColor.systemTeal)
         case .wpa:
             securityColor = Color(NSColor.systemTeal)
         case .wep:
-            securityColor = Color.yellow
+            securityColor = Color(NSColor.systemOrange)
         case .open:
-            securityColor = Color.red
+            securityColor = Color(NSColor.systemRed)
         case .unknown:
-            securityColor = Color.gray
+            securityColor = Color(NSColor.systemGray)
         }
         return securityColor
     }
