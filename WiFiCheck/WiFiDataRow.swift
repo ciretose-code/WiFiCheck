@@ -25,6 +25,20 @@ struct WiFiDataRow: View {
                     .renderingMode(.template)
                     .font(.caption)
                     .help("Security: \(wifidata.getSecurityName())")
+                if wifidata.PersonalHotspot {
+                    Image(systemName: "personalhotspot")
+                        .renderingMode(.template)
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                        .help("Personal Hotspot")
+                }
+                if wifidata.TemporarilyDisabled {
+                    Image(systemName: "wifi.slash")
+                        .renderingMode(.template)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .help("Temporarily Disabled")
+                }
             }
         }
         .accentColor(securityColor)

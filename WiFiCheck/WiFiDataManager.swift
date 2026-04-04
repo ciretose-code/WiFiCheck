@@ -59,6 +59,9 @@ class WiFiDataManager {
     let Moving = "Moving"
     let PersonalHotspot = "PersonalHotspot"
     let PrivateMACAddressEvaluatedAt = "PrivateMACAddressEvaluatedAt"
+    let PrivacyProxyEnabled = "PrivacyProxyEnabled"
+    let PrivateMACAddressEvaluationState = "PrivateMACAddressEvaluationState"
+    let UserPreferredNetworkNames = "UserPreferredNetworkNames"
 
     // BSSList keys
     let BSSList = "BSSList"
@@ -69,6 +72,9 @@ class WiFiDataManager {
     let DHCPServerID = "DHCPServerID"
     let IPv4NetworkSignature = "IPv4NetworkSignature"
     let IPv6NetworkSignature = "IPv6NetworkSignature"
+    let DHCPv6ServerID = "DHCPv6ServerID"
+    let Colocated5GHzRNRChannel = "colocated5GHzRNRChannel"
+    let Colocated5GHzRNRChannelFlags = "colocated5GHzRNRChannelFlags"
     let Location = "Location"
     let LocationLatitude = "LocationLatitude"
     let LocationLongitude = "LocationLongitude"
@@ -165,6 +171,11 @@ class WiFiDataManager {
         }
         return value as? Data
     }
+
+    private func findStringArray(_ value: AnyObject?) -> [String] {
+        guard let arr = value as? [String] else { return [] }
+        return arr
+    }
     
     
     fileprivate func findCaptiveProfile(_ value: AnyObject?) -> Array<WiFiData.CaptiveProfileData> {
@@ -194,6 +205,9 @@ class WiFiDataManager {
             bss.DHCPServerID = findData(dict[DHCPServerID])
             bss.IPv4NetworkSignature = findString(dict[IPv4NetworkSignature])
             bss.IPv6NetworkSignature = findString(dict[IPv6NetworkSignature])
+            bss.DHCPv6ServerID = findData(dict[DHCPv6ServerID])
+            bss.Colocated5GHzRNRChannel = findInt(dict[Colocated5GHzRNRChannel])
+            bss.Colocated5GHzRNRChannelFlags = findInt(dict[Colocated5GHzRNRChannelFlags])
             if let loc = dict[Location] as? Dictionary<String,AnyObject> {
                 bss.LocationLatitude = loc[LocationLatitude] as? Double
                 bss.LocationLongitude = loc[LocationLongitude] as? Double
@@ -444,6 +458,9 @@ class WiFiDataManager {
             wifidata.Moving = findBool(value[Moving])
             wifidata.PersonalHotspot = findBool(value[PersonalHotspot])
             wifidata.PrivateMACAddressEvaluatedAt = findDate(value[PrivateMACAddressEvaluatedAt])
+            wifidata.PrivacyProxyEnabled = findBool(value[PrivacyProxyEnabled])
+            wifidata.PrivateMACAddressEvaluationState = findString(value[PrivateMACAddressEvaluationState])
+            wifidata.UserPreferredNetworkNames = findStringArray(value[UserPreferredNetworkNames])
 
             // BSSList — top-level array of access points
             wifidata.BSSList = findBSSList(value[BSSList])

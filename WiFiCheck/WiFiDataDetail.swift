@@ -29,6 +29,46 @@ struct WiFiDataDetail: View {
     @State private var remainingSeconds: Int = Constants.passwordAutoHideDelay
     private let autoHideDelay: Int = Constants.passwordAutoHideDelay
 
+    @ViewBuilder
+    private var badgeView: some View {
+        let hasBadges = wifidata.PersonalHotspot || wifidata.TemporarilyDisabled ||
+                        wifidata.Moving || wifidata.SystemMode || wifidata.PrivacyProxyEnabled
+        if hasBadges {
+            HStack {
+                if wifidata.PersonalHotspot {
+                    Label("Personal Hotspot", systemImage: "personalhotspot")
+                        .font(.caption).foregroundColor(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Color.orange).clipShape(Capsule())
+                }
+                if wifidata.TemporarilyDisabled {
+                    Label("Temporarily Disabled", systemImage: "wifi.slash")
+                        .font(.caption).foregroundColor(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Color.red).clipShape(Capsule())
+                }
+                if wifidata.Moving {
+                    Label("Moving", systemImage: "figure.walk")
+                        .font(.caption).foregroundColor(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Color.blue).clipShape(Capsule())
+                }
+                if wifidata.SystemMode {
+                    Label("iCloud Sync", systemImage: "icloud")
+                        .font(.caption).foregroundColor(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Color.blue).clipShape(Capsule())
+                }
+                if wifidata.PrivacyProxyEnabled {
+                    Label("Privacy Proxy", systemImage: "shield.checkered")
+                        .font(.caption).foregroundColor(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Color.green).clipShape(Capsule())
+                }
+            }
+        }
+    }
+
     var body: some View {
 
         ScrollView {
@@ -71,7 +111,10 @@ struct WiFiDataDetail: View {
                                     .font(.subheadline)
                             }
                             .accessibilityLabel("Network visibility: \(wifidata.hiddenStateText())")
+                            Spacer()
+                            badgeView
                         }
+                        Spacer()
                     }
                     Spacer()
                     VStack(alignment: .trailing) {
@@ -133,10 +176,34 @@ struct WiFiDataDetail: View {
                     VStack(alignment: .trailing) {
                         VStack(alignment: .center) {
                             Text("Added On").font(.headline)
-//                            VStack(alignment: .trailing) {
                                 WiFiDateBox(date: wifidata.AddedAt, color: Utils.getDateBoxColor(wifidata, wifidata.AddedAt))
-//                            }
                             Text("\(wifidata.AddReason)").foregroundColor(.secondary)
+                        }
+                    }
+                }
+                Divider().padding(.vertical, 4)
+                HStack {
+                    if let discovered = wifidata.LastDiscoveredAt {
+                        VStack(alignment: .center) {
+                            Text("Last Discovered").font(.headline)
+                            WiFiDateBox(date: discovered, color: .secondary)
+                        }
+                        Spacer()
+                    }
+                    if let updated = wifidata.UpdatedAt {
+                        VStack(alignment: .center) {
+                            Text("Profile Updated").font(.headline)
+                            WiFiDateBox(date: updated, color: .secondary)
+                        }
+                        Spacer()
+                    }
+                    if wifidata.LastDisconnectTimestamp != nil {
+                        VStack(alignment: .center) {
+                            Text("Last Disconnect").font(.headline)
+                            WiFiDateBox(date: wifidata.LastDisconnectTimestamp, color: .secondary)
+                            Text(wifidata.disconnectReasonText())
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
                     }
                 }
@@ -145,6 +212,7 @@ struct WiFiDataDetail: View {
                     VStack(alignment: .trailing) {
                         if (wifidata.ChannelHistory.count > 0) {
                             ChannelHistoryView(channelData: wifidata.ChannelHistory)
+                            Spacer()
                         }
                     }
                     if (wifidata.ChannelHistory.count > 0) {
@@ -172,6 +240,8 @@ struct WiFiDataDetail: View {
                     }
                     Spacer()
                 }
+                // Network Details section
+                NetworkDetailsSection(wifidata: wifidata)
             }
             .padding()
         }
@@ -346,6 +416,7 @@ struct ChannelHistoryView: View {
                 Spacer()
             }
         }
+        Spacer()
     }
 }
 
@@ -353,12 +424,123 @@ struct ChannelHistoryView: View {
 
 struct BSSIDListView: View {
     var bssidData: [WiFiData.BSSData]
-    
+
+    private func frequencyBand(for channel: Int) -> String {
+        switch channel {
+        case 1...14: return "2.4 GHz"
+        case 36...177: return "5 GHz"
+        default: return "6 GHz"
+        }
+    }
+
+    private func dhcpServerIP(from data: Data?) -> String? {
+        guard let data = data, data.count == 4 else { return nil }
+        return data.map { String($0) }.joined(separator: ".")
+    }
+
     var body: some View {
-        VStack(alignment: .leading) {
-            Text("BSSID").bold()
-            ForEach(bssidData) { b in
-                Text("\(b.BSSID)")
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Access Points").bold()
+            ForEach(bssidData) { (b: WiFiData.BSSData) in
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(b.BSSID)
+                            .font(.system(.body, design: .monospaced))
+                            .bold()
+                        if b.Channel > 0 {
+                            Text("Ch \(b.Channel)")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .frame(height: 20)
+                                .background(Color.black)
+                                .clipShape(Capsule())
+                            Text(frequencyBand(for: b.Channel))
+                                .font(.caption)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .frame(height: 20)
+                                .background(b.Channel <= 14 ? Color.orange : (b.Channel <= 177 ? Color(red: 0.1, green: 0.5, blue: 0.9) : Color.purple))
+                                .clipShape(Capsule())
+                        }
+                    }
+                    if let lastSeen = b.LastAssociatedAt {
+                        Text("Last seen \(Utils.relativeDateToString(lastSeen) ?? "Unknown")")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    if let ip = dhcpServerIP(from: b.DHCPServerID) {
+                        Text("Router: \(ip)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    if !b.IPv4NetworkSignature.isEmpty {
+                        Text(b.IPv4NetworkSignature)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                    if let lat = b.LocationLatitude, let lon = b.LocationLongitude {
+                        Text("📍 \(String(format: "%.4f", lat)), \(String(format: "%.4f", lon))")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.bottom, 4)
+                if bssidData.last?.id != b.id {
+                    Divider()
+                }
+            }
+        }
+    }
+}
+
+
+struct NetworkDetailsSection: View {
+    var wifidata: WiFiData
+
+    var body: some View {
+        let hasRoaming = !wifidata.RoamingProfileType.isEmpty
+        let hasPrivateMAC = !wifidata.CachedPrivateMACAddress.isEmpty
+        let hasMACEval = !wifidata.PrivateMACAddressEvaluationState.isEmpty
+        let hasBrokenBackhaul = !wifidata.BrokenBackhaulState.isEmpty && wifidata.BrokenBackhaulState != "not broken"
+        let hasPreferredNames = !wifidata.UserPreferredNetworkNames.isEmpty
+
+        if hasRoaming || hasPrivateMAC || hasMACEval || hasBrokenBackhaul || hasPreferredNames {
+            Divider()
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Network Details").bold()
+                if hasRoaming {
+                    HStack {
+                        Text("Roaming Profile").foregroundColor(.secondary).frame(width: 160, alignment: .leading)
+                        Text(wifidata.RoamingProfileType).bold()
+                    }
+                }
+                if hasPrivateMAC {
+                    HStack {
+                        Text("Private MAC Address").foregroundColor(.secondary).frame(width: 160, alignment: .leading)
+                        Text(wifidata.CachedPrivateMACAddress).bold()
+                    }
+                }
+                if hasMACEval {
+                    HStack {
+                        Text("MAC Evaluation State").foregroundColor(.secondary).frame(width: 160, alignment: .leading)
+                        Text(wifidata.PrivateMACAddressEvaluationState).bold()
+                    }
+                }
+                if hasBrokenBackhaul {
+                    HStack {
+                        Text("Backhaul State").foregroundColor(.secondary).frame(width: 160, alignment: .leading)
+                        Text(wifidata.BrokenBackhaulState).bold()
+                    }
+                }
+                if hasPreferredNames {
+                    HStack {
+                        Text("Preferred Names").foregroundColor(.secondary).frame(width: 160, alignment: .leading)
+                        Text(wifidata.UserPreferredNetworkNames.joined(separator: ", ")).bold()
+                    }
+                }
             }
         }
     }

@@ -42,6 +42,9 @@ struct WiFiData: Hashable, Codable, Identifiable {
     var Moving: Bool = false
     var PersonalHotspot: Bool = false
     var PrivateMACAddressEvaluatedAt: Date? = nil
+    var PrivacyProxyEnabled: Bool = false
+    var PrivateMACAddressEvaluationState: String = ""
+    var UserPreferredNetworkNames: [String] = []
 
     // BSSList — top-level array in the real plist
     var BSSList: Array<BSSData> = []
@@ -90,6 +93,9 @@ struct WiFiData: Hashable, Codable, Identifiable {
         var DHCPServerID: Data? = nil
         var IPv4NetworkSignature: String = ""
         var IPv6NetworkSignature: String = ""
+        var DHCPv6ServerID: Data? = nil
+        var Colocated5GHzRNRChannel: Int = -1
+        var Colocated5GHzRNRChannelFlags: Int = -1
         var LocationLatitude: Double? = nil
         var LocationLongitude: Double? = nil
         var LocationAccuracy: Double? = nil
@@ -195,6 +201,23 @@ struct WiFiData: Hashable, Codable, Identifiable {
             return "eye.slash"
         } else {
             return "eye"
+        }
+    }
+
+    func disconnectReasonText() -> String {
+        switch LastDisconnectReason {
+        case -1: return "Unknown"
+        case 0: return "No reason"
+        case 1: return "Unspecified"
+        case 2: return "Previous auth invalid"
+        case 3: return "Leaving BSS"
+        case 4: return "Inactivity"
+        case 5: return "Too many associated stations"
+        case 8: return "Disassociated"
+        case 11: return "Not in BSS range"
+        case 15: return "4-way handshake timeout"
+        case 23: return "IEEE 802.1X auth failed"
+        default: return "Code \(LastDisconnectReason)"
         }
     }
 }
