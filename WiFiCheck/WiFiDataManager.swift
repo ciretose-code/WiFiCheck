@@ -93,6 +93,9 @@ class WiFiDataManager {
     
     var wifidatalist: Array<WiFiData> = Array<WiFiData>()
     private(set) var loadedFromDrop: Bool = false
+    /// True when data was loaded from an arbitrary plist file (drag-and-drop or File > Open).
+    /// False when loaded via the privileged helper (live system data).
+    private(set) var isLoadedFromFile: Bool = false
 
     init() {
         validateSystemPaths()
@@ -497,6 +500,7 @@ class WiFiDataManager {
         wifidatalist = parsed
         wifidatalist = sortByPreferredOrder()
         loadedFromDrop = true
+        isLoadedFromFile = true
         Self.logger.info("parseDroppedData: loaded \(parsed.count, privacy: .public) networks")
         return true
     }
@@ -521,6 +525,7 @@ class WiFiDataManager {
         wifidatalist = parsed
         wifidatalist = sortByPreferredOrder()
         loadedFromDrop = true
+        isLoadedFromFile = true
         Self.logger.info("loadFromURL: loaded \(parsed.count, privacy: .public) networks from \(url.path, privacy: .public)")
         return true
     }
@@ -696,6 +701,7 @@ class WiFiDataManager {
             self.wifidatalist = parsed
             self.wifidatalist = self.sortByPreferredOrder()
             self.loadedFromDrop = true
+            self.isLoadedFromFile = false
             finish(parsed, nil)
         }
     }

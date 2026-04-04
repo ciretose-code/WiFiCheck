@@ -170,19 +170,23 @@ struct WiFiDataDetail: View {
                                         Image(systemName: pwdIcon)
                                         Text(pwdText)
                                     }
+                                    .frame(minWidth: 160)
                                 }
                                 .buttonStyle(WiFiButtonStyle())
                                 .accessibilityLabel(showPassword ? "Hide network password" : "Show network password")
                                 Spacer().frame(height: 8)
                             }
-                            Button(action: { showDeleteConfirm = true }) {
-                                HStack {
-                                    Image(systemName: "minus.circle")
-                                    Text("Remove Network")
+                            if !WiFiDataManager.shared.isLoadedFromFile {
+                                Button(action: { showDeleteConfirm = true }) {
+                                    HStack {
+                                        Image(systemName: "minus.circle")
+                                        Text("Remove Network")
+                                    }
+                                    .frame(minWidth: 160)
                                 }
+                                .buttonStyle(WiFiButtonStyle())
+                                .accessibilityLabel("Remove \(wifidata.ssidString()) from known networks")
                             }
-                            .buttonStyle(WiFiButtonStyle(delete: true))
-                            .accessibilityLabel("Remove \(wifidata.ssidString()) from known networks")
                         }
                     }
                 }
