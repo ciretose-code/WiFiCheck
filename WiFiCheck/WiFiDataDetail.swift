@@ -129,17 +129,12 @@ struct WiFiDataDetail: View {
                                 .clipShape(Capsule())
                                 .accessibilityLabel("Security: \(wifidata.getSecurityName())")
                             Spacer()
-                            Label {
-                                Text(wifidata.hiddenStateText())
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            } icon: {
-                                Image(systemName: wifidata.hiddenStateImage())
-                                    .renderingMode(.template)
-                                    .foregroundColor(.secondary)
-                                    .font(.subheadline)
-                            }
-                            .accessibilityLabel("Network visibility: \(wifidata.hiddenStateText())")
+                            Label(wifidata.hiddenStateText(), systemImage: wifidata.hiddenStateImage())
+                                .font(.caption).foregroundColor(.white)
+                                .padding(.horizontal, 8).padding(.vertical, 4)
+                                .background(wifidata.Hidden ? Color.black : Color.green)
+                                .clipShape(Capsule())
+                                .accessibilityLabel("Network visibility: \(wifidata.hiddenStateText())")
                             Spacer()
                             badgeView
                         }
