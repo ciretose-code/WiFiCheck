@@ -246,6 +246,7 @@ struct WiFiListPane: View {
     }
 
     var body: some View {
+        let networks = filteredNetworks
         VStack(alignment: .leading) {
             HStack {
                 Text("Sort:").padding(.leading, 3).foregroundColor(.secondary)
