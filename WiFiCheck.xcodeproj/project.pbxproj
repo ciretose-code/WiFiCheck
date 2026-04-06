@@ -546,7 +546,7 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				INFOPLIST_FILE = WiFiCheck/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = WiFiCheck;
+				INFOPLIST_KEY_CFBundleDisplayName = "WiFi Check";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -598,7 +598,7 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				INFOPLIST_FILE = WiFiCheck/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = WiFiCheck;
+				INFOPLIST_KEY_CFBundleDisplayName = "WiFi Check";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (

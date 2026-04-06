@@ -438,7 +438,7 @@ struct SetupSheetView: View {
                 Image(systemName: "lock.rectangle.stack")
                     .font(.system(size: 48))
                     .foregroundColor(.secondary)
-                Text("WiFiCheck Setup")
+                Text("WiFi Check Setup")
                     .font(.title)
                     .fontWeight(.semibold)
                 Text("The system WiFi file is protected by macOS and requires elevated access to read.")
@@ -468,7 +468,7 @@ struct SetupSheetView: View {
                             .fixedSize(horizontal: false, vertical: true)
                         VStack(alignment: .leading, spacing: 4) {
                             Label("Enter your admin password if prompted", systemImage: "1.circle.fill")
-                            Label("Enable WiFiCheck in System Settings → Login Items → App Background Activity", systemImage: "2.circle.fill")
+                            Label("Enable WiFi Check in System Settings → Login Items → App Background Activity", systemImage: "2.circle.fill")
                             Label("Grant Full Disk Access to the helper binary", systemImage: "3.circle.fill")
                         }
                         .font(.caption)
@@ -503,7 +503,7 @@ struct SetupSheetView: View {
                                     .foregroundColor(.green)
                                     .font(.caption)
                                     .padding(.top, 1)
-                                Text("Helper registered! System Settings opened — enable WiFiCheck under **Privacy & Security → Login Items & Extensions**, then click below.")
+                                Text("Helper registered! System Settings opened — enable WiFi Check under **Privacy & Security → Login Items & Extensions**, then click below.")
                                     .font(.caption)
                                     .foregroundColor(.primary)
                                     .multilineTextAlignment(.leading)
@@ -799,7 +799,7 @@ struct WiFiDetailPane: View {
                     .font(.system(size: 60))
                     .foregroundStyle(Color.accentColor)
 
-                Text("WiFiCheck")
+                Text("WiFi Check")
                     .font(.title)
                     .fontWeight(.semibold)
 

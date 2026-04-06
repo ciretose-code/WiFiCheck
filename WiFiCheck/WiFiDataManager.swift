@@ -632,7 +632,7 @@ class WiFiDataManager {
         code: 100,
         userInfo: [NSLocalizedDescriptionKey:
             "The helper is registered and System Settings has been opened. " +
-            "Enable WiFiCheck under Privacy & Security → Login Items & Extensions, then click Install Helper again."]
+            "Enable WiFi Check under Privacy & Security → Login Items & Extensions, then click Install Helper again."]
     )
 
     /// Unregister the daemon (for debugging / uninstall).
