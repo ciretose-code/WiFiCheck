@@ -12,7 +12,7 @@ import CoreLocation
 
 // MARK: - Geocode Cache
 
-final class GeocodeCache {
+actor GeocodeCache {
     static let shared = GeocodeCache()
     private init() {}
 
