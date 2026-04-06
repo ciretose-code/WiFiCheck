@@ -23,22 +23,16 @@ final class GeocodeCache {
         String(format: "%.4f,%.4f", lat, lon)
     }
 
-    /// Returns a cached place name immediately, or performs a reverse geocode and caches the result.
-    /// Completion is always called on the main queue.
-    func resolve(lat: Double, lon: Double, completion: @escaping (String?) -> Void) {
+    /// Returns a cached place name, or performs a reverse geocode and caches the result.
+    func resolve(lat: Double, lon: Double) async -> String? {
         let k = key(lat: lat, lon: lon)
-        if let cached = cache[k] {
-            completion(cached)
-            return
-        }
-        CLGeocoder().reverseGeocodeLocation(CLLocation(latitude: lat, longitude: lon)) { [self] placemarks, _ in
-            let parts = [placemarks?.first?.locality,
-                         placemarks?.first?.administrativeArea,
-                         placemarks?.first?.country].compactMap { $0 }
-            let name = parts.isEmpty ? nil : parts.joined(separator: ", ")
-            if let name { self.cache[k] = name }
-            DispatchQueue.main.async { completion(name) }
-        }
+        if let cached = cache[k] { return cached }
+        guard let request = MKReverseGeocodingRequest(location: CLLocation(latitude: lat, longitude: lon)),
+              let mapItems = try? await request.mapItems,
+              let item = mapItems.first else { return nil }
+        let name = item.address?.shortAddress ?? item.address?.fullAddress
+        if let name { cache[k] = name }
+        return name
     }
 }
 
@@ -578,8 +572,8 @@ struct BSSLocationMapView: View {
             }
         }
         .onAppear {
-            GeocodeCache.shared.resolve(lat: latitude, lon: longitude) { name in
-                placeName = name
+            Task {
+                placeName = await GeocodeCache.shared.resolve(lat: latitude, lon: longitude)
             }
         }
         .sheet(isPresented: $showExpanded) {
