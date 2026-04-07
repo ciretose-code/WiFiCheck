@@ -28,7 +28,6 @@ DMG_NAME="${APP_NAME// /-}-${VERSION}"
 
 ARCHIVE_PATH="build/${SCHEME}.xcarchive"
 EXPORT_PATH="build/export"
-APP_PATH="${EXPORT_PATH}/${APP_NAME}.app"
 DMG_PATH="build/${DMG_NAME}.dmg"
 
 echo "▶ ${APP_NAME} ${VERSION} (build ${BUILD}) → ${TAG}"
@@ -52,6 +51,14 @@ xcodebuild -exportArchive \
   -exportPath "$EXPORT_PATH" \
   -exportOptionsPlist "$EXPORT_OPTIONS" \
   -allowProvisioningUpdates
+
+# Locate the exported .app (product name may differ from display name)
+APP_PATH=$(find "$EXPORT_PATH" -maxdepth 1 -name "*.app" | head -1)
+if [ -z "$APP_PATH" ]; then
+  echo "error: no .app found in ${EXPORT_PATH}" >&2
+  exit 1
+fi
+echo "▶ Found app: ${APP_PATH}"
 
 # ── 3. Create DMG (before notarizing so we notarize the DMG directly) ─────────
 echo "▶ Creating DMG..."
