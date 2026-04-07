@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" style="background: antiquewhite;">
+
 <head>
     <meta charset="utf-8">
-    <title>WiFi/Check</title>
+    <title>WiFiCheck</title>
     <meta name="description" content="WiFi Check - A quick way to see all things WiFi on your Mac">
     <meta name="author" content="Eric Wuehler">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -26,144 +27,134 @@
     </style>
 
 </head>
-<body class="d-flex flex-column h-100">
-    <main class="flex-shrink-0">
-<div class="container">
-    <div class="row align-items-center justify-content-center">
-        <div class="p-2">
-            <img class="img-fluid" src="wificheck128.png" />
-        </div>
-        <div class="p-2">
-            <span style="font-size: 42pt; font-weight: bold;">WiFi/Check</span><br/>
-        </div>
-    </div>
-    <div class="row p-2">
-        <p class="lead">WiFi/Check is a simple app that displays information about the WiFi connections
-        made from your Mac.  In the upgrade from Big Sur to Monterrey, Apple changed the
-        permissions on the data file - so it now requires a password to access and any
-        modifications to the file will require a password to make the change.  This also
-        uses the command line utility <code class="small">networksetup</code> for reading preferred order
-        and to remove a WiFi network from the list and if you want to see the password for
-        the WiFi Network stored in your Keychain, it will prompt for a password there, too.
-        </p>
-    </div>
-    <div class="row p-2">
-        <p class="lead">I built this mostly as an exercise to learn SwiftUI and scratch an itch.</p>
-    </div>
-    <div class="row">
-        <img class="img-fluid" src="wificheckwindow.png" />
-    </div>
-    <div class="row p-2 align-items-center justify-content-center">
-        <a class="btn-lg btn-dark" style="background-color: rebeccapurple;" href="https://drive.google.com/uc?export=download&id=1bQco76sNmrAPnL6S0N6udstlD1Opriur">Download</a>
-    </div>
-    <div class="row">
-        &nbsp;
-    </div>
-    <div class="row p-2" style="color: gray">
-        <p>
-        SHA1: f145d0f4661df4d98fdc33b2d473826ae12b25bb<br/>
-        SHA256: d6cef7b581925788011f5810a880078e8690a425f5019b5f6eaf2e1951ab9077
-        </p>
-    </div>
-    <div class="row p-2" style="color: gray">
-        <p>PS: You can validate the hash of the download using <a style="color: rebeccapurple" href="https://hashcheck.app">Hash/Check</a>.</p>
-    </div>
-    <div class="row">
-        &nbsp;
-    </div>
-    <div class="row p-2">
-        <b>FAQ</b>
-    </div>
-    <div class="row p-2">
-        <b>Should I trust an app I download from the internet?</b>
-    </div>
-    <div class="row p-2">
-        <p>You should be skeptical of anything you download from some relatively unknown
-            location. The app has been notarized by Apple - which is not a guarantee
-            that it is "safe", but it means at least Apple has run it through whatever
-            "app checker" they have and didn't create any red flags. If the app requires
-            you to disable security for any reason (or the hashes above don't match what you downloaded), you have the wrong app.
-        </p>
-    </div>
-    <div class="row p-2">
-        <b>Yeah, I'm not typing in my password in some random app I download.</b>
-    </div>
-    <div class="row p-2">
-        <p>
-            Smart! I wouldn't put my password into any app I just downloaded either.
-            If you're on Big Sur, you don't need to.  Apple change the permissions of the
-            known networks file in Monterrey that requires your password to access, specifically:<br/>
-            <code>/Library/Preferences/com.apple.wifi.known-networks.plist</code>
-        </p>
-        <p>
-            This is read and some of the data displayed is taken from this file.  If you are on
-            Monterrey and don't want to enter the password, you can open Terminal, and change the
-            permissions on the file yourself (that's all the app does) like this:<br/>
-            <code>sudo chmod 644 /Library/Preferences/com.apple.wifi.known-networks.plist</code>
-        </p>
-        <p>
-            There used to be a bunch more interesting information in this file but it seems
-            each release of macOS is getting rid of details, so not sure how much longer the
-            information will remain useful.
-        </p>
-    </div>
-    <div class="row p-2">
-        <b>Woah! You also want a password to show me my WiFi password?</b>
-    </div>
-    <div class="row p-2">
-        <p>
-            Yes.  However, if you want to find this information yourself, this can also
-            be found by opening the <code>Keychain Access</code> app from your
-            <code>/Applications/Utilities</code> folder, searching for your WiFi network
-            name, selecting the item in the list, clicking on the "Show password" checkbox...
-            Anyway, this was more of convenience, and it uses the Apple supplied Keychain APIs,
-            so up to you.
-        </p>
-    </div>
-    <div class="row p-2">
-        <b>What does "Remove WiFi" acutally do?  Will this delete my WiFi?</b>
-    </div>
-    <div class="row p-2">
-        <p>
-            No.  This removes the WiFi entry from your saved list of "known networks".  If you
-            remove the WiFi you will have to rejoin that WiFi just like you did the first
-            time.  Worst case scenario.
-        </p>
-    </div>
-    <div class="row p-2">
-        <b>Why would I bother removing the WiFi?</b>
-    </div>
-    <div class="row p-2">
-        <p>
-            I personally don't like keeping WiFi network information for networks I really
-            don't use on a regular basis. Especially if you keep "open" networks (aka no passwords) around.
-            If somebody decides to spoof an open network in a coffee shop, you just might
-            join a network you don't expect to. Not a problem for most people, but keeping
-            your approved "known networks" list to a limited set is a personal preference.
-        </p>
-        <p>
-           You can also remove old WiFi connections outside the context of the app.  If you go into
-           your <code>System Settings</code> (or Preferences, depending on what version of macOS you're running), select
-           <code>Networks</code>, <code>Wi-Fi</code>, then click <code>Advanced...</code> you'll see a list of "Known Networks".
-           This should be the same list you see in the WiFi/Check app.  You can remove
-           items from the list here.  The app uses the command line <code>networksetup</code> to remove the network.
-        </p>
-    </div>
- </div>
-</main>
-<footer class="footer mt-auto py-3" style="background-color: rebeccapurple">
-    <div class="container">
-        <div class="row align-items-center justify-content-center" style="color: white">
-            © 2021-2026&nbsp;<a style="color: white" href="https://ciretose.com">ciretose</a>
-        </div>
-    </div>
 
-</footer>
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
-integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
-crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"
-integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns"
-crossorigin="anonymous"></script>
+<body class="d-flex flex-column h-100">
+
+    <a href="../index.html" style="position: fixed; top: 10px; left: 10px;"><img src="../ciretoselogo.png" alt="Home"
+            style="height: 30px;"></a>
+
+    <main class="flex-shrink-0">
+        <div class="container">
+            <div class="row align-items-center justify-content-center">
+                <div class="p-2">
+                    <img class="img-fluid" src="wificheck128.png" />
+                </div>
+                <div class="p-2">
+                    <span style="font-size: 42pt; font-weight: bold;">WiFiCheck</span><br />
+                </div>
+            </div>
+            <div class="row p-2">
+                <p class="lead">WiFiCheck is a simple app that displays information about the WiFi connections
+                    made from your Mac. Recent version of macOS have changed the way this information is
+                    stored, so I updated the app to work with macOS 26. Enjoy!
+                </p>
+            </div>
+            <div class="row">
+                <img class="img-fluid" src="wificheckwindow.png" />
+            </div>
+            <div class="row p-2 align-items-center justify-content-center">
+                <a class="btn-lg btn-dark" style="background-color: rebeccapurple;"
+                    href="https://drive.google.com/file/d/1WuR4tXXABS8Pi5uH6NYcSbVu4WjbHLpH/view?usp=sharing">Download</a>
+            </div>
+            <div class="row">
+                &nbsp;
+            </div>
+            <div class="row p-2" style="color: gray">
+                <p>
+                    SHA1: cff6d47bf64636423ebfd2f8f1e0fe227d104b8e<br />
+                    SHA256: 08ef297203ac979c979a2f906948b4fca75f7c5ee8a6bb634214d58ea30cbf37
+                </p>
+            </div>
+            <div class="row p-2" style="color: gray">
+                <p>PS: You can validate the hash of the download using <a style="color: rebeccapurple"
+                        href="https://hashcheck.app">Hash/Check</a>.</p>
+            </div>
+            <div class="row">
+                &nbsp;
+            </div>
+            <div class="row p-2">
+                <b>FAQ</b>
+            </div>
+            <div class="row p-2">
+                <b>Should I trust an app I download from the internet?</b>
+            </div>
+            <div class="row p-2">
+                <p>You should be skeptical of anything you download from some relatively unknown
+                    location. The app has been notarized by Apple - which is not a guarantee
+                    that it is "safe", but it means at least Apple has run it through whatever
+                    "app checker" they have and didn't create any red flags. If the app requires
+                    you to disable security for any reason (or the hashes above don't match what you downloaded), you
+                    have the wrong app.
+                </p>
+            </div>
+            <div class="row p-2">
+                <b>Yeah, I'm not giving some random app I download full disk access and elevated priveleges.</b>
+            </div>
+            <div class="row p-2">
+                <p>
+                    Smart! I wouldn't trust any app I just downloaded either. Hence, the option to "try it out" by
+                    copying the required file to a location the app can read from.
+                </p>
+            </div>
+            <div class="row p-2">
+                <b>Woah! You also want a password to show me my WiFi password?</b>
+            </div>
+            <div class="row p-2">
+                <p>
+                    Yes. However, if you want to find this information yourself, this can also
+                    be found by opening the <code>Keychain Access</code> app from your
+                    <code>/Applications/Utilities</code> folder, searching for your WiFi network
+                    name, selecting the item in the list, clicking on the "Show password" checkbox...
+                    Anyway, this was more of convenience, and it uses the Apple supplied Keychain APIs,
+                    so up to you.
+                </p>
+            </div>
+            <div class="row p-2">
+                <b>What does "Remove Network" acutally do? Will this delete my WiFi?</b>
+            </div>
+            <div class="row p-2">
+                <p>
+                    No. This removes the WiFi entry from your saved list of "known networks". If you
+                    remove the WiFi you will have to rejoin that WiFi just like you did the first
+                    time. Worst case scenario.
+                </p>
+                <p>
+                    You can also remove old WiFi connections outside the context of the app. If you go into
+                    your <code>System Settings</code>, select <code>Wi-Fi</code>, then scroll to the bottom and
+                    click <code>Advanced...</code> you'll see a list of "Known Networks".
+                    This should be the same list you see in the WiFiCheck app. You can remove
+                    items from the list here. The app uses the command line <code>networksetup</code> to remove the
+                    network.
+                </p>
+            </div>
+            <div class="row p-2">
+                <b>What exactly is the purpose of this app?</b>
+            </div>
+            <div class="row p-2">
+                <p>
+                    <i>Shrug</i><br />
+                    I'm not really sure. I was curious about the information stored in the
+                    <code>/Library/Preferences/com.apple.wifi.known-networks.plist</code> file and
+                    wrote a quick app to display it. I've found it useful to see what networks my
+                    Mac remembers and to remove networks I no longer use.
+                </p>
+            </div>
+        </div>
+    </main>
+    <footer class="footer mt-auto py-3" style="background-color: rebeccapurple">
+        <div class="container">
+            <div class="row align-items-center justify-content-center" style="color: white">
+                © 2021-2026&nbsp;<a style="color: white" href="https://ciretose.com">ciretose</a>
+            </div>
+        </div>
+
+    </footer>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns"
+        crossorigin="anonymous"></script>
 </body>
+
 </html>

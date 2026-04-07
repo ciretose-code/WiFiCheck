@@ -14,12 +14,9 @@
 		7B0A2532270A6E8B00A51D79 /* WiFiDataRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0A2531270A6E8B00A51D79 /* WiFiDataRow.swift */; };
 		7B0B6A86272CA6B1006053B8 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B0B6A85272CA6B1006053B8 /* NetworkExtension.framework */; };
 		7B0B6A88272CA8C3006053B8 /* KeychainAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0B6A87272CA8C3006053B8 /* KeychainAccess.swift */; };
-		7B0B6A8B272F4823006053B8 /* sample2.json in Resources */ = {isa = PBXBuildFile; fileRef = 7B0B6A8A272F4823006053B8 /* sample2.json */; };
-		7B2086BD270A8C0E007A6500 /* sample.json in Resources */ = {isa = PBXBuildFile; fileRef = 7B2086BC270A8C0E007A6500 /* sample.json */; };
 		7B2086BF270A9154007A6500 /* WiFiDataList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2086BE270A9154007A6500 /* WiFiDataList.swift */; };
 		7B2086C1270A991A007A6500 /* WiFiDataDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2086C0270A991A007A6500 /* WiFiDataDetail.swift */; };
 		7B28BEA22F8180E5004E754D /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 7B28BEA12F8180E5004E754D /* AppIcon.icon */; };
-		7B2D7D1A2F5672A800824A10 /* com.apple.wifi.known-networks.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7B2D7D192F5672A800824A10 /* com.apple.wifi.known-networks.plist */; };
 		7B3DEFDB26EBF0DC007BE881 /* WiFiCheckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3DEFDA26EBF0DC007BE881 /* WiFiCheckApp.swift */; };
 		7B3DEFDD26EBF0DC007BE881 /* WiFiListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3DEFDC26EBF0DC007BE881 /* WiFiListView.swift */; };
 		7B3DEFDF26EBF0DE007BE881 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B3DEFDE26EBF0DE007BE881 /* Assets.xcassets */; };
@@ -74,12 +71,9 @@
 		7B0A2539270A7F3D00A51D79 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		7B0B6A85272CA6B1006053B8 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		7B0B6A87272CA8C3006053B8 /* KeychainAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainAccess.swift; sourceTree = "<group>"; };
-		7B0B6A8A272F4823006053B8 /* sample2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sample2.json; sourceTree = "<group>"; };
-		7B2086BC270A8C0E007A6500 /* sample.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sample.json; sourceTree = "<group>"; };
 		7B2086BE270A9154007A6500 /* WiFiDataList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiDataList.swift; sourceTree = "<group>"; };
 		7B2086C0270A991A007A6500 /* WiFiDataDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiDataDetail.swift; sourceTree = "<group>"; };
 		7B28BEA12F8180E5004E754D /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
-		7B2D7D192F5672A800824A10 /* com.apple.wifi.known-networks.plist */ = {isa = PBXFileReference; lastKnownFileType = file.bplist; path = "com.apple.wifi.known-networks.plist"; sourceTree = "<group>"; };
 		7B3DEFD726EBF0DC007BE881 /* WiFiCheck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WiFiCheck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B3DEFDA26EBF0DC007BE881 /* WiFiCheckApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiCheckApp.swift; sourceTree = "<group>"; };
 		7B3DEFDC26EBF0DC007BE881 /* WiFiListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiListView.swift; sourceTree = "<group>"; };
@@ -130,21 +124,10 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		7B2086B9270A8BC4007A6500 /* SampleData */ = {
-			isa = PBXGroup;
-			children = (
-				7B2D7D192F5672A800824A10 /* com.apple.wifi.known-networks.plist */,
-				7B2086BC270A8C0E007A6500 /* sample.json */,
-				7B0B6A8A272F4823006053B8 /* sample2.json */,
-			);
-			path = SampleData;
-			sourceTree = "<group>";
-		};
 		7B3DEFCE26EBF0DC007BE881 = {
 			isa = PBXGroup;
 			children = (
 				F35FB11B425B4DD3A4EE440A /* WiFiCheckHelper */,
-				7B2086B9270A8BC4007A6500 /* SampleData */,
 				7B0A2538270A7F1B00A51D79 /* Info */,
 				7B3DEFD926EBF0DC007BE881 /* WiFiCheck */,
 				7B3DEFD826EBF0DC007BE881 /* Products */,
@@ -282,11 +265,8 @@
 		7B3DEFD526EBF0DC007BE881 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
-				7B0B6A8B272F4823006053B8 /* sample2.json in Resources */,
 				7B3DEFE226EBF0DE007BE881 /* Preview Assets.xcassets in Resources */,
 				7B3DEFDF26EBF0DE007BE881 /* Assets.xcassets in Resources */,
-				7B2D7D1A2F5672A800824A10 /* com.apple.wifi.known-networks.plist in Resources */,
-				7B2086BD270A8C0E007A6500 /* sample.json in Resources */,
 				7B28BEA22F8180E5004E754D /* AppIcon.icon in Resources */,
 			);
 		};
