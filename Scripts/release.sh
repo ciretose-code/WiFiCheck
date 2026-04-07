@@ -65,7 +65,13 @@ echo "▶ Creating DMG..."
 
 STAGING_DMG="build/staging.dmg"
 APP_BUNDLE=$(basename "$APP_PATH")
-MOUNT_DIR="/Volumes/${APP_NAME} ${VERSION}"
+MOUNT_DIR="/Volumes/WiFiCheck-staging"
+
+# Clean up any leftover state from a previous run
+[ -f "$STAGING_DMG" ] && rm -f "$STAGING_DMG"
+if [ -d "$MOUNT_DIR" ]; then
+  hdiutil detach "$MOUNT_DIR" -quiet -force 2>/dev/null || true
+fi
 
 # Size: app + padding for background images and metadata
 APP_SIZE_MB=$(du -sm "$APP_PATH" | awk '{print $1}')
@@ -96,7 +102,7 @@ cp "Scripts/dmg-background.png" "$MOUNT_DIR/.background/dmg-background.png"
 # Configure window layout via Finder
 osascript <<APPLESCRIPT
 tell application "Finder"
-  tell disk "${APP_NAME} ${VERSION}"
+  tell disk "WiFiCheck-staging"
     open
     set current view of container window to icon view
     set toolbar visible of container window to false
