@@ -2,3 +2,8 @@
 DerivedData
 */project.xcworkspace/*
 .DS_Store
+build/
+.claude/
+*.p8
+*.p12
+*.pem
