@@ -60,13 +60,73 @@ if [ -z "$APP_PATH" ]; then
 fi
 echo "▶ Found app: ${APP_PATH}"
 
-# ── 3. Create DMG (before notarizing so we notarize the DMG directly) ─────────
+# ── 3. Create DMG with drag-to-Applications layout ────────────────────────────
 echo "▶ Creating DMG..."
+
+STAGING_DMG="build/staging.dmg"
+APP_BUNDLE=$(basename "$APP_PATH")
+MOUNT_DIR="/Volumes/${APP_NAME} ${VERSION}"
+
+# Size: app + padding for background images and metadata
+APP_SIZE_MB=$(du -sm "$APP_PATH" | awk '{print $1}')
+STAGING_SIZE=$((APP_SIZE_MB + 20))
+
+# Create a writable staging image
 hdiutil create \
+  -megabytes "$STAGING_SIZE" \
   -volname "${APP_NAME} ${VERSION}" \
-  -srcfolder "$APP_PATH" \
-  -ov -format UDZO \
-  "$DMG_PATH"
+  -fs HFS+ \
+  -ov \
+  "$STAGING_DMG"
+
+hdiutil attach "$STAGING_DMG" \
+  -mountpoint "$MOUNT_DIR" \
+  -noautoopen \
+  -readwrite
+
+# Populate the volume
+cp -r "$APP_PATH" "$MOUNT_DIR/"
+ln -s /Applications "$MOUNT_DIR/Applications"
+
+mkdir -p "$MOUNT_DIR/.background"
+cp "Scripts/dmg-background.png" "$MOUNT_DIR/.background/dmg-background.png"
+[ -f "Scripts/dmg-background@2x.png" ] && \
+  cp "Scripts/dmg-background@2x.png" "$MOUNT_DIR/.background/dmg-background@2x.png"
+
+# Configure window layout via Finder
+osascript <<APPLESCRIPT
+tell application "Finder"
+  tell disk "${APP_NAME} ${VERSION}"
+    open
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    set the bounds of container window to {100, 100, 640, 480}
+    set viewOptions to icon view options of container window
+    set arrangement of viewOptions to not arranged
+    set icon size of viewOptions to 128
+    set background picture of viewOptions to file ".background:dmg-background.png"
+    set position of item "${APP_BUNDLE}" of container window to {130, 180}
+    set position of item "Applications" of container window to {410, 180}
+    update without registering applications
+    delay 2
+    close
+  end tell
+end tell
+APPLESCRIPT
+
+sync
+sleep 1
+hdiutil detach "$MOUNT_DIR" -quiet
+
+# Convert to compressed read-only final DMG
+hdiutil convert "$STAGING_DMG" \
+  -format UDZO \
+  -imagekey zlib-level=9 \
+  -o "$DMG_PATH" \
+  -ov
+
+rm -f "$STAGING_DMG"
 
 # ── 4. Notarize DMG ────────────────────────────────────────────────────────────
 echo "▶ Notarizing (this takes a few minutes)..."
