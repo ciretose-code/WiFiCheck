@@ -79,8 +79,8 @@ echo "▶ Stapling..."
 xcrun stapler staple "$DMG_PATH"
 
 # ── 6. Verify ─────────────────────────────────────────────────────────────────
-echo "▶ Verifying..."
-spctl --assess --type open --context context:primary-signature --verbose "$DMG_PATH"
+echo "▶ Verifying staple..."
+xcrun stapler validate "$DMG_PATH"
 
 # ── 7. Publish GitHub release ─────────────────────────────────────────────────
 echo "▶ Publishing GitHub release ${TAG}..."
