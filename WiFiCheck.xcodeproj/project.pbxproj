@@ -89,6 +89,11 @@
 		7B798E542F848B1E00D33965 /* wificheck128.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = wificheck128.png; sourceTree = "<group>"; };
 		7B798E552F848B1E00D33965 /* wificheck512.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = wificheck512.png; sourceTree = "<group>"; };
 		7B798E562F848B1E00D33965 /* wificheckwindow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = wificheckwindow.png; sourceTree = "<group>"; };
+		7B798E582F848D6E00D33965 /* CONTRIBUTING.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CONTRIBUTING.md; sourceTree = "<group>"; };
+		7B798E592F848D6E00D33965 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		7B798E5A2F848D9200D33965 /* ExportOptions.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = ExportOptions.plist; sourceTree = "<group>"; };
+		7B798E5B2F848D9200D33965 /* install-dev.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-dev.sh"; sourceTree = "<group>"; };
+		7B798E5C2F848D9200D33965 /* release.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = release.sh; sourceTree = "<group>"; };
 		7B7D654B2F56525700FA47CF /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		7BCF2FA62737335E00ABC4D1 /* CheckboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxView.swift; sourceTree = "<group>"; };
 		8513818756E24D7198D0267C /* com.ciretose.macos.tool.WiFiCheck.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.ciretose.macos.tool.WiFiCheck.helper.plist; sourceTree = "<group>"; };
@@ -116,6 +121,8 @@
 		7B0A2538270A7F1B00A51D79 /* Info */ = {
 			isa = PBXGroup;
 			children = (
+				7B798E582F848D6E00D33965 /* CONTRIBUTING.md */,
+				7B798E592F848D6E00D33965 /* LICENSE */,
 				7B0A2539270A7F3D00A51D79 /* README.md */,
 			);
 			name = Info;
@@ -132,6 +139,7 @@
 		7B3DEFCE26EBF0DC007BE881 = {
 			isa = PBXGroup;
 			children = (
+				7B798E5D2F848D9200D33965 /* Scripts */,
 				7B798E572F848B1E00D33965 /* docs */,
 				F35FB11B425B4DD3A4EE440A /* WiFiCheckHelper */,
 				7B0A2538270A7F1B00A51D79 /* Info */,
@@ -195,6 +203,16 @@
 				7B798E562F848B1E00D33965 /* wificheckwindow.png */,
 			);
 			path = docs;
+			sourceTree = "<group>";
+		};
+		7B798E5D2F848D9200D33965 /* Scripts */ = {
+			isa = PBXGroup;
+			children = (
+				7B798E5A2F848D9200D33965 /* ExportOptions.plist */,
+				7B798E5B2F848D9200D33965 /* install-dev.sh */,
+				7B798E5C2F848D9200D33965 /* release.sh */,
+			);
+			path = Scripts;
 			sourceTree = "<group>";
 		};
 		F35FB11B425B4DD3A4EE440A /* WiFiCheckHelper */ = {
