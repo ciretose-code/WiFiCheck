@@ -84,6 +84,11 @@
 		7B5A4387272362CE00E4D73F /* WiFiDateBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiDateBox.swift; sourceTree = "<group>"; };
 		7B6363382725077F0054A094 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7B6FE0E62719408C00CF5CEB /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
+		7B798E522F848B1E00D33965 /* CNAME */ = {isa = PBXFileReference; lastKnownFileType = text; path = CNAME; sourceTree = "<group>"; };
+		7B798E532F848B1E00D33965 /* index.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
+		7B798E542F848B1E00D33965 /* wificheck128.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = wificheck128.png; sourceTree = "<group>"; };
+		7B798E552F848B1E00D33965 /* wificheck512.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = wificheck512.png; sourceTree = "<group>"; };
+		7B798E562F848B1E00D33965 /* wificheckwindow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = wificheckwindow.png; sourceTree = "<group>"; };
 		7B7D654B2F56525700FA47CF /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		7BCF2FA62737335E00ABC4D1 /* CheckboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxView.swift; sourceTree = "<group>"; };
 		8513818756E24D7198D0267C /* com.ciretose.macos.tool.WiFiCheck.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.ciretose.macos.tool.WiFiCheck.helper.plist; sourceTree = "<group>"; };
@@ -127,6 +132,7 @@
 		7B3DEFCE26EBF0DC007BE881 = {
 			isa = PBXGroup;
 			children = (
+				7B798E572F848B1E00D33965 /* docs */,
 				F35FB11B425B4DD3A4EE440A /* WiFiCheckHelper */,
 				7B0A2538270A7F1B00A51D79 /* Info */,
 				7B3DEFD926EBF0DC007BE881 /* WiFiCheck */,
@@ -177,6 +183,18 @@
 				7B3DEFE126EBF0DE007BE881 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		7B798E572F848B1E00D33965 /* docs */ = {
+			isa = PBXGroup;
+			children = (
+				7B798E522F848B1E00D33965 /* CNAME */,
+				7B798E532F848B1E00D33965 /* index.html */,
+				7B798E542F848B1E00D33965 /* wificheck128.png */,
+				7B798E552F848B1E00D33965 /* wificheck512.png */,
+				7B798E562F848B1E00D33965 /* wificheckwindow.png */,
+			);
+			path = docs;
 			sourceTree = "<group>";
 		};
 		F35FB11B425B4DD3A4EE440A /* WiFiCheckHelper */ = {
