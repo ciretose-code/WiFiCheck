@@ -92,17 +92,19 @@ hdiutil attach "$STAGING_DMG" \
 
 # Populate the volume
 cp -r "$APP_PATH" "$MOUNT_DIR/"
-ln -s /Applications "$MOUNT_DIR/Applications"
 
 mkdir -p "$MOUNT_DIR/.background"
 cp "Scripts/dmg-background.png" "$MOUNT_DIR/.background/dmg-background.png"
 [ -f "Scripts/dmg-background@2x.png" ] && \
   cp "Scripts/dmg-background@2x.png" "$MOUNT_DIR/.background/dmg-background@2x.png"
 
-# Configure window layout via Finder
+# Configure window layout via Finder (alias gives Applications proper icon)
 osascript <<APPLESCRIPT
 tell application "Finder"
-  tell disk "WiFiCheck-staging"
+  -- Create alias before entering tell disk scope so startup disk resolves correctly
+  set theDisk to disk "WiFiCheck-staging"
+  make new alias file to folder "Applications" of startup disk at theDisk
+  tell theDisk
     open
     set current view of container window to icon view
     set toolbar visible of container window to false
@@ -120,6 +122,7 @@ tell application "Finder"
   end tell
 end tell
 APPLESCRIPT
+
 
 sync
 sleep 1
