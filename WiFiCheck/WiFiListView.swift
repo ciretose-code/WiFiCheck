@@ -8,6 +8,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import ServiceManagement
+import CoreWLAN
 
 enum SortableMenu: String, CaseIterable, Identifiable {
     var id: String {
@@ -40,9 +41,11 @@ enum SortableMenu: String, CaseIterable, Identifiable {
 struct WiFiListView: View {
     @State private var wifidataArray = Array<WiFiData>()
     @State private var listSelection: WiFiData? = nil
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var hasAutoSelected = false
 
     var body: some View {
-        NavigationSplitView(columnVisibility: .constant(.all)) {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             WiFiListPane(sharedNetworks: $wifidataArray, listSelection: $listSelection)
         } detail: {
             if let selected = listSelection {
@@ -55,6 +58,14 @@ struct WiFiListView: View {
             }
         }
         .navigationSplitViewStyle(.balanced)
+        .onChange(of: wifidataArray) {
+            guard !hasAutoSelected, !wifidataArray.isEmpty else { return }
+            hasAutoSelected = true
+            if let currentSSID = CWWiFiClient.shared().interface()?.ssid(),
+               let match = wifidataArray.first(where: { $0.ssidString() == currentSSID }) {
+                listSelection = match
+            }
+        }
     }
 }
 

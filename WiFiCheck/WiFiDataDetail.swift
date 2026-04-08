@@ -40,7 +40,6 @@ struct WiFiDataDetail: View {
     var wifidata: WiFiData = WiFiDataManager.shared.getWiFiDataList().first ?? WiFiData()
 
     @State private var showPassword = false
-    @State private var pwdShown = false
     @State private var pwdText = "Show Password"
     @State private var pwdIcon = "lock"
     @State private var cachedPassword: String? = nil
@@ -173,12 +172,12 @@ struct WiFiDataDetail: View {
                                 Button(action: { showDeleteConfirm = true }) {
                                     HStack {
                                         Image(systemName: "minus.circle")
-                                        Text("Remove Network")
+                                        Text("Forget Network")
                                     }
                                     .frame(minWidth: 160)
                                 }
                                 .buttonStyle(WiFiButtonStyle())
-                                .accessibilityLabel("Remove \(wifidata.ssidString()) from known networks")
+                                .accessibilityLabel("Forget \(wifidata.ssidString())")
                             }
                         }
                     }
@@ -281,23 +280,23 @@ struct WiFiDataDetail: View {
             hidePassword()
         }
         .confirmationDialog(
-            "Remove \"\(wifidata.ssidString())\"?",
+            "Forget \"\(wifidata.ssidString())\"?",
             isPresented: $showDeleteConfirm,
             titleVisibility: .visible
         ) {
-            Button("Remove Network", role: .destructive) {
+            Button("Forget Network", role: .destructive) {
                 let success = NetworkSetup.shared.deleteNetwork(wifidata.ssidString())
                 if success {
                     onDelete?()
                 } else {
-                    deleteError = "Could not remove \"\(wifidata.ssidString())\". Make sure the network exists in your preferred networks list."
+                    deleteError = "Forget \(wifidata.ssidString()) failed. Make sure the network exists in your preferred networks list."
                 }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will remove \"\(wifidata.ssidString())\" from your known networks list. You can rejoin the network at any time.")
+            Text("Forget \"\(wifidata.ssidString())\"? You can rejoin the network at any time.")
         }
-        .alert("Remove Failed", isPresented: Binding(
+        .alert("Forget Failed", isPresented: Binding(
             get: { deleteError != nil },
             set: { if !$0 { deleteError = nil } }
         )) {
@@ -336,11 +335,11 @@ struct WiFiDataDetail: View {
 
     /// Starts the countdown timer to auto-hide the password
     private func startPasswordTimer() {
+        // Cancel any existing timer before resetting state
+        stopPasswordTimer()
+
         // Reset countdown
         remainingSeconds = autoHideDelay
-
-        // Cancel any existing timer
-        stopPasswordTimer()
 
         // Start a new timer that ticks every second
         passwordTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
@@ -392,19 +391,6 @@ struct CollocatedGroupView: View {
 struct ChannelHistoryView: View {
     var channelData: [WiFiData.ChannelData]
 
-    private func frequencyBand(for channel: Int) -> String {
-        switch channel {
-        case 1...13: return "2.4 GHz"
-        case 14: return "2.4 GHz"
-        case 36...177: return "5 GHz"
-        default: return "6 GHz"
-        }
-    }
-
-    private func bandColor(for channel: Int) -> Color {
-        Utils.getBandColor(for: channel)
-    }
-
     var body: some View {
         VStack(alignment: .leading) {
             Text("Channel History").bold()
@@ -419,14 +405,14 @@ struct ChannelHistoryView: View {
                         .background(Color.black)
                         .clipShape(Capsule())
                         .accessibilityLabel("Channel \(cd.Channel)")
-                    Text(frequencyBand(for: cd.Channel))
+                    Text(Utils.frequencyBand(for: cd.Channel))
                         .font(.caption).bold()
                         .foregroundColor(.white)
                         .padding(.horizontal, 8).padding(.vertical, 4)
                         .frame(minWidth: 62)
-                        .background(bandColor(for: cd.Channel))
+                        .background(Utils.getBandColor(for: cd.Channel))
                         .clipShape(Capsule())
-                        .accessibilityLabel(frequencyBand(for: cd.Channel))
+                        .accessibilityLabel(Utils.frequencyBand(for: cd.Channel))
                     Text("\(cd.joinedTime())")
                         .font(.caption).bold()
                         .foregroundColor(.white)
@@ -446,14 +432,6 @@ struct ChannelHistoryView: View {
 
 struct BSSIDListView: View {
     var bssidData: [WiFiData.BSSData]
-
-    private func frequencyBand(for channel: Int) -> String {
-        switch channel {
-        case 1...14: return "2.4 GHz"
-        case 36...177: return "5 GHz"
-        default: return "6 GHz"
-        }
-    }
 
     private func dhcpServerIP(from data: Data?) -> String? {
         guard let data = data, data.count == 4 else { return nil }
@@ -475,7 +453,7 @@ struct BSSIDListView: View {
                                 .padding(.horizontal, 8).padding(.vertical, 4)
                                 .background(Color.black)
                                 .clipShape(Capsule())
-                            Text(frequencyBand(for: b.Channel))
+                            Text(Utils.frequencyBand(for: b.Channel))
                                 .font(.caption).foregroundColor(.white)
                                 .padding(.horizontal, 8).padding(.vertical, 4)
                                 .background(Utils.getBandColor(for: b.Channel))

@@ -59,25 +59,6 @@ Build and run the `WiFiCheck` scheme. For testing the privileged helper, install
 
 ---
 
-## Releasing
-
-`Scripts/release.sh` automates the full release pipeline: archive → export → DMG → notarize → staple → GitHub release.
-
-One-time setup (stores Apple notarization credentials in your keychain):
-```bash
-xcrun notarytool store-credentials "wifi-check-notary" \
-  --key ~/.private_keys/AuthKey_<KEY_ID>.p8 \
-  --key-id <KEY_ID> \
-  --issuer <ISSUER_ID>
-```
-
-Then:
-```bash
-./Scripts/release.sh
-```
-
----
-
 ## Background
 
 Built as an exercise in SwiftUI and to scratch a personal itch — I wanted visibility into my Mac's full Wi-Fi history.

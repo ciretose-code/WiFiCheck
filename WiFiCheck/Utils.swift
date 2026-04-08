@@ -172,6 +172,15 @@ class Utils {
         return securityColor
     }
 
+    /// Returns the frequency band name for a WiFi channel number.
+    static func frequencyBand(for channel: Int) -> String {
+        switch channel {
+        case 1...14:   return "2.4 GHz"
+        case 36...177: return "5 GHz"
+        default:       return "6 GHz"
+        }
+    }
+
     /// Returns the color for a WiFi channel's frequency band.
     /// Uses NSColor-backed system colors so they adapt correctly in both light and dark mode.
     static func getBandColor(for channel: Int) -> Color {
