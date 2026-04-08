@@ -246,12 +246,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7B3DEFE726EBF0DE007BE881 /* Build configuration list for PBXNativeTarget "WiFiCheck" */;
 			buildPhases = (
+				7B0B6A89272E3A0E006053B8 /* Increment Build Number */,
 				7B3DEFD326EBF0DC007BE881 /* Sources */,
 				7B3DEFD426EBF0DC007BE881 /* Frameworks */,
 				7B3DEFD526EBF0DC007BE881 /* Resources */,
 				258B3F104C2840E89F14D56D /* CopyFiles (Helper Binary) */,
 				CFC9EA24A6754763AE2921F0 /* CopyFiles (Daemon Plist) */,
-				7B0B6A89272E3A0E006053B8 /* Increment Build Number */,
 			);
 			buildRules = (
 			);
