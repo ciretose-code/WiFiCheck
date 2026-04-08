@@ -21,20 +21,15 @@ NOTARY_PROFILE="wifi-check-notary"   # keychain profile name from store-credenti
 # ── Derived values ─────────────────────────────────────────────────────────────
 PLIST="WiFiCheck/Info.plist"
 VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$PLIST")
-BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$PLIST")
-TAG="v${VERSION}.${BUILD}"
 APP_NAME="WiFi Check"
-DMG_NAME="${APP_NAME// /-}-${VERSION}"
 
 ARCHIVE_PATH="build/${SCHEME}.xcarchive"
 EXPORT_PATH="build/export"
-DMG_PATH="build/${DMG_NAME}.dmg"
 
-echo "▶ ${APP_NAME} ${VERSION} (build ${BUILD}) → ${TAG}"
 mkdir -p build
 
-# ── 1. Archive ─────────────────────────────────────────────────────────────────
-echo "▶ Archiving..."
+# ── 1. Archive (build phase increments CFBundleVersion in Info.plist) ──────────
+echo "▶ Archiving ${APP_NAME} ${VERSION}..."
 xcodebuild archive \
   -project "$PROJECT" \
   -scheme "$SCHEME" \
@@ -43,6 +38,13 @@ xcodebuild archive \
   -destination "generic/platform=macOS" \
   -allowProvisioningUpdates \
   | grep -E "^(error:|warning:|Build succeeded|Archive succeeded|/)" || true
+
+# Read the incremented build number from the archive
+BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$PLIST")
+TAG="v${VERSION}.${BUILD}"
+DMG_NAME="${APP_NAME// /-}-${VERSION}"
+DMG_PATH="build/${DMG_NAME}.dmg"
+echo "▶ ${APP_NAME} ${VERSION} (build ${BUILD}) → ${TAG}"
 
 # ── 2. Export (Developer ID signed) ───────────────────────────────────────────
 echo "▶ Exporting..."
@@ -157,6 +159,12 @@ gh release create "$TAG" \
   "$DMG_PATH" \
   --title "${APP_NAME} ${TAG}" \
   --generate-notes
+
+# ── 8. Commit and push updated Info.plist ─────────────────────────────────────
+echo "▶ Committing build number ${BUILD}..."
+git add "$PLIST"
+git commit -m "Release ${TAG} (build ${BUILD})"
+git push
 
 echo ""
 echo "✅ Released: ${TAG}"
