@@ -44,6 +44,9 @@ struct WiFiDataDetail: View {
     @State private var pwdIcon = "lock"
     @State private var cachedPassword: String? = nil
 
+    @State private var showQRCode = false
+    @State private var qrImage: NSImage? = nil
+
     @State private var showDeleteConfirm = false
     @State private var deleteError: String? = nil
     var onDelete: (() -> Void)? = nil
@@ -168,6 +171,20 @@ struct WiFiDataDetail: View {
                                 .accessibilityLabel(showPassword ? "Hide network password" : "Show network password")
                                 Spacer().frame(height: 8)
                             }
+                            Button(action: { showQRForCurrentNetwork() }) {
+                                HStack {
+                                    Image(systemName: "qrcode")
+                                    Text("Show QR Code")
+                                }
+                                .frame(minWidth: 160)
+                            }
+                            .buttonStyle(WiFiButtonStyle())
+                            .popover(isPresented: $showQRCode) {
+                                WiFiQRCodeView(ssid: wifidata.ssidString(), image: qrImage)
+                                    .padding()
+                            }
+                            .accessibilityLabel("Show QR code for \(wifidata.ssidString())")
+                            Spacer().frame(height: 8)
                             if !WiFiDataManager.shared.isLoadedFromFile {
                                 Button(action: { showDeleteConfirm = true }) {
                                     HStack {
@@ -278,6 +295,8 @@ struct WiFiDataDetail: View {
         .onChange(of: wifidata.WiFiID) {
             // When the user selects a different network, immediately hide any visible password
             hidePassword()
+            showQRCode = false
+            qrImage = nil
         }
         .confirmationDialog(
             "Forget \"\(wifidata.ssidString())\"?",
@@ -304,6 +323,26 @@ struct WiFiDataDetail: View {
         } message: {
             Text(deleteError ?? "")
         }
+    }
+
+    // MARK: - QR Code
+
+    private func showQRForCurrentNetwork() {
+        let password: String?
+        let security = wifidata.securityType()
+        if security != .open && security != .unknown {
+            password = (try? KeychainAccess.getPassword(forNetwork: wifidata.ssidString()).get())
+        } else {
+            password = nil
+        }
+        let qrString = wifiQRString(
+            ssid: wifidata.ssidString(),
+            password: password,
+            security: security,
+            isHidden: wifidata.Hidden
+        )
+        qrImage = generateQRCode(from: qrString)
+        showQRCode = true
     }
 
     // MARK: - Password Timer Methods

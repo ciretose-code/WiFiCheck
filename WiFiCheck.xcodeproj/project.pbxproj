@@ -16,6 +16,7 @@
 		7B0B6A88272CA8C3006053B8 /* KeychainAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0B6A87272CA8C3006053B8 /* KeychainAccess.swift */; };
 		7B2086BF270A9154007A6500 /* WiFiDataList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2086BE270A9154007A6500 /* WiFiDataList.swift */; };
 		7B2086C1270A991A007A6500 /* WiFiDataDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2086C0270A991A007A6500 /* WiFiDataDetail.swift */; };
+		AABB00011122334455667788 /* WiFiQRCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00011122334455667799 /* WiFiQRCode.swift */; };
 		7B28BEA22F8180E5004E754D /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 7B28BEA12F8180E5004E754D /* AppIcon.icon */; };
 		7B3DEFDB26EBF0DC007BE881 /* WiFiCheckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3DEFDA26EBF0DC007BE881 /* WiFiCheckApp.swift */; };
 		7B3DEFDD26EBF0DC007BE881 /* WiFiListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3DEFDC26EBF0DC007BE881 /* WiFiListView.swift */; };
@@ -73,6 +74,7 @@
 		7B0B6A87272CA8C3006053B8 /* KeychainAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainAccess.swift; sourceTree = "<group>"; };
 		7B2086BE270A9154007A6500 /* WiFiDataList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiDataList.swift; sourceTree = "<group>"; };
 		7B2086C0270A991A007A6500 /* WiFiDataDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiDataDetail.swift; sourceTree = "<group>"; };
+		AABB00011122334455667799 /* WiFiQRCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiQRCode.swift; sourceTree = "<group>"; };
 		7B28BEA12F8180E5004E754D /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		7B3DEFD726EBF0DC007BE881 /* WiFiCheck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WiFiCheck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B3DEFDA26EBF0DC007BE881 /* WiFiCheckApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiCheckApp.swift; sourceTree = "<group>"; };
@@ -176,6 +178,7 @@
 				7B2086BE270A9154007A6500 /* WiFiDataList.swift */,
 				7B5A4387272362CE00E4D73F /* WiFiDateBox.swift */,
 				7B2086C0270A991A007A6500 /* WiFiDataDetail.swift */,
+				AABB00011122334455667799 /* WiFiQRCode.swift */,
 				7B0A252F270A660200A51D79 /* WiFiDataManager.swift */,
 				7B3DEFDE26EBF0DE007BE881 /* Assets.xcassets */,
 				7B3DEFE326EBF0DE007BE881 /* Info.plist */,
@@ -350,6 +353,7 @@
 				7B0315F427247A7B00D775ED /* NetworkSetup.swift in Sources */,
 				7B3DEFDB26EBF0DC007BE881 /* WiFiCheckApp.swift in Sources */,
 				7B2086C1270A991A007A6500 /* WiFiDataDetail.swift in Sources */,
+				AABB00011122334455667788 /* WiFiQRCode.swift in Sources */,
 				7B6FE0E72719408C00CF5CEB /* Utils.swift in Sources */,
 				7B0B6A88272CA8C3006053B8 /* KeychainAccess.swift in Sources */,
 			);
