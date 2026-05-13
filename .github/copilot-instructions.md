@@ -2,79 +2,96 @@
 
 ## Project Overview
 
-WiFi/Check is a **macOS-only SwiftUI app** (macOS 11.0+, Swift 5.0) that reads the system WiFi known-networks plist and displays connection history, security info, and stored passwords. The app requires **Full Disk Access** because `/Library/Preferences/com.apple.wifi.known-networks.plist` is protected on macOS Big Sur and later.
+WiFi/Check is a **macOS-only SwiftUI app** for inspecting the system Wi-Fi known-networks plist, showing connection history, security details, BSSID/channel history, and stored passwords. The current docs and project settings target **Xcode 26+** and **macOS 26+**.
 
-## Build
+The app has two supported data-access paths:
 
-Open `WiFiCheck.xcodeproj` in Xcode and build the `WiFiCheck` scheme, or from the command line:
+1. **Privileged helper (recommended)** — a launchd daemon installed with `SMAppService.daemon` reads `/Library/Preferences/com.apple.wifi.known-networks.plist` as root and returns the raw plist over XPC.
+2. **Manual file import** — the user copies the plist to a readable location or opens/drags in a plist file; this works without the helper but does not provide live system access.
+
+## Build, Test, and Lint
+
+Build the main app from Xcode or from the command line:
 
 ```bash
-xcodebuild -project WiFiCheck.xcodeproj -scheme WiFiCheck build
+xcodebuild -project WiFiCheck.xcodeproj -scheme WiFiCheck -allowProvisioningUpdates build
 ```
 
-There are no test targets.
+Build just the helper target when isolating daemon/XPC issues:
 
-## Architecture
-
-The app follows a **singleton-service pattern**, not MVVM. There is no `ObservableObject` or `@EnvironmentObject`; views call the shared singletons directly.
-
-- **`WiFiDataManager.shared`** — reads and parses the plist, owns the in-memory `[WiFiData]` list, handles sorting, and supports drag-and-drop loading when Full Disk Access is unavailable.
-- **`NetworkSetup.shared`** — wraps the `networksetup` CLI tool to get preferred network order, active SSID, and remove networks. Detects the actual WiFi interface name (usually `en0`) at init.
-- **`KeychainAccess`** — static methods only; reads WiFi passwords from Keychain under service name `"AirPort"`. Prefer the `getPassword(forNetwork:)` method that returns `Result<String, Error>` over the deprecated `getWiFiPassword(forNetwork:)` tuple version.
-- **`Utils`** — static utility class for date formatting and `runCommand(_:withArgs:)`. All shell commands must go through `Utils.runCommand`; never create `Process` directly.
-- **`Constants`** — `enum` (no cases) holding all app-wide literal values. Add new constants here.
-
-### View hierarchy
-
-```
-WiFiCheckApp
-└── ContentView
-    └── WiFiListView              NavigationView wrapper + sidebar toggle
-        ├── WiFiListPane          Sidebar: sort picker, network list, Remove/Show buttons
-        └── WiFiDataDetail        Detail pane: dates, security, password reveal, channel history
+```bash
+xcodebuild -project WiFiCheck.xcodeproj -scheme WiFiCheckHelper -allowProvisioningUpdates build
 ```
 
-Supporting views: `WiFiDataRow`, `WiFiDateBox`, `CheckboxView`, `CollocatedGroupView`, `ChannelHistoryView`, `BSSIDListView`.
+For helper testing, the built app must be installed to `/Applications` because `SMAppService.daemon` will not work correctly from DerivedData:
 
-Custom button style: **`WiFiButtonStyle`** (defined in `WiFiCheckApp.swift`) — takes `delete: Bool` and `disabled: Bool` parameters; use this for all action buttons.
+```bash
+./Scripts/install-dev.sh
+```
 
-### Data model
+The release pipeline is scripted here:
 
-`WiFiData` is a plain `struct` (Hashable, Codable, Identifiable via `id: Self`). Property names use **PascalCase to match plist keys exactly** (e.g., `JoinedByUserAt`, `AddReason`). Don't change this casing.
+```bash
+./Scripts/release.sh
+```
 
-The plist is parsed manually with `PropertyListSerialization` rather than `Codable` because the top-level structure is a `Dictionary<String, AnyObject>`. The `find*` helper methods on `WiFiDataManager` (`findBool`, `findInt`, `findString`, `findDate`, `findData`) are the safe extraction layer — use them when adding new plist fields.
+There are **no XCTest targets** in this repo today, so there is no single-test command to run. There is also **no lint/formatter configuration**; follow the existing Swift style and rely on Xcode compiler diagnostics.
+
+## High-Level Architecture
+
+The app uses a **singleton-service pattern**, not MVVM. There is no `ObservableObject` or `@EnvironmentObject`; views keep local `@State` and call shared services directly.
+
+- **`WiFiCheck` target** — the SwiftUI app.
+- **`WiFiCheckHelper` target** — a privileged background helper/launch daemon that reads the protected plist as root.
+- **`WiFiHelperProtocol.swift`** — the shared XPC contract; it must stay in sync across both targets.
+
+The main flow is:
+
+1. `WiFiListView` / `WiFiListPane` own the UI state for sorting, searching, setup, helper install/remove, file import, and initial loading.
+2. `WiFiDataManager.shared` is the central integration point. It checks direct file access, installs/uninstalls the helper, loads raw plist data via XPC or file import, parses the plist, stores the in-memory `[WiFiData]`, and provides the sorting methods used by the sidebar.
+3. `NetworkSetup.shared` wraps `/usr/sbin/networksetup` to detect the actual Wi-Fi interface, fetch the preferred network order, read the current SSID, and remove saved networks.
+4. `WiFiDataDetail` renders the selected network and handles password reveal, QR popover, and "Forget Network". The forget action is only available for live system data, not imported plist files.
+
+`WiFiData` mirrors the real plist structure rather than introducing a separate view model. It carries top-level fields, `BSSList`, `CaptiveProfile`, and `__OSSpecific__` content, and also provides display helpers such as security classification and human-readable disconnect reasons.
+
+The plist is parsed manually with `PropertyListSerialization` because the top level is a `Dictionary<String, AnyObject>`, not a clean Codable shape.
 
 ## Key Conventions
 
-**Plist key names as instance variables**: `WiFiDataManager` stores all plist key strings as `let` instance variables (e.g., `let AddReason = "AddReason"`). When adding support for a new plist field, add the key as an instance variable there and a matching property on `WiFiData`.
+**Dependency-free app**: `CONTRIBUTING.md` explicitly asks contributors to keep the project dependency-free and avoid new entitlements or privacy permissions without strong justification.
 
-**Known plist typo**: The system plist has a typo — `BrokenBackhaulStateUdatedAt` (missing second `p`). The constant in `WiFiDataManager` intentionally preserves this typo to match the actual key.
+**Add plist fields in three places**: when supporting a new plist field, update:
 
-**Apple WiFi ID format**: Plist keys use `wifi.ssid.<hexdata>` format. Use `WiFiDataManager.parseWiFiSSID(_:)` to decode them. Don't assume the key is a plain SSID string.
+1. the string key stored on `WiFiDataManager`
+2. the assignment in `WiFiDataManager.parseWiFiData(from:)`
+3. the matching property on `WiFiData`
 
-**Security color coding** (used consistently across `WiFiDataRow`, `WiFiDataDetail`, `Utils`):
-- WPA3 → `.green`
-- WPA2/WPA → `Color(NSColor.systemTeal)`
-- WEP → `.yellow`
-- Open → `.red`
-- Unknown → `.gray`
+**Preserve plist naming**: `WiFiData` property names intentionally use plist-style PascalCase (`JoinedByUserAt`, `AddReason`, etc.). Do not "Swiftify" them.
 
-**Logging**: Use `os.log` (`Logger`) with subsystem `"com.ciretose.wificheck"`. Mark user data as `.private` and non-sensitive paths as `.public`.
+**Preserve Apple's typo**: the real plist key is `BrokenBackhaulStateUdatedAt` (missing the second `p`). Keep that typo in the parser constant so lookups still work.
 
-**Date display**: Use `Utils.relativeDateToString` for user-facing dates (shows relative time for dates within 9 months, falls back to "DD MMM YYYY"). Use `Utils.dateToString` for full absolute timestamps (e.g., tooltips).
+**Do not treat Wi-Fi IDs as plain SSIDs**: plist entries use `wifi.ssid.<hexdata>` keys. Use `WiFiDataManager.parseWiFiSSID(_:)` when decoding network IDs or collocated-group values.
 
-**DateFormatter caching**: `Utils` caches static `DateFormatter` instances because they're expensive to allocate. Follow this pattern for any new formatters.
+**Helper/XPC names must stay aligned**: the app target, helper target, Mach service name (`com.ciretose.macos.tool.WiFiCheck.helper`), and daemon plist name all have to match for helper installation and XPC communication to work.
 
-**Preferred order encoding**: Networks are assigned order values in increments of `Constants.networkOrderIncrement` (100) by `NetworkSetup.getPreferredNetworkOrder()`. Networks not in the preferred list get `Int.max`.
+**Imported file state changes behavior**: `loadedFromDrop` / `isLoadedFromFile` are behavioral flags, not just provenance. Imported plist data should not be treated like live system data; for example, the UI hides "Forget Network" for imported files.
 
-**Drag-and-drop fallback**: When Full Disk Access isn't granted, `WiFiListPane` shows a drop target. `WiFiDataManager.parseDroppedData(_:)` handles the dropped plist bytes and sets `loadedFromDrop = true`, which causes `needsPassword()` to return `false`.
+**All shelling out goes through `Utils.runCommand`**: do not instantiate `Process` directly outside `Utils`. `runCommand` already uses argument arrays, captures stdout/stderr, and enforces a timeout.
 
-**Shell command safety**: `Utils.runCommand` passes arguments as an array to `Process` (not a shell string), has a 30-second timeout, and captures both stdout and stderr. `NetworkSetup.deleteNetwork` validates SSIDs against a shell metacharacter blocklist before calling out.
+**Use shared date formatting helpers**: `Utils.relativeDateToString` is the standard user-facing "recent date" formatter, while `Utils.dateToString` is the full timestamp format. Follow the cached formatter pattern in `Utils` for any new formatters.
 
-## Sample Data
+**Use project logging conventions**: use `Logger` with subsystem `com.ciretose.wificheck`, and mark user/network data as `.private` while keeping non-sensitive paths `.public`.
 
-`SampleData/com.apple.wifi.known-networks.plist` is a real plist for local development. Drag it onto the app window to load it without Full Disk Access.
+**Use `WiFiButtonStyle` for action buttons**: setup, password, destructive, and other app action buttons consistently use the custom `WiFiButtonStyle` from `WiFiCheckApp.swift`.
 
-## Custom Agent
+**Security display is centralized**: `WiFiData.securityType()` and `Utils.getSecurityColor(_:)` define the shared mapping used across list/detail UI:
 
-`.github/agents/swift-code-reviewer.agent.md` defines a code review agent specialized for this project. Invoke it when asked to review Swift code for bugs or issues.
+- WPA3 → green
+- WPA2/WPA → teal
+- WEP → orange
+- Open → red
+- Unknown → gray
+
+**Preferred order comes from `networksetup`, not plist order**: `NetworkSetup.getPreferredNetworkOrder()` assigns values in increments of `Constants.networkOrderIncrement` (100), and networks missing from the preferred list fall back to `Int.max`.
+
+**Code review agent**: `.github/agents/swift-code-reviewer.agent.md` is the project-specific reviewer for Swift/macOS bug-finding tasks.
