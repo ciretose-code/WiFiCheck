@@ -22,6 +22,8 @@ NOTARY_PROFILE="wifi-check-notary"   # keychain profile name from store-credenti
 PLIST="WiFiCheck/Info.plist"
 VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$PLIST")
 APP_NAME="WiFi Check"
+GITHUB_REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
+CURRENT_BRANCH=$(git branch --show-current)
 
 ARCHIVE_PATH="build/${SCHEME}.xcarchive"
 EXPORT_PATH="build/export"
@@ -45,6 +47,7 @@ TAG="v${VERSION}.${BUILD}"
 DMG_NAME="${APP_NAME// /-}-${VERSION}"
 DMG_PATH="build/${DMG_NAME}.dmg"
 echo "▶ ${APP_NAME} ${VERSION} (build ${BUILD}) → ${TAG}"
+echo "▶ GitHub repo: ${GITHUB_REPO}"
 
 # ── 2. Export (Developer ID signed) ───────────────────────────────────────────
 echo "▶ Exporting..."
@@ -156,6 +159,7 @@ xcrun stapler validate "$DMG_PATH"
 # ── 7. Publish GitHub release ─────────────────────────────────────────────────
 echo "▶ Publishing GitHub release ${TAG}..."
 gh release create "$TAG" \
+  --repo "$GITHUB_REPO" \
   "$DMG_PATH" \
   --title "${APP_NAME} ${TAG}" \
   --generate-notes
@@ -163,8 +167,8 @@ gh release create "$TAG" \
 # ── 8. Commit and push updated Info.plist ─────────────────────────────────────
 echo "▶ Committing build number ${BUILD}..."
 git add "$PLIST"
-git commit -m "Release ${TAG} (build ${BUILD})"
-git push
+git commit -m "Release ${TAG} (build ${BUILD})" -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+git push origin "$CURRENT_BRANCH"
 
 echo ""
 echo "✅ Released: ${TAG}"
