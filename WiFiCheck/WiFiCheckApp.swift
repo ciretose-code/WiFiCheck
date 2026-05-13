@@ -29,6 +29,10 @@ struct WiFiCheckApp: App {
                 .keyboardShortcut("r", modifiers: [.command, .shift])
             }
             CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") {
+                    NotificationCenter.default.post(name: .checkForUpdates, object: nil)
+                }
+                Divider()
                 Button("Setup…") {
                     NotificationCenter.default.post(name: .showSetupSheet, object: nil)
                 }
@@ -42,6 +46,7 @@ struct WiFiCheckApp: App {
 }
 
 extension Notification.Name {
+    static let checkForUpdates = Notification.Name("com.ciretose.WiFiCheck.checkForUpdates")
     static let showSetupSheet = Notification.Name("com.ciretose.WiFiCheck.showSetupSheet")
     static let showRemoveHelperSheet = Notification.Name("com.ciretose.WiFiCheck.showRemoveHelperSheet")
     static let openWiFiFile = Notification.Name("com.ciretose.WiFiCheck.openWiFiFile")
@@ -67,4 +72,3 @@ struct WiFiButtonStyle: ButtonStyle {
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 }
-

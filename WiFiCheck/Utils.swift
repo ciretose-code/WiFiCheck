@@ -7,6 +7,7 @@
 
 import Foundation
 import Dispatch
+import os.log
 import SwiftUI
 
 extension Date {
@@ -26,6 +27,119 @@ struct RuntimeError: Error {
     }
     let message: String
     let kind: ErrorKind
+}
+
+struct UpdateRelease: Decodable {
+    let tagName: String
+    let htmlURL: URL
+
+    private enum CodingKeys: String, CodingKey {
+        case tagName = "tag_name"
+        case htmlURL = "html_url"
+    }
+
+    var displayVersion: String {
+        UpdateChecker.displayVersion(tagName)
+    }
+}
+
+enum UpdateCheckResult {
+    case upToDate(currentTag: String)
+    case updateAvailable(currentTag: String, release: UpdateRelease)
+}
+
+enum UpdateCheckError: LocalizedError {
+    case invalidConfiguration
+    case invalidResponse
+    case unexpectedStatus(Int)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidConfiguration:
+            return "The update check URL is invalid."
+        case .invalidResponse:
+            return "GitHub returned an invalid response."
+        case .unexpectedStatus(let statusCode):
+            return "GitHub returned HTTP \(statusCode)."
+        }
+    }
+}
+
+enum UpdateChecker {
+    private static let logger = Logger(subsystem: "com.ciretose.wificheck", category: "UpdateChecker")
+
+    static func currentVersionTag() -> String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
+        return "v\(version).\(build)"
+    }
+
+    static func displayVersion(_ tag: String) -> String {
+        tag.replacingOccurrences(of: "v", with: "", options: [.anchored])
+    }
+
+    static func checkForUpdates() async throws -> UpdateCheckResult {
+        guard let url = URL(string: Constants.gitHubLatestReleaseAPI) else {
+            throw UpdateCheckError.invalidConfiguration
+        }
+
+        var request = URLRequest(url: url, timeoutInterval: 15.0)
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("WiFiCheck/\(displayVersion(currentVersionTag()))", forHTTPHeaderField: "User-Agent")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw UpdateCheckError.invalidResponse
+            }
+
+            guard httpResponse.statusCode == 200 else {
+                throw UpdateCheckError.unexpectedStatus(httpResponse.statusCode)
+            }
+
+            let release = try JSONDecoder().decode(UpdateRelease.self, from: data)
+            let currentTag = currentVersionTag()
+
+            logger.info("Update check current=\(currentTag, privacy: .public) latest=\(release.tagName, privacy: .public)")
+
+            if isVersion(release.tagName, newerThan: currentTag) {
+                return .updateAvailable(currentTag: currentTag, release: release)
+            }
+
+            return .upToDate(currentTag: currentTag)
+        } catch {
+            logger.error("Update check failed: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
+    }
+
+    private static func isVersion(_ remoteTag: String, newerThan localTag: String) -> Bool {
+        let remote = versionComponents(from: remoteTag)
+        let local = versionComponents(from: localTag)
+        let componentCount = max(remote.count, local.count)
+
+        for index in 0..<componentCount {
+            let remoteValue = index < remote.count ? remote[index] : 0
+            let localValue = index < local.count ? local[index] : 0
+
+            if remoteValue != localValue {
+                return remoteValue > localValue
+            }
+        }
+
+        return false
+    }
+
+    private static func versionComponents(from tag: String) -> [Int] {
+        tag.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "v", with: "", options: [.anchored])
+            .split(separator: ".")
+            .compactMap { component in
+                let digits = component.prefix { $0.isNumber }
+                return digits.isEmpty ? nil : Int(digits)
+            }
+    }
 }
 
 class Utils {
@@ -297,4 +411,3 @@ class Utils {
     
     
 }
-

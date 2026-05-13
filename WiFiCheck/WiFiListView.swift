@@ -108,6 +108,7 @@ struct WiFiListPane: View {
     @State private var helperRemoving = false
     @State private var helperRemoveError: String? = nil
     @State private var helperRemoved = false
+    @State private var updateCheckInProgress = false
 
     static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
 
@@ -163,6 +164,59 @@ struct WiFiListPane: View {
         } else {
             showSetupSheet = true
         }
+    }
+
+    func checkForUpdates() {
+        guard !updateCheckInProgress else { return }
+        updateCheckInProgress = true
+
+        Task {
+            do {
+                let result = try await UpdateChecker.checkForUpdates()
+                await MainActor.run {
+                    updateCheckInProgress = false
+                    presentUpdateCheckResult(result)
+                }
+            } catch {
+                await MainActor.run {
+                    updateCheckInProgress = false
+                    presentUpdateCheckError(error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func presentUpdateCheckResult(_ result: UpdateCheckResult) {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+
+        switch result {
+        case .upToDate(let currentTag):
+            alert.messageText = "You're Up to Date"
+            alert.informativeText = "WiFi Check \(UpdateChecker.displayVersion(currentTag)) is the latest published release."
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        case .updateAvailable(let currentTag, let release):
+            alert.messageText = "Update Available"
+            alert.informativeText = "WiFi Check \(release.displayVersion) is available. You're currently running \(UpdateChecker.displayVersion(currentTag))."
+            alert.addButton(withTitle: "Open Release Page")
+            alert.addButton(withTitle: "Cancel")
+
+            if alert.runModal() == .alertFirstButtonReturn {
+                NSWorkspace.shared.open(release.htmlURL)
+            }
+        }
+    }
+
+    @MainActor
+    private func presentUpdateCheckError(_ message: String) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Could Not Check for Updates"
+        alert.informativeText = message
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     func copyCommandToClipboard() {
@@ -390,6 +444,9 @@ struct WiFiListPane: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .showSetupSheet)) { _ in
             showSetupSheet = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .checkForUpdates)) { _ in
+            checkForUpdates()
         }
         .onReceive(NotificationCenter.default.publisher(for: .showRemoveHelperSheet)) { _ in
             helperRemoved = false
@@ -880,4 +937,3 @@ struct WiFiListView_Previews: PreviewProvider {
         WiFiListView()
     }
 }
-

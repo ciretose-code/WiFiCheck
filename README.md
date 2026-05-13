@@ -22,6 +22,7 @@ For each known network:
 - **Password** — reads from your Keychain with your permission, auto-hides after a configurable timeout
 
 Networks can also be removed from your preferred networks list.
+From the app menu, WiFi Check can also manually compare your installed version against the latest GitHub release.
 
 ---
 
@@ -46,7 +47,7 @@ Then use File → Open in the app. No helper required, but data won't update aut
 Requires Xcode 26+ and macOS 26.
 
 ```bash
-git clone https://github.com/ewuehler/WiFiCheck.git
+git clone https://github.com/ciretose-code/WiFiCheck.git
 cd WiFiCheck
 open WiFiCheck.xcodeproj
 ```

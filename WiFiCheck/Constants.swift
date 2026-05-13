@@ -30,6 +30,17 @@ enum Constants {
     /// Keychain service name for WiFi passwords
     static let keychainService = "AirPort"
 
+    // MARK: - App Updates
+
+    /// GitHub repository owner used for manual update checks
+    static let gitHubOwner = "ciretose-code"
+
+    /// GitHub repository name used for manual update checks
+    static let gitHubRepository = "WiFiCheck"
+
+    /// GitHub API endpoint for the latest published release
+    static let gitHubLatestReleaseAPI = "https://api.github.com/repos/\(gitHubOwner)/\(gitHubRepository)/releases/latest"
+
     // MARK: - File Paths
 
     /// System configuration folder containing network preferences
