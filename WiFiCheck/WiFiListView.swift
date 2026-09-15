@@ -932,8 +932,6 @@ private struct StatCard: View {
 }
 
 
-struct WiFiListView_Previews: PreviewProvider {
-    static var previews: some View {
-        WiFiListView()
-    }
+#Preview {
+    WiFiListView()
 }
