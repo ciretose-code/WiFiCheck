@@ -635,6 +635,37 @@ class WiFiDataManager {
             "Enable WiFi Check under Privacy & Security → Login Items & Extensions, then click Install Helper again."]
     )
 
+    /// XPC domain for helper load failures that are not the helper's own reply error.
+    static let helperXPCErrorDomain = "com.ciretose.wificheck.helperXPC"
+
+    /// The helper did not reply before the load timeout.
+    static let helperTimeoutError = NSError(
+        domain: helperXPCErrorDomain,
+        code: 101,
+        userInfo: [NSLocalizedDescriptionKey: "The helper did not respond in time."]
+    )
+
+    /// The XPC connection was invalidated before a reply arrived.
+    static let helperInvalidatedError = NSError(
+        domain: helperXPCErrorDomain,
+        code: 102,
+        userInfo: [NSLocalizedDescriptionKey: "The helper connection was invalidated."]
+    )
+
+    /// The XPC connection was interrupted before a reply arrived.
+    static let helperInterruptedError = NSError(
+        domain: helperXPCErrorDomain,
+        code: 103,
+        userInfo: [NSLocalizedDescriptionKey: "The helper connection was interrupted."]
+    )
+
+    /// The remote object could not be cast to `WiFiHelperProtocol`.
+    static let helperInvalidProxyError = NSError(
+        domain: helperXPCErrorDomain,
+        code: 104,
+        userInfo: [NSLocalizedDescriptionKey: "Could not create a helper XPC proxy."]
+    )
+
     /// Unregister the daemon (for debugging / uninstall).
     func uninstallHelper(completion: @escaping (Bool, Error?) -> Void) {
         let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
@@ -647,62 +678,76 @@ class WiFiDataManager {
     }
 
     /// Read the WiFi plist via the privileged helper over XPC.
-    /// Calls `completion` on the main thread with the parsed networks and any error.
+    /// Calls `completion` exactly once on the main thread with the parsed networks and any error.
     func loadViaHelper(completion: @escaping ([WiFiData]?, Error?) -> Void) {
         let connection = NSXPCConnection(machServiceName: Self.kHelperMachService,
                                          options: .privileged)
         connection.remoteObjectInterface = NSXPCInterface(with: WiFiHelperProtocol.self)
 
-        // Guard against completion being called more than once (timeout vs reply race).
+        // Invalidation, interruption, proxy errors, the reply, and the timeout can
+        // all fire on different queues. Lock the check-and-set so only the first
+        // winner schedules completion, then hop to main.
+        let finishLock = NSLock()
         var finished = false
         let finish: ([WiFiData]?, Error?) -> Void = { result, error in
-            guard !finished else { return }
-            finished = true
-            DispatchQueue.main.async { completion(result, error) }
+            finishLock.lock()
+            let shouldComplete = !finished
+            if shouldComplete { finished = true }
+            finishLock.unlock()
+            guard shouldComplete else { return }
+            DispatchQueue.main.async {
+                if let parsed = result {
+                    self.wifidatalist = parsed
+                    self.wifidatalist = self.sortByPreferredOrder()
+                    self.loadedFromDrop = false
+                    self.isLoadedFromFile = false
+                }
+                completion(result, error)
+            }
         }
 
         connection.invalidationHandler = {
             Self.logger.error("XPC connection invalidated")
-            finish(nil, nil)
+            finish(nil, Self.helperInvalidatedError)
         }
         connection.interruptionHandler = {
             Self.logger.error("XPC connection interrupted")
-            finish(nil, nil)
+            finish(nil, Self.helperInterruptedError)
         }
         connection.resume()
 
         // 15-second safety net so the spinner can never hang forever.
         DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-            if !finished {
+            finishLock.lock()
+            let alreadyFinished = finished
+            finishLock.unlock()
+            if !alreadyFinished {
                 Self.logger.error("XPC reply timed out after 15 s")
-                connection.invalidate()
-                finish(nil, nil)
+                finish(nil, Self.helperTimeoutError)
             }
+            connection.invalidate()
         }
 
         guard let proxy = connection.remoteObjectProxyWithErrorHandler({ error in
             Self.logger.error("XPC proxy error: \(error.localizedDescription, privacy: .public)")
-            connection.invalidate()
             finish(nil, error)
-        }) as? WiFiHelperProtocol else {
             connection.invalidate()
-            finish(nil, nil)
+        }) as? WiFiHelperProtocol else {
+            finish(nil, Self.helperInvalidProxyError)
+            connection.invalidate()
             return
         }
 
         proxy.readWifiPlist { data, error in
-            connection.invalidate()
             guard let data = data else {
                 Self.logger.error("Helper returned no data: \(error?.localizedDescription ?? "unknown", privacy: .public)")
                 finish(nil, error)
+                connection.invalidate()
                 return
             }
             let parsed = self.parseWiFiData(from: data)
-            self.wifidatalist = parsed
-            self.wifidatalist = self.sortByPreferredOrder()
-            self.loadedFromDrop = true
-            self.isLoadedFromFile = false
             finish(parsed, nil)
+            connection.invalidate()
         }
     }
 
