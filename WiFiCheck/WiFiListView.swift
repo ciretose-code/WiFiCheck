@@ -8,7 +8,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import ServiceManagement
-import CoreWLAN
 
 enum SortableMenu: String, CaseIterable, Identifiable {
     var id: String {
@@ -61,7 +60,8 @@ struct WiFiListView: View {
         .onChange(of: wifidataArray) {
             guard !hasAutoSelected, !wifidataArray.isEmpty else { return }
             hasAutoSelected = true
-            if let currentSSID = CWWiFiClient.shared().interface()?.ssid(),
+            let currentSSID = NetworkSetup.shared.getAirportNetwork()
+            if !currentSSID.isEmpty,
                let match = wifidataArray.first(where: { $0.ssidString() == currentSSID }) {
                 listSelection = match
             }
