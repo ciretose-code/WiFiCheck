@@ -292,18 +292,20 @@ class Utils {
     /// then 2.4 GHz (`0x8`). Those bits are the only way to tell 6 GHz from
     /// 2.4/5, because 6 E channel numbers reuse 1–14 and 36–177.
     ///
-    /// Without flags, 1...14 is treated as 2.4 GHz and 36...177 as 5 GHz.
-    /// Missing or otherwise out-of-range channels (including the plist
-    /// unset sentinel `-1`) return `"Unknown"`. Channel history has no flags,
-    /// so those rows stay number-only.
+    /// Without flags, 1...14 is treated as 2.4 GHz, 36...177 as 5 GHz,
+    /// and 189...233 as 6 GHz (high 6E channels that do not collide with
+    /// 2.4/5 numbering). Missing or otherwise out-of-range channels
+    /// (including the plist unset sentinel `-1`) return `"Unknown"`.
+    /// Channel history has no flags, so those rows stay number-only.
     static func frequencyBand(for channel: Int, flags: Int = -1) -> String {
         if let band = documentedFrequencyBand(fromChannelFlags: flags) {
             return band
         }
         switch channel {
-        case 1...14:   return "2.4 GHz"
-        case 36...177: return "5 GHz"
-        default:       return "Unknown"
+        case 1...14:    return "2.4 GHz"
+        case 36...177:  return "5 GHz"
+        case 189...233: return "6 GHz"
+        default:        return "Unknown"
         }
     }
 
