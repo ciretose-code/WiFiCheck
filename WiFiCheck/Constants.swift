@@ -54,4 +54,15 @@ enum Constants {
 
     /// Airport framework utility path (optional, for advanced features)
     static let airportCommandPath = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
+
+    /// Privileged helper executable name (matches helper PRODUCT_NAME / BundleProgram)
+    static let helperBinaryName = "com.ciretose.macos.tool.WiFiCheck.helper"
+
+    /// Absolute path of the helper binary inside the running app bundle
+    static var helperBinaryPath: String {
+        Bundle.main.bundleURL
+            .appendingPathComponent("Contents/Library/LaunchDaemons")
+            .appendingPathComponent(helperBinaryName)
+            .path
+    }
 }

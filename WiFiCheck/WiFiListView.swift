@@ -548,7 +548,7 @@ struct SetupSheetView: View {
                                     .foregroundColor(.orange)
                                     .font(.caption)
                                     .padding(.top, 1)
-                                Text("One more step — the helper needs **Full Disk Access**. In System Settings → Privacy & Security → Full Disk Access, click **+** and add:\n`WiFiCheck.app`")
+                                Text("One more step — the helper needs **Full Disk Access**. In System Settings → Privacy & Security → Full Disk Access, click **+** and add the helper binary:\n`\(Constants.helperBinaryPath)`\nUpdating the app changes this path, so a previous Full Disk Access grant can go stale.")
                                     .font(.caption)
                                     .foregroundColor(.primary)
                                     .multilineTextAlignment(.leading)
