@@ -287,22 +287,46 @@ class Utils {
     }
 
     /// Returns the frequency band name for a WiFi channel number.
-    static func frequencyBand(for channel: Int) -> String {
+    ///
+    /// Channel-number ranges are only a guess: 1...14 is treated as 2.4 GHz
+    /// and 36...177 as 5 GHz. Missing or otherwise out-of-range channels
+    /// (including the plist unset sentinel `-1`) return `"Unknown"` rather
+    /// than 6 GHz, because 6 GHz reuses low channel numbers.
+    ///
+    /// `flags` is the BSS `ChannelFlags` value when available (unset is `-1`).
+    /// This repository has no verified ChannelFlags bit layout, so a present
+    /// flag currently does not override the channel-number guess. The
+    /// parameter is threaded so a documented mapping can override here
+    /// without changing call sites.
+    static func frequencyBand(for channel: Int, flags: Int = -1) -> String {
+        if let band = documentedFrequencyBand(fromChannelFlags: flags) {
+            return band
+        }
         switch channel {
         case 1...14:   return "2.4 GHz"
         case 36...177: return "5 GHz"
-        default:       return "6 GHz"
+        default:       return "Unknown"
         }
     }
 
     /// Returns the color for a WiFi channel's frequency band.
     /// Uses NSColor-backed system colors so they adapt correctly in both light and dark mode.
-    static func getBandColor(for channel: Int) -> Color {
-        switch channel {
-        case 1...14:  return Color(NSColor.systemOrange)   // 2.4 GHz
-        case 36...177: return Color(NSColor.systemBlue)    // 5 GHz
-        default:      return Color(NSColor.systemPurple)   // 6 GHz
+    static func getBandColor(for channel: Int, flags: Int = -1) -> Color {
+        switch frequencyBand(for: channel, flags: flags) {
+        case "2.4 GHz": return Color(NSColor.systemOrange)
+        case "5 GHz":   return Color(NSColor.systemBlue)
+        case "6 GHz":   return Color(NSColor.systemPurple)
+        default:        return Color(NSColor.systemGray)
         }
+    }
+
+    /// ChannelFlags band bits are not documented in this repository.
+    /// A verified mapping can override the channel-number guess here.
+    private static func documentedFrequencyBand(fromChannelFlags flags: Int) -> String? {
+        // Unset ChannelFlags values are stored as -1. No bit-to-band mapping
+        // in this repository has been verified, so no override is applied.
+        guard flags > 0 else { return nil }
+        return nil
     }
 
     /// Returns a date box color that fades from the system accent color toward gray as the date ages.
