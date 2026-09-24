@@ -286,23 +286,51 @@ class Utils {
         return securityColor
     }
 
-    /// Returns the frequency band name for a WiFi channel number.
-    static func frequencyBand(for channel: Int) -> String {
+    /// Returns the frequency band name for a WiFi channel.
+    ///
+    /// Prefer `ChannelFlags` when present: 6 GHz (`0x2000`), 5 GHz (`0x10`),
+    /// then 2.4 GHz (`0x8`). Those bits are the only way to tell 6 GHz from
+    /// 2.4/5, because 6 E channel numbers reuse 1–14 and 36–177.
+    ///
+    /// Without flags, 1...14 is treated as 2.4 GHz, 36...177 as 5 GHz,
+    /// and 189...233 as 6 GHz (high 6E channels that do not collide with
+    /// 2.4/5 numbering). Missing or otherwise out-of-range channels
+    /// (including the plist unset sentinel `-1`) return `"Unknown"`.
+    /// Channel history has no flags, so those rows stay number-only.
+    static func frequencyBand(for channel: Int, flags: Int = -1) -> String {
+        if let band = documentedFrequencyBand(fromChannelFlags: flags) {
+            return band
+        }
         switch channel {
-        case 1...14:   return "2.4 GHz"
-        case 36...177: return "5 GHz"
-        default:       return "6 GHz"
+        case 1...14:    return "2.4 GHz"
+        case 36...177:  return "5 GHz"
+        case 189...233: return "6 GHz"
+        default:        return "Unknown"
         }
     }
 
     /// Returns the color for a WiFi channel's frequency band.
     /// Uses NSColor-backed system colors so they adapt correctly in both light and dark mode.
-    static func getBandColor(for channel: Int) -> Color {
-        switch channel {
-        case 1...14:  return Color(NSColor.systemOrange)   // 2.4 GHz
-        case 36...177: return Color(NSColor.systemBlue)    // 5 GHz
-        default:      return Color(NSColor.systemPurple)   // 6 GHz
+    static func getBandColor(for channel: Int, flags: Int = -1) -> Color {
+        switch frequencyBand(for: channel, flags: flags) {
+        case "2.4 GHz": return Color(NSColor.systemOrange)
+        case "5 GHz":   return Color(NSColor.systemBlue)
+        case "6 GHz":   return Color(NSColor.systemPurple)
+        default:        return Color(NSColor.systemGray)
         }
+    }
+
+    /// Band bits from Apple's apple80211 channel flags, as stored on BSSList.
+    ///
+    /// `0x8` / `0x10` are in the historical public-ish header (2.4 / 5 GHz).
+    /// `0x2000` is the 6 GHz bit observed on live 6E `CHANNEL_FLAGS` values
+    /// (not in the old header). Unset plist values are `-1`.
+    private static func documentedFrequencyBand(fromChannelFlags flags: Int) -> String? {
+        guard flags > 0 else { return nil }
+        if flags & 0x2000 != 0 { return "6 GHz" }
+        if flags & 0x10 != 0 { return "5 GHz" }
+        if flags & 0x8 != 0 { return "2.4 GHz" }
+        return nil
     }
 
     /// Returns a date box color that fades from the system accent color toward gray as the date ages.

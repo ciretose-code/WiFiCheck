@@ -504,10 +504,10 @@ struct BSSIDListView: View {
                                 .padding(.horizontal, 8).padding(.vertical, 4)
                                 .background(Color.black)
                                 .clipShape(Capsule())
-                            Text(Utils.frequencyBand(for: b.Channel))
+                            Text(Utils.frequencyBand(for: b.Channel, flags: b.ChannelFlags))
                                 .font(.caption).foregroundColor(.white)
                                 .padding(.horizontal, 8).padding(.vertical, 4)
-                                .background(Utils.getBandColor(for: b.Channel))
+                                .background(Utils.getBandColor(for: b.Channel, flags: b.ChannelFlags))
                                 .clipShape(Capsule())
                         }
                     }
