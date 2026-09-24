@@ -794,38 +794,50 @@ class WiFiDataManager {
                                          options: .privileged)
         connection.remoteObjectInterface = NSXPCInterface(with: WiFiHelperProtocol.self)
 
+        let finishLock = NSLock()
         var finished = false
         let finish: (Bool, Error?) -> Void = { success, error in
-            guard !finished else { return }
-            finished = true
-            DispatchQueue.main.async { completion(success, error) }
+            finishLock.lock()
+            let shouldComplete = !finished
+            if shouldComplete { finished = true }
+            finishLock.unlock()
+            guard shouldComplete else { return }
+            DispatchQueue.main.async {
+                if success {
+                    self.wifidatalist.removeAll { $0.WiFiID == wifiID }
+                }
+                completion(success, error)
+            }
         }
 
         connection.invalidationHandler = {
             Self.logger.error("XPC connection invalidated during forget")
-            finish(false, nil)
+            finish(false, Self.helperInvalidatedError)
         }
         connection.interruptionHandler = {
             Self.logger.error("XPC connection interrupted during forget")
-            finish(false, nil)
+            finish(false, Self.helperInterruptedError)
         }
         connection.resume()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
-            if !finished {
+            finishLock.lock()
+            let alreadyFinished = finished
+            finishLock.unlock()
+            if !alreadyFinished {
                 Self.logger.error("XPC forget reply timed out after 15 s")
-                connection.invalidate()
-                finish(false, nil)
+                finish(false, Self.helperTimeoutError)
             }
+            connection.invalidate()
         }
 
         guard let proxy = connection.remoteObjectProxyWithErrorHandler({ error in
             Self.logger.error("XPC proxy error during forget: \(error.localizedDescription, privacy: .public)")
-            connection.invalidate()
             finish(false, error)
-        }) as? WiFiHelperProtocol else {
             connection.invalidate()
-            finish(false, nil)
+        }) as? WiFiHelperProtocol else {
+            finish(false, Self.helperInvalidProxyError)
+            connection.invalidate()
             return
         }
 
@@ -843,7 +855,6 @@ class WiFiDataManager {
             if case .failure(let keychainError) = KeychainAccess.deletePassword(forNetwork: ssid) {
                 Self.logger.info("Keychain delete failed: \(keychainError.localizedDescription, privacy: .public)")
             }
-            self.wifidatalist.removeAll { $0.WiFiID == wifiID }
             finish(true, nil)
             connection.invalidate()
         }
