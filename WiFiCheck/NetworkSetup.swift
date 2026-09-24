@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreWLAN
 import os.log
 
 class NetworkSetup {
@@ -19,6 +20,18 @@ class NetworkSetup {
     private let networksetup: String = Constants.networksetupPath
     private var devicename: String = Constants.defaultWiFiDevice
     private let wifiservice: String = Constants.wifiServiceName
+
+    /// CoreWLAN Wi-Fi interface used for the BSD device name and current SSID.
+    private func wifiInterface() -> CWInterface? {
+        let client = CWWiFiClient.shared()
+        if let named = client.interface(withName: devicename) {
+            return named
+        }
+        if let primary = client.interface() {
+            return primary
+        }
+        return client.interfaces()?.first
+    }
 
     init() {
         // Validate system paths exist
@@ -48,69 +61,26 @@ class NetworkSetup {
 
     /// Detects and sets the WiFi network interface device name
     ///
-    /// Queries the system using `networksetup -listallhardwareports` to find the actual WiFi device name.
-    /// On most Macs this is "en0", but it can vary. The detected device name is stored in `devicename`.
-    ///
-    /// This method parses the output looking for a line containing "Hardware Port" and "Wi-Fi",
-    /// then extracts the device name from the following "Device:" line.
+    /// Uses CoreWLAN (`CWWiFiClient`) to read the BSD interface name (typically "en0").
+    /// This avoids parsing localized `networksetup -listallhardwareports` labels.
     private func setWiFiDevice() {
-        var output: String = ""
-
-        do {
-            output = try Utils.runCommand(networksetup, withArgs: ["-listallhardwareports"])
-        } catch let e as RuntimeError {
-            Self.logger.error("RuntimeError: \(String(describing: e.kind), privacy: .public) - \(e.message, privacy: .public)")
-        } catch {
-            Self.logger.error("Error: \(error.localizedDescription, privacy: .public)")
+        let client = CWWiFiClient.shared()
+        let iface = client.interface() ?? client.interfaces()?.first
+        if let name = iface?.interfaceName?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            devicename = name
+            return
         }
-
-        if !output.isEmpty {
-            let networks = output.components(separatedBy: .newlines).dropFirst()
-            var getNext: Bool = false
-            for network in networks {
-                let n = network.trimmingCharacters(in: .whitespacesAndNewlines)
-                if getNext {
-                    if let range = n.range(of: "Device:") {
-                        let d = n[range.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
-                        devicename = d
-                    }
-                    getNext = false
-                }
-                if n.contains("Hardware Port") && n.contains("Wi-Fi") {
-                    getNext = true
-                }
-            }
-        }
+        Self.logger.warning("Unable to determine Wi-Fi interface via CoreWLAN; using default \(Constants.defaultWiFiDevice, privacy: .public)")
     }
 
     /// Retrieves the currently connected WiFi network SSID
     ///
-    /// Executes `networksetup -getairportnetwork <device>` to query the active WiFi connection.
-    /// If the device is not connected to WiFi, returns an empty string.
+    /// Uses CoreWLAN (`CWInterface.ssid()`) instead of parsing
+    /// `networksetup -getairportnetwork` output, which uses a localized "Network:" label.
     ///
     /// - Returns: The SSID of the currently connected network, or an empty string if not connected or on error
     func getAirportNetwork() -> String {
-        var ssid: String = ""
-        var output: String = ""
-
-        do {
-            output = try Utils.runCommand(networksetup, withArgs: ["-getairportnetwork", devicename])
-        } catch let e as RuntimeError {
-            Self.logger.error("RuntimeError: \(String(describing: e.kind), privacy: .public) - \(e.message, privacy: .public)")
-            return ssid
-        } catch {
-            Self.logger.error("Error: \(error.localizedDescription, privacy: .public)")
-            return ssid
-        }
-
-        if !output.isEmpty {
-            if let range = output.range(of: "Network:") {
-                let outstr = output[range.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
-                ssid = outstr
-            }
-        }
-        return ssid
-
+        return wifiInterface()?.ssid() ?? ""
     }
     
     /// Retrieves the user's preferred WiFi network ordering from system preferences
@@ -138,31 +108,51 @@ class NetworkSetup {
             return prefWiFi
         }
 
-        if !output.isEmpty {
-            let networks = output.components(separatedBy: .newlines).dropFirst()
-            var i = Constants.networkOrderIncrement
-            for network in networks {
-                let n = network.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !n.isEmpty else { continue }
-                prefWiFi[n] = i
-                i += Constants.networkOrderIncrement
-            }
+        return Self.preferredNetworkOrder(from: output)
+    }
+
+    /// Parses `networksetup -listpreferredwirelessnetworks` stdout without matching localized labels.
+    ///
+    /// The first content line is a header in the current locale. SSIDs follow, usually tab-indented.
+    /// A missing or empty header is not treated as a parse failure.
+    static func preferredNetworkOrder(from output: String) -> Dictionary<String, Int> {
+        var prefWiFi: Dictionary<String, Int> = [:]
+        guard !output.isEmpty else { return prefWiFi }
+
+        var lines = output.components(separatedBy: .newlines)
+        // Skip leading blank lines so an empty header translation is not a failure
+        while lines.first?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true {
+            lines.removeFirst()
+        }
+        // Skip one unindented header line when present; indented first line is an SSID
+        if let first = lines.first, first.first != "\t", first.first != " " {
+            lines.removeFirst()
+        }
+
+        var i = Constants.networkOrderIncrement
+        for network in lines {
+            let n = network.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !n.isEmpty else { continue }
+            prefWiFi[n] = i
+            i += Constants.networkOrderIncrement
         }
         return prefWiFi
     }
     
-    /// Removes a WiFi network from the system's list of known networks
+    /// Removes a WiFi network from the preferred wireless network order.
     ///
-    /// Executes `networksetup -removepreferredwirelessnetwork <device> <network>` to delete the
-    /// specified network from the user's saved networks. This removes the network's stored password
-    /// from the keychain and prevents automatic reconnection.
+    /// Executes `networksetup -removepreferredwirelessnetwork <device> <network>`. That command
+    /// only edits preferred-network order; it does not delete the known-networks plist entry or
+    /// the keychain password. `WiFiDataManager.forgetNetwork` performs those additional steps.
+    ///
+    /// Success is determined from the process termination status, not localized stdout.
     ///
     /// Arguments are passed directly to `Process` (not through a shell), so no shell injection
     /// is possible and no character filtering is needed. Valid SSIDs containing parentheses,
     /// asterisks, or other special characters are handled correctly.
     ///
     /// - Parameter network: The SSID of the network to remove
-    /// - Returns: `true` if the network was successfully removed, `false` otherwise
+    /// - Returns: `true` if the command exited with status 0, `false` otherwise
     func deleteNetwork(_ network: String) -> Bool {
         // Validate that the network name is not empty
         guard !network.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -170,9 +160,13 @@ class NetworkSetup {
             return false
         }
 
-        var output: String = ""
         do {
-            output = try Utils.runCommand(networksetup, withArgs: ["-removepreferredwirelessnetwork", devicename, network])
+            let result = try Utils.runCommandWithStatus(networksetup, withArgs: ["-removepreferredwirelessnetwork", devicename, network])
+            if result.status == 0 {
+                return true
+            }
+            Self.logger.error("remove preferred network failed with status \(result.status)")
+            return false
         } catch let e as RuntimeError {
             Self.logger.error("RuntimeError: \(String(describing: e.kind), privacy: .public) - \(e.message, privacy: .public)")
             return false
@@ -180,11 +174,5 @@ class NetworkSetup {
             Self.logger.error("Error: \(error.localizedDescription, privacy: .public)")
             return false
         }
-        if !output.isEmpty {
-            if output.contains("Removed") {
-                return true
-            }
-        }
-        return false
     }
 }

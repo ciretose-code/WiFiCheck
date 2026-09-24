@@ -373,11 +373,18 @@ class Utils {
     ///   - env: Optional environment variables dictionary
     ///   - timeout: Maximum execution time in seconds (default: 30.0)
     /// - Returns: The command's stdout output as a string
-    /// - Throws:
-    ///   - `RuntimeError.taskRun`: If the process fails to start
-    ///   - `RuntimeError.taskRun`: If the command times out
-    ///   - `RuntimeError.noOutput`: If stdout is empty (stderr is included in error message)
-    static func runCommand(_ executable: String, withArgs args: [String], withEnvironment env: [String:String]? = nil, timeout: TimeInterval = 30.0) throws -> String {
+    /// Result of running an external command, including process termination status.
+    struct CommandResult {
+        let output: String
+        let errorOutput: String
+        let status: Int32
+    }
+
+    /// Executes a command-line utility and returns stdout, stderr, and termination status.
+    ///
+    /// Unlike `runCommand`, this does not treat empty stdout as a failure. Use this when
+    /// success must be determined from the process exit status rather than localized text.
+    static func runCommandWithStatus(_ executable: String, withArgs args: [String], withEnvironment env: [String:String]? = nil, timeout: TimeInterval = 30.0) throws -> CommandResult {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: executable)
         task.arguments = args
@@ -425,14 +432,23 @@ class Utils {
         let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
         let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
 
-        let out = String(decoding: outputData, as: UTF8.self)
-        let err = String(decoding: errorData, as: UTF8.self)
+        return CommandResult(
+            output: String(decoding: outputData, as: UTF8.self),
+            errorOutput: String(decoding: errorData, as: UTF8.self),
+            status: task.terminationStatus
+        )
+    }
 
-        if out.isEmpty {
-            throw RuntimeError(message: "\(err)", kind: .noOutput)
-        } else {
-            return out
+    /// - Throws:
+    ///   - `RuntimeError.taskRun`: If the process fails to start
+    ///   - `RuntimeError.taskRun`: If the command times out
+    ///   - `RuntimeError.noOutput`: If stdout is empty (stderr is included in error message)
+    static func runCommand(_ executable: String, withArgs args: [String], withEnvironment env: [String:String]? = nil, timeout: TimeInterval = 30.0) throws -> String {
+        let result = try runCommandWithStatus(executable, withArgs: args, withEnvironment: env, timeout: timeout)
+        if result.output.isEmpty {
+            throw RuntimeError(message: result.errorOutput, kind: .noOutput)
         }
+        return result.output
     }
     
     

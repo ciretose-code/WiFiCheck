@@ -21,7 +21,7 @@ For each known network:
 - **Captive portal** — last login date for networks requiring web authentication
 - **Password** — reads from your Keychain with your permission, auto-hides after a configurable timeout
 
-Networks can also be removed from your preferred networks list.
+Networks can also be forgotten. Forget removes the entry from known-networks history, the preferred list, and the saved password.
 From the app menu, WiFi Check can also manually compare your installed version against the latest GitHub release.
 
 ---
