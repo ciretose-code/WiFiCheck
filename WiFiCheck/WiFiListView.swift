@@ -234,6 +234,7 @@ struct WiFiListPane: View {
         }
         if WiFiDataManager.shared.loadFromURL(fileURL) {
             sharedNetworks = WiFiDataManager.shared.getWiFiDataList()
+            applySort()
             reloadView.toggle()
             showSetupSheet = false
         } else {
@@ -333,6 +334,7 @@ struct WiFiListPane: View {
             DispatchQueue.main.async {
                 if parsed {
                     sharedNetworks = WiFiDataManager.shared.getWiFiDataList()
+                    applySort()
                     reloadView.toggle()
                 } else {
                     dropErrorMessage = "\"\(fileURL.lastPathComponent)\" does not appear to be a valid WiFi known-networks plist."
