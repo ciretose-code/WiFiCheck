@@ -172,17 +172,16 @@
             </div>
             <div class="row p-2">
                 <p>
-                    No. This removes the WiFi entry from your saved list of "known networks". If you
-                    remove the WiFi you will have to rejoin that WiFi just like you did the first
-                    time. Worst case scenario.
+                    No. Forget removes the WiFi entry from <code>com.apple.wifi.known-networks.plist</code>
+                    (via the privileged helper), from the preferred-network list, and from the saved
+                    AirPort keychain password. You will have to rejoin that WiFi just like you did
+                    the first time.
                 </p>
                 <p>
                     You can also remove old WiFi connections outside the context of the app. If you go into
                     your <code>System Settings</code>, select <code>Wi-Fi</code>, then scroll to the bottom and
                     click <code>Advanced...</code> you'll see a list of "Known Networks".
-                    This should be the same list you see in the WiFi Check app. You can remove
-                    items from the list here. The app uses the command line <code>networksetup</code> to remove the
-                    network.
+                    This should be the same list you see in the WiFi Check app.
                 </p>
             </div>
             <div class="row p-2">

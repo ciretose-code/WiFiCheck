@@ -716,4 +716,92 @@ class WiFiDataManager {
         }
     }
 
+    /// Sentinel error when Forget is attempted on an imported (non-live) plist.
+    static let cannotForgetImportedError = NSError(
+        domain: "com.ciretose.wificheck.forget",
+        code: 1,
+        userInfo: [NSLocalizedDescriptionKey: "Imported network lists cannot be forgotten from this Mac."]
+    )
+
+    /// Sentinel error when the helper is required to delete a known-networks entry.
+    static let helperRequiredToForgetError = NSError(
+        domain: "com.ciretose.wificheck.forget",
+        code: 2,
+        userInfo: [NSLocalizedDescriptionKey: "The privileged helper is required to forget a network from known-networks history."]
+    )
+
+    /// Forgets a live known network.
+    ///
+    /// Requires the privileged helper so the root-owned known-networks plist can be edited.
+    /// After the plist entry is removed, preferred-list and keychain cleanup are best-effort
+    /// and do not fail the operation. The in-memory row is dropped only after the plist delete.
+    func forgetNetwork(wifiID: String, ssid: String, completion: @escaping (Bool, Error?) -> Void) {
+        if isLoadedFromFile {
+            DispatchQueue.main.async { completion(false, Self.cannotForgetImportedError) }
+            return
+        }
+        guard helperIsRunning else {
+            DispatchQueue.main.async { completion(false, Self.helperRequiredToForgetError) }
+            return
+        }
+
+        let connection = NSXPCConnection(machServiceName: Self.kHelperMachService,
+                                         options: .privileged)
+        connection.remoteObjectInterface = NSXPCInterface(with: WiFiHelperProtocol.self)
+
+        var finished = false
+        let finish: (Bool, Error?) -> Void = { success, error in
+            guard !finished else { return }
+            finished = true
+            DispatchQueue.main.async { completion(success, error) }
+        }
+
+        connection.invalidationHandler = {
+            Self.logger.error("XPC connection invalidated during forget")
+            finish(false, nil)
+        }
+        connection.interruptionHandler = {
+            Self.logger.error("XPC connection interrupted during forget")
+            finish(false, nil)
+        }
+        connection.resume()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+            if !finished {
+                Self.logger.error("XPC forget reply timed out after 15 s")
+                connection.invalidate()
+                finish(false, nil)
+            }
+        }
+
+        guard let proxy = connection.remoteObjectProxyWithErrorHandler({ error in
+            Self.logger.error("XPC proxy error during forget: \(error.localizedDescription, privacy: .public)")
+            connection.invalidate()
+            finish(false, error)
+        }) as? WiFiHelperProtocol else {
+            connection.invalidate()
+            finish(false, nil)
+            return
+        }
+
+        proxy.deleteWifiNetwork(wifiID: wifiID) { success, error in
+            guard success else {
+                Self.logger.error("Helper failed to delete known-networks entry: \(error?.localizedDescription ?? "unknown", privacy: .public)")
+                finish(false, error)
+                connection.invalidate()
+                return
+            }
+
+            if !NetworkSetup.shared.deleteNetwork(ssid) {
+                Self.logger.info("Preferred-list removal did not succeed; plist entry was already removed")
+            }
+            if case .failure(let keychainError) = KeychainAccess.deletePassword(forNetwork: ssid) {
+                Self.logger.info("Keychain delete failed: \(keychainError.localizedDescription, privacy: .public)")
+            }
+            self.wifidatalist.removeAll { $0.WiFiID == wifiID }
+            finish(true, nil)
+            connection.invalidate()
+        }
+    }
+
 }

@@ -6,7 +6,7 @@ WiFi/Check is a **macOS-only SwiftUI app** for inspecting the system Wi-Fi known
 
 The app has two supported data-access paths:
 
-1. **Privileged helper (recommended)** — a launchd daemon installed with `SMAppService.daemon` reads `/Library/Preferences/com.apple.wifi.known-networks.plist` as root and returns the raw plist over XPC.
+1. **Privileged helper (recommended)** — a launchd daemon installed with `SMAppService.daemon` reads `/Library/Preferences/com.apple.wifi.known-networks.plist` as root and returns the raw plist over XPC. The same helper can delete a single validated `wifi.ssid.<hex>` entry so Forget actually edits the store this app displays.
 2. **Manual file import** — the user copies the plist to a readable location or opens/drags in a plist file; this works without the helper but does not provide live system access.
 
 ## Build, Test, and Lint
@@ -42,15 +42,15 @@ There are **no XCTest targets** in this repo today, so there is no single-test c
 The app uses a **singleton-service pattern**, not MVVM. There is no `ObservableObject` or `@EnvironmentObject`; views keep local `@State` and call shared services directly.
 
 - **`WiFiCheck` target** — the SwiftUI app.
-- **`WiFiCheckHelper` target** — a privileged background helper/launch daemon that reads the protected plist as root.
+- **`WiFiCheckHelper` target** — a privileged background helper/launch daemon that reads the protected plist as root and can delete one known-networks entry.
 - **`WiFiHelperProtocol.swift`** — the shared XPC contract; it must stay in sync across both targets.
 
 The main flow is:
 
 1. `WiFiListView` / `WiFiListPane` own the UI state for sorting, searching, setup, helper install/remove, file import, and initial loading.
 2. `WiFiDataManager.shared` is the central integration point. It checks direct file access, installs/uninstalls the helper, loads raw plist data via XPC or file import, parses the plist, stores the in-memory `[WiFiData]`, and provides the sorting methods used by the sidebar.
-3. `NetworkSetup.shared` wraps `/usr/sbin/networksetup` to detect the actual Wi-Fi interface, fetch the preferred network order, read the current SSID, and remove saved networks.
-4. `WiFiDataDetail` renders the selected network and handles password reveal, QR popover, and "Forget Network". The forget action is only available for live system data, not imported plist files.
+3. `NetworkSetup.shared` wraps `/usr/sbin/networksetup` to detect the actual Wi-Fi interface, fetch the preferred network order, read the current SSID, and remove a preferred-network entry. Preferred-list removal is not a full forget.
+4. `WiFiDataDetail` renders the selected network and handles password reveal, QR popover, and "Forget Network". Forget goes through `WiFiDataManager.forgetNetwork`, which deletes the plist entry via the helper, then best-effort preferred-list and keychain cleanup. The forget action is only available for live system data, not imported plist files.
 
 `WiFiData` mirrors the real plist structure rather than introducing a separate view model. It carries top-level fields, `BSSList`, `CaptiveProfile`, and `__OSSpecific__` content, and also provides display helpers such as security classification and human-readable disconnect reasons.
 
@@ -76,7 +76,7 @@ The plist is parsed manually with `PropertyListSerialization` because the top le
 
 **Imported file state changes behavior**: `loadedFromDrop` / `isLoadedFromFile` are behavioral flags, not just provenance. Imported plist data should not be treated like live system data; for example, the UI hides "Forget Network" for imported files.
 
-**All shelling out goes through `Utils.runCommand`**: do not instantiate `Process` directly outside `Utils`. `runCommand` already uses argument arrays, captures stdout/stderr, and enforces a timeout.
+**All shelling out goes through `Utils.runCommand` / `Utils.runCommandWithStatus`**: do not instantiate `Process` directly outside `Utils`. Use `runCommandWithStatus` when success depends on termination status rather than localized stdout.
 
 **Use shared date formatting helpers**: `Utils.relativeDateToString` is the standard user-facing "recent date" formatter, while `Utils.dateToString` is the full timestamp format. Follow the cached formatter pattern in `Utils` for any new formatters.
 

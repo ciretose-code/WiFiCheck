@@ -151,18 +151,20 @@ class NetworkSetup {
         return prefWiFi
     }
     
-    /// Removes a WiFi network from the system's list of known networks
+    /// Removes a WiFi network from the preferred wireless network order.
     ///
-    /// Executes `networksetup -removepreferredwirelessnetwork <device> <network>` to delete the
-    /// specified network from the user's saved networks. This removes the network's stored password
-    /// from the keychain and prevents automatic reconnection.
+    /// Executes `networksetup -removepreferredwirelessnetwork <device> <network>`. That command
+    /// only edits preferred-network order; it does not delete the known-networks plist entry or
+    /// the keychain password. `WiFiDataManager.forgetNetwork` performs those additional steps.
+    ///
+    /// Success is determined from the process termination status, not localized stdout.
     ///
     /// Arguments are passed directly to `Process` (not through a shell), so no shell injection
     /// is possible and no character filtering is needed. Valid SSIDs containing parentheses,
     /// asterisks, or other special characters are handled correctly.
     ///
     /// - Parameter network: The SSID of the network to remove
-    /// - Returns: `true` if the network was successfully removed, `false` otherwise
+    /// - Returns: `true` if the command exited with status 0, `false` otherwise
     func deleteNetwork(_ network: String) -> Bool {
         // Validate that the network name is not empty
         guard !network.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -170,9 +172,13 @@ class NetworkSetup {
             return false
         }
 
-        var output: String = ""
         do {
-            output = try Utils.runCommand(networksetup, withArgs: ["-removepreferredwirelessnetwork", devicename, network])
+            let result = try Utils.runCommandWithStatus(networksetup, withArgs: ["-removepreferredwirelessnetwork", devicename, network])
+            if result.status == 0 {
+                return true
+            }
+            Self.logger.error("remove preferred network failed with status \(result.status)")
+            return false
         } catch let e as RuntimeError {
             Self.logger.error("RuntimeError: \(String(describing: e.kind), privacy: .public) - \(e.message, privacy: .public)")
             return false
@@ -180,11 +186,5 @@ class NetworkSetup {
             Self.logger.error("Error: \(error.localizedDescription, privacy: .public)")
             return false
         }
-        if !output.isEmpty {
-            if output.contains("Removed") {
-                return true
-            }
-        }
-        return false
     }
 }

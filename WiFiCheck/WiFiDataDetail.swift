@@ -49,6 +49,7 @@ struct WiFiDataDetail: View {
 
     @State private var showDeleteConfirm = false
     @State private var deleteError: String? = nil
+    @State private var isForgetting = false
     var onDelete: (() -> Void)? = nil
 
     // Password auto-hide timer
@@ -189,11 +190,12 @@ struct WiFiDataDetail: View {
                                 Button(action: { showDeleteConfirm = true }) {
                                     HStack {
                                         Image(systemName: "minus.circle")
-                                        Text("Forget Network")
+                                        Text(isForgetting ? "Forgetting…" : "Forget Network")
                                     }
                                     .frame(minWidth: 160)
                                 }
                                 .buttonStyle(WiFiButtonStyle())
+                                .disabled(isForgetting)
                                 .accessibilityLabel("Forget \(wifidata.ssidString())")
                             }
                         }
@@ -304,16 +306,11 @@ struct WiFiDataDetail: View {
             titleVisibility: .visible
         ) {
             Button("Forget Network", role: .destructive) {
-                let success = NetworkSetup.shared.deleteNetwork(wifidata.ssidString())
-                if success {
-                    onDelete?()
-                } else {
-                    deleteError = "Forget \(wifidata.ssidString()) failed. Make sure the network exists in your preferred networks list."
-                }
+                forgetSelectedNetwork()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Forget \"\(wifidata.ssidString())\"? You can rejoin the network at any time.")
+            Text("This removes \"\(wifidata.ssidString())\" from this Mac's known-networks history, preferred list, and saved password. You can rejoin the network at any time.")
         }
         .alert("Forget Failed", isPresented: Binding(
             get: { deleteError != nil },
@@ -322,6 +319,21 @@ struct WiFiDataDetail: View {
             Button("OK", role: .cancel) { deleteError = nil }
         } message: {
             Text(deleteError ?? "")
+        }
+    }
+
+    // MARK: - Forget
+
+    private func forgetSelectedNetwork() {
+        guard !isForgetting else { return }
+        isForgetting = true
+        WiFiDataManager.shared.forgetNetwork(wifiID: wifidata.WiFiID, ssid: wifidata.ssidString()) { success, error in
+            isForgetting = false
+            if success {
+                onDelete?()
+            } else {
+                deleteError = error?.localizedDescription ?? "Forget \(wifidata.ssidString()) failed."
+            }
         }
     }
 

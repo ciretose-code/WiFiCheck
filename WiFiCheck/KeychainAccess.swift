@@ -96,6 +96,22 @@ class KeychainAccess {
         return password
     }
 
+    /// Deletes the stored AirPort password for a WiFi network.
+    /// Missing items are treated as success so forget can proceed after a prior delete.
+    static func deletePassword(forNetwork wifiname: String) -> Result<Void, Error> {
+        let query: [String: AnyObject] = [
+            kSecAttrService as String: Constants.keychainService as AnyObject,
+            kSecAttrAccount as String: wifiname as AnyObject,
+            kSecClass as String: kSecClassGenericPassword
+        ]
+
+        let status = SecItemDelete(query as CFDictionary)
+        if status == errSecSuccess || status == errSecItemNotFound {
+            return .success(())
+        }
+        return .failure(KeychainError.unexpectedStatus(status))
+    }
+
     /// Retrieves WiFi password from Keychain using Result type
     /// - Parameter wifiname: The SSID of the WiFi network
     /// - Returns: Result containing password string on success, or error on failure
