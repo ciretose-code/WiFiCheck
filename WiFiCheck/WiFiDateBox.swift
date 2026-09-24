@@ -31,12 +31,10 @@ struct WiFiDateBox: View {
     }
 }
 
-struct WiFiDateBox_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            WiFiDateBox(date: Date())
-            WiFiDateBox(date: Date())
-            WiFiDateBox(date: nil)
-        }
-    }
+#Preview("Joined") {
+    WiFiDateBox(date: Date())
+}
+
+#Preview("Never") {
+    WiFiDateBox(date: nil)
 }

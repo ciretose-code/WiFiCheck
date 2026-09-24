@@ -83,14 +83,17 @@ struct WiFiDataRow: View {
     }
 }
 
-struct WiFiDataRow_Previews: PreviewProvider {
-    static var previews: some View {
-        let list = WiFiDataManager.shared.getWiFiDataList()
-        Group {
-            if list.indices.contains(0) { WiFiDataRow(wifidata: list[0]) }
-            if list.indices.contains(1) { WiFiDataRow(wifidata: list[1]) }
-            if list.indices.contains(2) { WiFiDataRow(wifidata: list[2]) }
-        }
-        .previewLayout(.fixed(width:250, height: 70))
-    }
+#Preview("First", traits: .fixedLayout(width: 250, height: 70)) {
+    let list = WiFiDataManager.shared.getWiFiDataList()
+    if list.indices.contains(0) { WiFiDataRow(wifidata: list[0]) }
+}
+
+#Preview("Second", traits: .fixedLayout(width: 250, height: 70)) {
+    let list = WiFiDataManager.shared.getWiFiDataList()
+    if list.indices.contains(1) { WiFiDataRow(wifidata: list[1]) }
+}
+
+#Preview("Third", traits: .fixedLayout(width: 250, height: 70)) {
+    let list = WiFiDataManager.shared.getWiFiDataList()
+    if list.indices.contains(2) { WiFiDataRow(wifidata: list[2]) }
 }

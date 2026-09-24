@@ -703,8 +703,6 @@ struct NetworkDetailsSection: View {
     }
 }
 
-struct WiFiDataDetail_Previews: PreviewProvider {
-    static var previews: some View {
-        WiFiDataDetail(wifidata: WiFiDataManager.shared.getWiFiDataList().first ?? WiFiData())
-    }
+#Preview {
+    WiFiDataDetail(wifidata: WiFiDataManager.shared.getWiFiDataList().first ?? WiFiData())
 }

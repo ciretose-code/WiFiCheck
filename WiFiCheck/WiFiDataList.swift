@@ -16,8 +16,6 @@ struct WiFiDataList: View {
     }
 }
 
-struct WiFiDataList_Previews: PreviewProvider {
-    static var previews: some View {
-        WiFiDataList()
-    }
+#Preview {
+    WiFiDataList()
 }
