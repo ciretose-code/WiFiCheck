@@ -50,6 +50,7 @@ struct WiFiDataDetail: View {
     @State private var showDeleteConfirm = false
     @State private var deleteError: String? = nil
     @State private var isForgetting = false
+    @State private var keychainError: String? = nil
     var onDelete: (() -> Void)? = nil
 
     // Password auto-hide timer
@@ -299,6 +300,7 @@ struct WiFiDataDetail: View {
             hidePassword()
             showQRCode = false
             qrImage = nil
+            keychainError = nil
         }
         .confirmationDialog(
             "Forget \"\(wifidata.ssidString())\"?",
@@ -319,6 +321,14 @@ struct WiFiDataDetail: View {
             Button("OK", role: .cancel) { deleteError = nil }
         } message: {
             Text(deleteError ?? "")
+        }
+        .alert("Password Unavailable", isPresented: Binding(
+            get: { keychainError != nil },
+            set: { if !$0 { keychainError = nil } }
+        )) {
+            Button("OK", role: .cancel) { keychainError = nil }
+        } message: {
+            Text(keychainError ?? "")
         }
     }
 
@@ -343,7 +353,13 @@ struct WiFiDataDetail: View {
         let password: String?
         let security = wifidata.securityType()
         if security != .open && security != .unknown {
-            password = (try? KeychainAccess.getPassword(forNetwork: wifidata.ssidString()).get())
+            switch KeychainAccess.getPassword(forNetwork: wifidata.ssidString()) {
+            case .success(let storedPassword):
+                password = storedPassword
+            case .failure(let error):
+                presentKeychainError(error)
+                return
+            }
         } else {
             password = nil
         }
@@ -374,13 +390,14 @@ struct WiFiDataDetail: View {
             switch KeychainAccess.getPassword(forNetwork: wifidata.ssidString()) {
             case .success(let password):
                 cachedPassword = password
-            case .failure:
+                showPassword = true
+                pwdText = "Hide Password"
+                pwdIcon = "lock.slash"
+                startPasswordTimer()
+            case .failure(let error):
                 cachedPassword = nil
+                presentKeychainError(error)
             }
-            showPassword = true
-            pwdText = "Hide Password"
-            pwdIcon = "lock.slash"
-            startPasswordTimer()
         }
     }
 
@@ -394,11 +411,10 @@ struct WiFiDataDetail: View {
 
         // Start a new timer that ticks every second
         passwordTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            if remainingSeconds > 0 {
-                remainingSeconds -= 1
-            } else {
-                // Time's up - hide the password
+            if remainingSeconds <= 1 {
                 hidePassword()
+            } else {
+                remainingSeconds -= 1
             }
         }
     }
@@ -416,6 +432,27 @@ struct WiFiDataDetail: View {
         pwdIcon = "lock"
         cachedPassword = nil
         stopPasswordTimer()
+    }
+
+    private func presentKeychainError(_ error: Error) {
+        let ssid = wifidata.ssidString()
+        keychainError = "Unable to read the password for \"\(ssid)\" from the keychain. \(keychainErrorDetail(error))"
+    }
+
+    private func keychainErrorDetail(_ error: Error) -> String {
+        guard let kcError = error as? KeychainAccess.KeychainError else {
+            return error.localizedDescription
+        }
+        switch kcError {
+        case .itemNotFound:
+            return "The password was not found."
+        case .duplicateItem:
+            return "A duplicate keychain item already exists."
+        case .invalidItemFormat:
+            return "The stored item is not in a readable format."
+        case .unexpectedStatus(let status):
+            return "Keychain status \(status)."
+        }
     }
 }
 
