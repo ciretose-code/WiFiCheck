@@ -533,7 +533,17 @@ class WiFiDataManager {
     // Load data from file
     func load(_ filename: String) -> Array<WiFiData> {
 
-        if !FileManager.default.isReadableFile(atPath: filename) {
+        // The system known-networks plist is chmod 600 root:wheel. isReadableFile
+        // uses access() and returns false even when Full Disk Access lets open()
+        // succeed. Match hasDirectAccess() for that path; keep the DAC check for
+        // any other caller-supplied file.
+        let canRead: Bool
+        if filename == wifiKnownNetworksPath {
+            canRead = hasDirectAccess()
+        } else {
+            canRead = FileManager.default.isReadableFile(atPath: filename)
+        }
+        if !canRead {
             Self.logger.error("File is not readable at path: \(filename, privacy: .public)")
             return Array<WiFiData>()
         }
