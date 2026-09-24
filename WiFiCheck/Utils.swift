@@ -286,18 +286,16 @@ class Utils {
         return securityColor
     }
 
-    /// Returns the frequency band name for a WiFi channel number.
+    /// Returns the frequency band name for a WiFi channel.
     ///
-    /// Channel-number ranges are only a guess: 1...14 is treated as 2.4 GHz
-    /// and 36...177 as 5 GHz. Missing or otherwise out-of-range channels
-    /// (including the plist unset sentinel `-1`) return `"Unknown"` rather
-    /// than 6 GHz, because 6 GHz reuses low channel numbers.
+    /// Prefer `ChannelFlags` when present: 6 GHz (`0x2000`), 5 GHz (`0x10`),
+    /// then 2.4 GHz (`0x8`). Those bits are the only way to tell 6 GHz from
+    /// 2.4/5, because 6 E channel numbers reuse 1–14 and 36–177.
     ///
-    /// `flags` is the BSS `ChannelFlags` value when available (unset is `-1`).
-    /// This repository has no verified ChannelFlags bit layout, so a present
-    /// flag currently does not override the channel-number guess. The
-    /// parameter is threaded so a documented mapping can override here
-    /// without changing call sites.
+    /// Without flags, 1...14 is treated as 2.4 GHz and 36...177 as 5 GHz.
+    /// Missing or otherwise out-of-range channels (including the plist
+    /// unset sentinel `-1`) return `"Unknown"`. Channel history has no flags,
+    /// so those rows stay number-only.
     static func frequencyBand(for channel: Int, flags: Int = -1) -> String {
         if let band = documentedFrequencyBand(fromChannelFlags: flags) {
             return band
@@ -320,12 +318,16 @@ class Utils {
         }
     }
 
-    /// ChannelFlags band bits are not documented in this repository.
-    /// A verified mapping can override the channel-number guess here.
+    /// Band bits from Apple's apple80211 channel flags, as stored on BSSList.
+    ///
+    /// `0x8` / `0x10` are in the historical public-ish header (2.4 / 5 GHz).
+    /// `0x2000` is the 6 GHz bit observed on live 6E `CHANNEL_FLAGS` values
+    /// (not in the old header). Unset plist values are `-1`.
     private static func documentedFrequencyBand(fromChannelFlags flags: Int) -> String? {
-        // Unset ChannelFlags values are stored as -1. No bit-to-band mapping
-        // in this repository has been verified, so no override is applied.
         guard flags > 0 else { return nil }
+        if flags & 0x2000 != 0 { return "6 GHz" }
+        if flags & 0x10 != 0 { return "5 GHz" }
+        if flags & 0x8 != 0 { return "2.4 GHz" }
         return nil
     }
 
