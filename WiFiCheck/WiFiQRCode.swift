@@ -90,5 +90,6 @@ struct WiFiQRCodeView: View {
             .disabled(image == nil)
         }
         .frame(minWidth: 280)
+        .restoredPresentationControls()
     }
 }

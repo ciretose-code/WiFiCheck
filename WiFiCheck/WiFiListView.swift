@@ -360,7 +360,8 @@ struct WiFiListPane: View {
                 .onChange(of: selectedSort) {
                     applySort()
                 }
-                .pickerStyle(MenuPickerStyle())
+                .pickerStyle(.menu)
+                .controlSize(.regular)
             }
             Divider()
             if !sharedNetworks.isEmpty {
@@ -474,6 +475,7 @@ struct WiFiListPane: View {
                 showError: $showDropError,
                 errorMessage: $dropErrorMessage
             )
+            .restoredPresentationControls()
         }
         .sheet(isPresented: $showRemoveHelperSheet) {
             RemoveHelperSheetView(
@@ -482,6 +484,7 @@ struct WiFiListPane: View {
                 removed: $helperRemoved,
                 removeError: $helperRemoveError
             )
+            .restoredPresentationControls()
         }
             Spacer()
     }
@@ -669,6 +672,7 @@ struct SetupSheetView: View {
             .padding(.bottom, 24)
         }
         .frame(minWidth: 800)
+        .restoredPresentationControls()
         .alert(isPresented: $showError) {
             Alert(
                 title: Text("Could Not Read File"),
@@ -843,6 +847,7 @@ struct RemoveHelperSheetView: View {
         }
         .padding(.horizontal, 40)
         .frame(minWidth: 520)
+        .restoredPresentationControls()
     }
 }
 

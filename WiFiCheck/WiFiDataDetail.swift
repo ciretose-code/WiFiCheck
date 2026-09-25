@@ -184,6 +184,7 @@ struct WiFiDataDetail: View {
                             .popover(isPresented: $showQRCode) {
                                 WiFiQRCodeView(ssid: wifidata.ssidString(), image: qrImage)
                                     .padding()
+                                    .restoredPresentationControls()
                             }
                             .accessibilityLabel("Show QR code for \(wifidata.ssidString())")
                             Spacer().frame(height: 8)
@@ -644,6 +645,7 @@ struct BSSLocationMapView: View {
         }
         .sheet(isPresented: $showExpanded) {
             LocationMapSheet(coordinate: coordinate, accuracy: accuracy, coordinateText: coordinateText, placeName: placeName)
+                .restoredPresentationControls()
         }
     }
 }
@@ -697,6 +699,7 @@ struct LocationMapSheet: View {
             }
             .padding()
         }
+        .restoredPresentationControls()
     }
 }
 
