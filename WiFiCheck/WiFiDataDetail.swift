@@ -45,7 +45,7 @@ struct WiFiDataDetail: View {
     @State private var cachedPassword: String? = nil
 
     @State private var showQRCode = false
-    @State private var qrImage: NSImage? = nil
+    @State private var qrPayload: String = ""
 
     @State private var showDeleteConfirm = false
     @State private var deleteError: String? = nil
@@ -182,7 +182,7 @@ struct WiFiDataDetail: View {
                             }
                             .buttonStyle(WiFiButtonStyle())
                             .popover(isPresented: $showQRCode) {
-                                WiFiQRCodeView(ssid: wifidata.ssidString(), image: qrImage)
+                                WiFiQRCodeView(ssid: wifidata.ssidString(), qrString: qrPayload)
                                     .padding()
                                     .restoredPresentationControls()
                             }
@@ -300,7 +300,7 @@ struct WiFiDataDetail: View {
             // When the user selects a different network, immediately hide any visible password
             hidePassword()
             showQRCode = false
-            qrImage = nil
+            qrPayload = ""
             keychainError = nil
         }
         .confirmationDialog(
@@ -370,8 +370,13 @@ struct WiFiDataDetail: View {
             security: security,
             isHidden: wifidata.Hidden
         )
-        qrImage = generateQRCode(from: qrString)
-        showQRCode = true
+        qrPayload = qrString
+        // SecItemCopyMatching runs a nested main-thread run loop for the
+        // keychain ACL prompt. Presenting the popover in that same turn
+        // captures a nil image and shows "QR Code Unavailable".
+        DispatchQueue.main.async {
+            showQRCode = true
+        }
     }
 
     // MARK: - Password Timer Methods
