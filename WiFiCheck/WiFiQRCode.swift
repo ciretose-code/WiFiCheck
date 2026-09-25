@@ -61,7 +61,9 @@ func generateQRCode(from string: String) -> NSImage? {
 
 struct WiFiQRCodeView: View {
     let ssid: String
-    let image: NSImage?
+    let qrString: String
+
+    @State private var image: NSImage?
 
     var body: some View {
         VStack(spacing: 12) {
@@ -91,5 +93,19 @@ struct WiFiQRCodeView: View {
         }
         .frame(minWidth: 280)
         .restoredPresentationControls()
+        .onAppear {
+            renderQR()
+        }
+    }
+
+    private func renderQR() {
+        image = generateQRCode(from: qrString)
+        // CIQRCodeGenerator can return nil immediately after a keychain ACL
+        // dialog; retry once the security window is fully gone.
+        if image == nil {
+            DispatchQueue.main.async {
+                image = generateQRCode(from: qrString)
+            }
+        }
     }
 }
