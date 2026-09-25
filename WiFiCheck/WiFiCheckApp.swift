@@ -72,3 +72,13 @@ struct WiFiButtonStyle: ButtonStyle {
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 }
+
+extension View {
+    /// Re-apply control metrics that the macOS 27 SDK resets inside sheets and popovers.
+    /// Safe on macOS 26; does not change padding or sizing for the 27-only look.
+    func restoredPresentationControls() -> some View {
+        self
+            .controlSize(.regular)
+            .buttonSizing(.flexible)
+    }
+}
