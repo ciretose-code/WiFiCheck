@@ -354,7 +354,7 @@ struct WiFiDataDetail: View {
         let password: String?
         let security = wifidata.securityType()
         if security != .open && security != .unknown {
-            switch KeychainAccess.getPassword(forNetwork: wifidata.ssidString()) {
+            switch passwordFromCacheOrKeychain() {
             case .success(let storedPassword):
                 password = storedPassword
             case .failure(let error):
@@ -376,27 +376,33 @@ struct WiFiDataDetail: View {
 
     // MARK: - Password Timer Methods
 
+    /// Returns a password already revealed for this network, or reads the keychain once.
+    /// The result is stored in `cachedPassword` until `hidePassword()` or a network change.
+    private func passwordFromCacheOrKeychain() -> Result<String, Error> {
+        if let cached = cachedPassword, !cached.isEmpty {
+            return .success(cached)
+        }
+        switch KeychainAccess.getPassword(forNetwork: wifidata.ssidString()) {
+        case .success(let password):
+            cachedPassword = password
+            return .success(password)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+
     /// Toggles password visibility and manages the auto-hide timer
     private func togglePasswordVisibility() {
         if showPassword {
-            // Password is now being hidden - cancel the timer and clear cached value
-            showPassword = false
-            pwdText = "Show Password"
-            pwdIcon = "lock"
-            cachedPassword = nil
-            stopPasswordTimer()
+            hidePassword()
         } else {
-            // Fetch the password once here (not in body) to avoid blocking the main thread
-            // on every render. cachedPassword is cleared when the password is hidden.
-            switch KeychainAccess.getPassword(forNetwork: wifidata.ssidString()) {
-            case .success(let password):
-                cachedPassword = password
+            switch passwordFromCacheOrKeychain() {
+            case .success:
                 showPassword = true
                 pwdText = "Hide Password"
                 pwdIcon = "lock.slash"
                 startPasswordTimer()
             case .failure(let error):
-                cachedPassword = nil
                 presentKeychainError(error)
             }
         }
