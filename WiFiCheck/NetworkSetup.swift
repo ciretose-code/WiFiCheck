@@ -95,17 +95,15 @@ class NetworkSetup {
     /// - Returns: Dictionary mapping network SSID to priority value (lower = higher priority)
     func getPreferredNetworkOrder() -> Dictionary<String,Int> {
 
-        var prefWiFi: Dictionary<String,Int> = [:]
-        var output: String = ""
-
+        let output: String
         do {
             output = try Utils.runCommand(networksetup, withArgs: ["-listpreferredwirelessnetworks", devicename])
         } catch let e as RuntimeError {
             Self.logger.error("RuntimeError: \(String(describing: e.kind), privacy: .public) - \(e.message, privacy: .public)")
-            return prefWiFi
+            return [:]
         } catch {
             Self.logger.error("Error: \(error.localizedDescription, privacy: .public)")
-            return prefWiFi
+            return [:]
         }
 
         return Self.preferredNetworkOrder(from: output)
