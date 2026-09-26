@@ -1,307 +1,110 @@
 <!DOCTYPE html>
-<html lang="en" style="background: antiquewhite;">
+<html lang="en">
 
 <head>
     <meta charset="utf-8">
     <title>WiFi Check</title>
-    <meta name="description" content="WiFi Check - A quick way to see all things WiFi on your Mac">
+    <meta name="description" content="A quick way to see all things WiFi on your Mac">
     <meta name="author" content="Eric Wuehler">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
-        integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+    <meta property="og:title" content="WiFi Check">
+    <meta property="og:description" content="A quick way to see all things WiFi on your Mac">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://wificheck.app/">
+    <meta property="og:image" content="https://wificheck.app/wificheck128.png">
+    <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="wificheck128.png">
-
-    <style type="text/css">
-        body {
-            font-weight: 400;
-            font-family: "SF Pro", "Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            color: #000;
-            background-color: antiquewhite;
-        }
-
-        code {
-            color: rebeccapurple;
-        }
-
-        .verify-block {
-            margin-top: 6px;
-            text-align: center;
-        }
-        .verify-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #888;
-            margin-bottom: 4px;
-        }
-        .verify-hash {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.68rem;
-            color: #999;
-            word-break: break-all;
-            line-height: 1.6;
-            margin-bottom: 8px;
-        }
-        .btn-verify {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: transparent;
-            border: 1px solid rebeccapurple;
-            color: rebeccapurple;
-            padding: 5px 14px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-decoration: none;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-verify:hover {
-            background: rgba(102, 51, 153, 0.08);
-            color: rebeccapurple;
-            text-decoration: none;
-        }
-        .verify-status {
-            font-size: 0.75rem;
-            color: #888;
-            margin-left: 6px;
-        }
-        .verify-status.ok  { color: #2a9d6a; }
-        .verify-missing {
-            font-size: 0.75rem;
-            color: #c0392b;
-            margin-top: 4px;
-        }
-        .verify-missing a { color: #c0392b; }
-    </style>
-
 </head>
 
-<body class="d-flex flex-column h-100">
+<body>
+    <a class="home-link" href="https://ciretose.com" aria-label="ciretose home">
+        <img src="https://ciretose.com/ciretoselogo.png" alt="ciretose logo">
+    </a>
 
-    <a href="https://ciretose.com" style="position: fixed; top: 10px; left: 10px;"><img
-            src="https://ciretose.com/ciretoselogo.png" alt="Home" style="height: 30px;"></a>
+    <main class="container">
+        <header class="header">
+            <img src="wificheck512.png" alt="WiFi Check icon" width="96" height="96">
+            <h1>WiFi Check</h1>
+            <p class="subtitle">A quick way to see all things WiFi on your Mac</p>
+        </header>
 
-    <main class="flex-shrink-0">
-        <div class="container">
-            <div class="row align-items-center justify-content-center">
-                <div class="p-2">
-                    <img class="img-fluid" src="wificheck128.png" />
+        <section class="card story">
+            <p class="lede">WiFi Check is a simple app that displays information about the WiFi connections made from your Mac. Recent versions of macOS have changed the way this information is stored, so I updated the app to work with macOS 26. Enjoy!</p>
+            <figure class="shot">
+                <img src="wificheckwindow.png" alt="WiFi Check showing known networks on a Mac">
+            </figure>
+            <div class="modes">
+                <div class="mode">
+                    <h2>What it shows</h2>
+                    <p>SSID, security, connection timestamps, access points, channel history, collocated networks, and the password from Keychain when you ask for it.</p>
                 </div>
-                <div class="p-2">
-                    <span style="font-size: 42pt; font-weight: bold;">WiFi Check</span><br />
-                </div>
-            </div>
-            <div class="row p-2">
-                <p class="lead">WiFi Check is a simple app that displays information about the WiFi connections
-                    made from your Mac. Recent version of macOS have changed the way this information is
-                    stored, so I updated the app to work with macOS 26. Enjoy!
-                </p>
-            </div>
-            <div class="row">
-                <img class="img-fluid" src="wificheckwindow.png" />
-            </div>
-            <div class="row p-2 align-items-center justify-content-center">
-                <a id="download-btn" class="btn-lg btn-dark" style="background-color: rebeccapurple;"
-                    href="https://github.com/ciretose-code/WiFiCheck/releases/latest">Download</a>
-            </div>
-            <div class="row p-2 align-items-center justify-content-center" style="color: gray">
-                <small>macOS 26+ &nbsp;·&nbsp; <a style="color: rebeccapurple"
-                        href="https://github.com/ciretose-code/WiFiCheck">GitHub</a></small>
-            </div>
-            <div id="verify-section" class="row p-2 align-items-center justify-content-center" hidden>
-                <div class="verify-block">
-                    <div class="verify-label">SHA-256 &mdash; <span id="verify-version"></span></div>
-                    <div id="sha256-display" class="verify-hash"></div>
-                    <div>
-                        <a id="verify-btn" href="#" class="btn-verify">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Verify with Hash/Check
-                        </a>
-                        <span id="verify-status" class="verify-status"></span>
-                    </div>
-                    <div id="hc-missing" class="verify-missing" hidden>
-                        Hash/Check not installed. <a href="https://apps.apple.com/us/app/hash-check/id1550525767">Get it free →</a>
-                    </div>
+                <div class="mode">
+                    <h2>Two ways to read it</h2>
+                    <p>Install the privileged helper for live system data, or copy the plist somewhere the app can open. Forget removes a network from history, the preferred list, and the saved password.</p>
                 </div>
             </div>
-            <div class="row">
-                &nbsp;
-            </div>
-            <div class="row p-2">
-                <b>FAQ</b>
-            </div>
-            <div class="row p-2">
-                <b>Should I trust an app I download from the internet?</b>
-            </div>
-            <div class="row p-2">
-                <p>You should be skeptical of anything you download from some relatively unknown
-                    location. The app has been notarized by Apple - which is not a guarantee
-                    that it is "safe", but it means at least Apple has run it through whatever
-                    "app checker" they have and didn't create any red flags. The source is available
-                    on GitHub if you'd like to inspect it yourself.
-                </p>
-            </div>
-            <div class="row p-2">
-                <b>Yeah, I'm not giving some random app I download full disk access and elevated privileges.</b>
-            </div>
-            <div class="row p-2">
-                <p>
-                    Smart! I wouldn't trust any app I just downloaded either. Hence, the option to "try it out" by
-                    copying the required file to a location the app can read from.
-                </p>
-            </div>
-            <div class="row p-2">
-                <b>Woah! You also want a password to show me my WiFi password?</b>
-            </div>
-            <div class="row p-2">
-                <p>
-                    Yes. However, if you want to find this information yourself, this can also
-                    be found by opening the <code>Keychain Access</code> app from your
-                    <code>/Applications/Utilities</code> folder, searching for your WiFi network
-                    name, selecting the item in the list, clicking on the "Show password" checkbox...
-                    Anyway, this was more of convenience, and it uses the Apple supplied Keychain APIs,
-                    so up to you.
-                </p>
-            </div>
-            <div class="row p-2">
-                <b>What does "Forget Network" actually do? Will this delete my WiFi?</b>
-            </div>
-            <div class="row p-2">
-                <p>
-                    No. Forget removes the WiFi entry from <code>com.apple.wifi.known-networks.plist</code>
-                    (via the privileged helper), from the preferred-network list, and from the saved
-                    AirPort keychain password. You will have to rejoin that WiFi just like you did
-                    the first time.
-                </p>
-                <p>
-                    You can also remove old WiFi connections outside the context of the app. If you go into
-                    your <code>System Settings</code>, select <code>Wi-Fi</code>, then scroll to the bottom and
-                    click <code>Advanced...</code> you'll see a list of "Known Networks".
-                    This should be the same list you see in the WiFi Check app.
-                </p>
-            </div>
-            <div class="row p-2">
-                <b>What exactly is the purpose of this app?</b>
-            </div>
-            <div class="row p-2">
-                <p>
-                    ¯\_(ツ)_/¯<br /><br />
-                    I was curious about the information stored in the
-                    <code>/Library/Preferences/com.apple.wifi.known-networks.plist</code> file and
-                    wrote an app to display it. I've found it useful to see what networks my
-                    Mac remembers and to remove networks I no longer use.
-                </p>
-            </div>
+        </section>
+
+        <div class="actions">
+            <a id="download-btn" class="btn btn-primary" href="https://github.com/ciretose-code/WiFiCheck/releases/latest">Download Latest Release</a>
+            <a class="btn btn-secondary" href="https://github.com/ciretose-code/WiFiCheck">View on GitHub</a>
+            <a class="btn btn-secondary" href="https://github.com/sponsors/ciretose-code/">Chip In</a>
         </div>
+
+        <section id="verify-section" class="card" hidden>
+            <div class="verify-label">SHA-256 — <span id="verify-version" class="verify-version"></span></div>
+            <div id="sha256-display" class="verify-hash"></div>
+            <div class="verify-row">
+                <a id="verify-btn" class="btn btn-secondary" href="#">Verify with Hash/Check</a>
+                <span id="verify-status" class="verify-status"></span>
+            </div>
+            <p id="hc-missing" class="verify-missing" hidden>
+                Hash/Check not installed. <a href="https://apps.apple.com/us/app/hash-check/id1550525767">Get it free on the Mac App Store.</a>
+            </p>
+        </section>
+
+        <section class="card faq">
+            <h2>FAQ</h2>
+
+            <article>
+                <h3>Should I trust an app I download from the internet?</h3>
+                <p>You should be skeptical of anything you download from some relatively unknown location. The app has been notarized by Apple — which is not a guarantee that it is "safe", but it means at least Apple has run it through whatever "app checker" they have and didn't create any red flags. The source is available on GitHub if you'd like to inspect it yourself.</p>
+            </article>
+
+            <article>
+                <h3>Yeah, I'm not giving some random app I download full disk access and elevated privileges.</h3>
+                <p>Smart! I wouldn't trust any app I just downloaded either. Hence, the option to "try it out" by copying the required file to a location the app can read from.</p>
+            </article>
+
+            <article>
+                <h3>Woah! You also want a password to show me my WiFi password?</h3>
+                <p>Yes. However, if you want to find this information yourself, this can also be found by opening the <code>Keychain Access</code> app from your <code>/Applications/Utilities</code> folder, searching for your WiFi network name, selecting the item in the list, clicking on the "Show password" checkbox... Anyway, this was more of convenience, and it uses the Apple supplied Keychain APIs, so up to you.</p>
+            </article>
+
+            <article>
+                <h3>What does "Forget Network" actually do? Will this delete my WiFi?</h3>
+                <p>No. Forget removes the WiFi entry from <code>com.apple.wifi.known-networks.plist</code> (via the privileged helper), from the preferred-network list, and from the saved AirPort keychain password. You will have to rejoin that WiFi just like you did the first time.</p>
+                <p>You can also remove old WiFi connections outside the context of the app. If you go into your <code>System Settings</code>, select <code>Wi-Fi</code>, then scroll to the bottom and click <code>Advanced...</code> you'll see a list of "Known Networks". This should be the same list you see in the WiFi Check app.</p>
+            </article>
+
+            <article>
+                <h3>What exactly is the purpose of this app?</h3>
+                <p>¯\_(ツ)_/¯</p>
+                <p>I was curious about the information stored in the <code>/Library/Preferences/com.apple.wifi.known-networks.plist</code> file and wrote an app to display it. I've found it useful to see what networks my Mac remembers and to remove networks I no longer use.</p>
+            </article>
+
+            <article>
+                <h3>What version of macOS do I need?</h3>
+                <p>macOS 26 or later. Recent versions of macOS changed how this information is stored, and the app is written for that.</p>
+            </article>
+        </section>
     </main>
-    <footer class="footer mt-auto py-3" style="background-color: rebeccapurple">
-        <div class="container">
-            <div class="row align-items-center justify-content-center" style="color: white">
-                © 2021-2026&nbsp;<a style="color: white" href="https://ciretose.com">ciretose</a>
-            </div>
-        </div>
 
+    <footer>
+        © 2021–2026 <a href="https://ciretose.com">ciretose</a>
     </footer>
-    <script>
-    (function () {
-        var REPO = 'ciretose-code/WiFiCheck';
-        var useIframe = !!window.chrome;
 
-        function tryDeepLink(url, onOk, onFail) {
-            var launched = false;
-            function onBlur() {
-                launched = true;
-                window.removeEventListener('blur', onBlur);
-                if (onOk) onOk();
-            }
-            window.addEventListener('blur', onBlur);
-            if (useIframe) {
-                var f = document.createElement('iframe');
-                f.style.cssText = 'display:none';
-                document.body.appendChild(f);
-                f.src = url;
-                setTimeout(function () {
-                    document.body.removeChild(f);
-                    window.removeEventListener('blur', onBlur);
-                    if (!launched && onFail) onFail();
-                }, 1000);
-            } else {
-                window.location.href = url;
-                setTimeout(function () {
-                    window.removeEventListener('blur', onBlur);
-                    if (!launched && onFail) onFail();
-                }, 1000);
-            }
-        }
-
-        function showVerify(hash, version) {
-            var section   = document.getElementById('verify-section');
-            var btn       = document.getElementById('verify-btn');
-            var hashEl    = document.getElementById('sha256-display');
-            var statusEl  = document.getElementById('verify-status');
-            var missingEl = document.getElementById('hc-missing');
-            var verEl     = document.getElementById('verify-version');
-
-            btn.href = 'hashcheck://hash/sha256/' + hash;
-            hashEl.textContent = hash;
-            if (version) verEl.textContent = version;
-            section.hidden = false;
-
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                statusEl.textContent = 'Launching…';
-                statusEl.className = 'verify-status';
-                missingEl.hidden = true;
-                tryDeepLink(btn.href,
-                    function () { statusEl.textContent = '✓ Launched'; statusEl.className = 'verify-status ok'; },
-                    function () { statusEl.textContent = ''; statusEl.className = 'verify-status'; missingEl.hidden = false; }
-                );
-            });
-        }
-
-        function findHash(release) {
-            var assets = release.assets || [];
-            for (var i = 0; i < assets.length; i++) {
-                if (/\.sha256$/i.test(assets[i].name)) {
-                    return fetch(assets[i].browser_download_url)
-                        .then(function (r) { return r.text(); })
-                        .then(function (t) {
-                            var m = t.match(/([0-9a-fA-F]{64})/);
-                            return m ? m[1].toLowerCase() : null;
-                        });
-                }
-            }
-            var body = release.body || '';
-            var m = body.match(/\b([0-9a-fA-F]{64})\b/);
-            return Promise.resolve(m ? m[1].toLowerCase() : null);
-        }
-
-        fetch('https://api.github.com/repos/' + REPO + '/releases/latest')
-            .then(function (r) { return r.json(); })
-            .then(function (release) {
-                var dmg = (release.assets || []).find(function (a) { return /\.dmg$/i.test(a.name); });
-                if (dmg) {
-                    var btn = document.getElementById('download-btn');
-                    btn.href = dmg.browser_download_url;
-                    btn.setAttribute('download', dmg.name);
-                }
-                return findHash(release).then(function (hash) {
-                    if (hash) showVerify(hash, release.tag_name);
-                });
-            })
-            .catch(function () { /* silently fail */ });
-    }());
-    </script>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
-        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns"
-        crossorigin="anonymous"></script>
+    <script src="verify-release.js" data-repo="ciretose-code/WiFiCheck"></script>
 </body>
 
 </html>
