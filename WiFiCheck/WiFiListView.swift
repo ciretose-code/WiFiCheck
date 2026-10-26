@@ -110,7 +110,13 @@ struct WiFiListPane: View {
     @State private var helperRemoved = false
     @State private var updateCheckInProgress = false
 
-    static let sudoCommand = "sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist && sudo chmod 644 ~/Downloads/wifi-networks.plist"
+    /// Private export under Application Support; owner-only (600) after chown so the app can read it.
+    static let sudoCommand = "mkdir -p \"$HOME/Library/Application Support/WiFiCheck\" && sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist \"$HOME/Library/Application Support/WiFiCheck/wifi-networks.plist\" && sudo chown \"$USER\" \"$HOME/Library/Application Support/WiFiCheck/wifi-networks.plist\" && chmod 600 \"$HOME/Library/Application Support/WiFiCheck/wifi-networks.plist\""
+
+    static var exportedNetworksURL: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/WiFiCheck/wifi-networks.plist")
+    }
 
     func applySort() {
         sortString = selectedSort.title
@@ -224,11 +230,10 @@ struct WiFiListPane: View {
         NSPasteboard.general.setString(Self.sudoCommand, forType: .string)
     }
 
-    func loadFromDownloads() {
-        let fileURL = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Downloads/wifi-networks.plist")
+    func loadFromExport() {
+        let fileURL = Self.exportedNetworksURL
         guard FileManager.default.isReadableFile(atPath: fileURL.path) else {
-            dropErrorMessage = "wifi-networks.plist not found in Downloads. Run the command above first."
+            dropErrorMessage = "wifi-networks.plist not found. Run the command above first."
             showDropError = true
             return
         }
@@ -237,6 +242,8 @@ struct WiFiListPane: View {
             applySort()
             reloadView.toggle()
             showSetupSheet = false
+            // Remove the sensitive copy once it has been imported into memory.
+            try? FileManager.default.removeItem(at: fileURL)
         } else {
             dropErrorMessage = "wifi-networks.plist doesn't appear to be a valid WiFi known-networks plist."
             showDropError = true
@@ -320,7 +327,7 @@ struct WiFiListPane: View {
 
                     DispatchQueue.main.async {
                         if originalURL?.path == "/Library/Preferences/com.apple.wifi.known-networks.plist" {
-                            dropErrorMessage = "That file is root-protected and cannot be read directly. Use the command below to copy it to your Downloads folder first."
+                            dropErrorMessage = "That file is root-protected and cannot be read directly. Use the Terminal command in Setup to copy it first."
                         } else {
                             dropErrorMessage = error?.localizedDescription ?? "Could not read the dropped file."
                         }
@@ -466,7 +473,7 @@ struct WiFiListPane: View {
             SetupSheetView(
                 sudoCommand: WiFiListPane.sudoCommand,
                 onCopy: copyCommandToClipboard,
-                onLoad: loadFromDownloads,
+                onLoad: loadFromExport,
                 onInstallHelper: installAndLoadViaHelper,
                 helperInstalling: $helperInstalling,
                 helperError: $helperError,
@@ -625,7 +632,7 @@ struct SetupSheetView: View {
                     recommended: false
                 ) {
                     VStack(spacing: 10) {
-                        Text("Run the command below in Terminal. It copies the WiFi file to your Downloads folder where the app can read it.")
+                        Text("Run the command below in Terminal. It copies the WiFi file to a private Application Support folder with owner-only permissions. The app deletes the copy after a successful load — delete it yourself if you open the file another way.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.leading)

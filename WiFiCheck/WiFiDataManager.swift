@@ -385,7 +385,7 @@ class WiFiDataManager {
 
         Self.logger.warning("WiFiCheck does not have Full Disk Access")
         Self.logger.info("The WiFi preferences file is protected by System Integrity Protection.")
-        Self.logger.info("To read WiFi history: sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist")
+        Self.logger.info("To read WiFi history: copy known-networks.plist to ~/Library/Application Support/WiFiCheck/wifi-networks.plist with chmod 600 (see Setup), then delete the copy after import.")
 
         return false
     }
