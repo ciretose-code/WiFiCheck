@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 import MapKit
 import CoreLocation
 
@@ -298,8 +299,9 @@ struct WiFiDataDetail: View {
             .padding()
         }
         .onDisappear {
-            // Clean up timer when view disappears
+            // Clean up timer and restore window sharing when view disappears
             stopPasswordTimer()
+            setWindowExcludedFromCapture(false)
         }
         .onChange(of: wifidata.WiFiID) {
             // When the user selects a different network, immediately hide any visible password
@@ -411,6 +413,7 @@ struct WiFiDataDetail: View {
                 showPassword = true
                 pwdText = "Hide Password"
                 pwdIcon = "lock.slash"
+                setWindowExcludedFromCapture(true)
                 startPasswordTimer()
             case .failure(let error):
                 presentKeychainError(error)
@@ -452,6 +455,14 @@ struct WiFiDataDetail: View {
         // Drop any WIFI:…;P:… payload that still holds the password in memory
         showQRCode = false
         qrPayload = ""
+        setWindowExcludedFromCapture(false)
+    }
+
+    /// Excludes the host window from screen capture/sharing while a password is revealed (`NSWindow.SharingType.none`).
+    /// Accessibility/VoiceOver can still read revealed secrets by design.
+    private func setWindowExcludedFromCapture(_ excluded: Bool) {
+        let window = NSApp.keyWindow ?? NSApp.mainWindow ?? NSApp.windows.first
+        window?.sharingType = excluded ? .none : .readOnly
     }
 
     private func presentKeychainError(_ error: Error) {
