@@ -38,6 +38,7 @@
 		F0E1D2C3B4A5968778695A4B /* WiFiDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6478899AABB00 /* WiFiDataTests.swift */; };
 		B2C3D4E5F6A7588990BBCC22 /* SortTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6478899AABB11 /* SortTests.swift */; };
 		D4E5F6A7B8C9700112DDEE44 /* KnownNetworksParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8699001CCDD33 /* KnownNetworksParsingTests.swift */; };
+		A9B0C1D2E3F4051627384950 /* UpdateReleaseURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C1D2E3F405162738495A61 /* UpdateReleaseURLTests.swift */; };
 		F6A7B8C9D0E1922334FF0066 /* preferred-networks-english.txt in Resources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D0811223EEFF55 /* preferred-networks-english.txt */; };
 		B8C9D0E1F2A3B45566BB2288 /* preferred-networks-german.txt in Resources */ = {isa = PBXBuildFile; fileRef = A7B8C9D0E1F2A34455AA1177 /* preferred-networks-german.txt */; };
 		D0E1F2A3B4C5D67788DD44AA /* preferred-networks-empty.txt in Resources */ = {isa = PBXBuildFile; fileRef = C9D0E1F2A3B4C56677CC3399 /* preferred-networks-empty.txt */; };
@@ -130,6 +131,7 @@
 		E1F2A3B4C5D6478899AABB00 /* WiFiDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiDataTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6478899AABB11 /* SortTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortTests.swift; sourceTree = "<group>"; };
 		C3D4E5F6A7B8699001CCDD33 /* KnownNetworksParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnownNetworksParsingTests.swift; sourceTree = "<group>"; };
+		B0C1D2E3F405162738495A61 /* UpdateReleaseURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateReleaseURLTests.swift; sourceTree = "<group>"; };
 		E5F6A7B8C9D0811223EEFF55 /* preferred-networks-english.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = preferred-networks-english.txt; sourceTree = "<group>"; };
 		A7B8C9D0E1F2A34455AA1177 /* preferred-networks-german.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = preferred-networks-german.txt; sourceTree = "<group>"; };
 		C9D0E1F2A3B4C56677CC3399 /* preferred-networks-empty.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = preferred-networks-empty.txt; sourceTree = "<group>"; };
@@ -182,6 +184,7 @@
 				E1F2A3B4C5D6478899AABB00 /* WiFiDataTests.swift */,
 				A1B2C3D4E5F6478899AABB11 /* SortTests.swift */,
 				C3D4E5F6A7B8699001CCDD33 /* KnownNetworksParsingTests.swift */,
+				B0C1D2E3F405162738495A61 /* UpdateReleaseURLTests.swift */,
 				CD567CB4244448EE9879C75E /* Fixtures */,
 			);
 			path = WiFiCheckTests;
@@ -484,6 +487,7 @@
 				F0E1D2C3B4A5968778695A4B /* WiFiDataTests.swift in Sources */,
 				B2C3D4E5F6A7588990BBCC22 /* SortTests.swift in Sources */,
 				D4E5F6A7B8C9700112DDEE44 /* KnownNetworksParsingTests.swift in Sources */,
+				A9B0C1D2E3F4051627384950 /* UpdateReleaseURLTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
