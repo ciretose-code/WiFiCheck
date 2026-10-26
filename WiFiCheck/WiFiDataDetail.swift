@@ -313,7 +313,7 @@ struct WiFiDataDetail: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This removes \"\(wifidata.ssidString())\" from this Mac's known-networks history, preferred list, and saved password. You can rejoin the network at any time.")
+            Text("This removes \"\(wifidata.ssidString())\" from this Mac's known-networks history, preferred list, and saved password. You can rejoin anytime. If Wi-Fi looks wrong afterward, toggle it off and on or reconnect — Forget races with system Wi-Fi daemons.")
         }
         .alert("Forget Failed", isPresented: Binding(
             get: { deleteError != nil },
