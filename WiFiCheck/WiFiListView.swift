@@ -210,7 +210,12 @@ struct WiFiListPane: View {
             alert.addButton(withTitle: "Cancel")
 
             if alert.runModal() == .alertFirstButtonReturn {
-                NSWorkspace.shared.open(release.htmlURL)
+                do {
+                    let url = try release.openableHTMLURL()
+                    NSWorkspace.shared.open(url)
+                } catch {
+                    presentUpdateCheckError(error.localizedDescription)
+                }
             }
         }
     }

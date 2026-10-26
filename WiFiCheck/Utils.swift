@@ -41,6 +41,14 @@ struct UpdateRelease: Decodable {
     var displayVersion: String {
         UpdateChecker.displayVersion(tagName)
     }
+
+    /// Release page URL only when scheme/host are on the GitHub allowlist.
+    func openableHTMLURL() throws -> URL {
+        guard UpdateChecker.isAllowedReleaseURL(htmlURL) else {
+            throw UpdateCheckError.untrustedReleaseURL
+        }
+        return htmlURL
+    }
 }
 
 enum UpdateCheckResult {
@@ -48,10 +56,11 @@ enum UpdateCheckResult {
     case updateAvailable(currentTag: String, release: UpdateRelease)
 }
 
-enum UpdateCheckError: LocalizedError {
+enum UpdateCheckError: Equatable, LocalizedError {
     case invalidConfiguration
     case invalidResponse
     case unexpectedStatus(Int)
+    case untrustedReleaseURL
 
     var errorDescription: String? {
         switch self {
@@ -61,6 +70,8 @@ enum UpdateCheckError: LocalizedError {
             return "GitHub returned an invalid response."
         case .unexpectedStatus(let statusCode):
             return "GitHub returned HTTP \(statusCode)."
+        case .untrustedReleaseURL:
+            return "The release page URL is not from github.com and will not be opened."
         }
     }
 }
@@ -76,6 +87,21 @@ enum UpdateChecker {
 
     static func displayVersion(_ tag: String) -> String {
         tag.replacingOccurrences(of: "v", with: "", options: [.anchored])
+    }
+
+    /// Only https://github.com/... release URLs are safe to open from update check.
+    static func isAllowedReleaseURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased(), scheme == "https" else {
+            return false
+        }
+        guard let host = url.host?.lowercased(), host == "github.com" else {
+            return false
+        }
+        // Reject credential-bearing URLs (https://user@github.com/...).
+        if url.user != nil || url.password != nil {
+            return false
+        }
+        return true
     }
 
     static func checkForUpdates() async throws -> UpdateCheckResult {
@@ -99,6 +125,8 @@ enum UpdateChecker {
             }
 
             let release = try JSONDecoder().decode(UpdateRelease.self, from: data)
+            // Fail closed: never surface an update that points off github.com.
+            _ = try release.openableHTMLURL()
             let currentTag = currentVersionTag()
 
             logger.info("Update check current=\(currentTag, privacy: .public) latest=\(release.tagName, privacy: .public)")
