@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct WiFiCheckApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @AppStorage(ForgetAuthentication.preferenceKey) private var requireAuthToForget = true
 
     var body: some Scene {
         WindowGroup {
@@ -32,6 +33,8 @@ struct WiFiCheckApp: App {
                 Button("Check for Updates…") {
                     NotificationCenter.default.post(name: .checkForUpdates, object: nil)
                 }
+                Divider()
+                Toggle("Require Auth to Forget Networks", isOn: $requireAuthToForget)
                 Divider()
                 Button("Setup…") {
                     NotificationCenter.default.post(name: .showSetupSheet, object: nil)

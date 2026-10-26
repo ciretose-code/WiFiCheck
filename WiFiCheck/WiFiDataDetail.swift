@@ -342,7 +342,7 @@ struct WiFiDataDetail: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This removes \"\(wifidata.ssidString())\" from this Mac's known-networks history, preferred list, and saved password. You can rejoin anytime. If Wi-Fi looks wrong afterward, toggle it off and on or reconnect — Forget races with system Wi-Fi daemons.")
+            Text(forgetConfirmationMessage)
         }
         .alert("Forget Failed", isPresented: Binding(
             get: { deleteError != nil },
@@ -364,15 +364,37 @@ struct WiFiDataDetail: View {
 
     // MARK: - Forget
 
+    private var forgetConfirmationMessage: String {
+        var message = "This removes \"\(wifidata.ssidString())\" from this Mac's known-networks history, preferred list, and saved password. You can rejoin anytime. If Wi-Fi looks wrong afterward, toggle it off and on or reconnect — Forget races with system Wi-Fi daemons."
+        if ForgetAuthentication.isRequired {
+            message += " You will be asked to authenticate with Touch ID or your Mac password."
+        }
+        return message
+    }
+
     private func forgetSelectedNetwork() {
         guard !isForgetting else { return }
         isForgetting = true
-        WiFiDataManager.shared.forgetNetwork(wifiID: wifidata.WiFiID, ssid: wifidata.ssidString()) { success, error in
-            isForgetting = false
-            if success {
-                onDelete?()
-            } else {
-                deleteError = error?.localizedDescription ?? "Forget \(wifidata.ssidString()) failed."
+        let ssid = wifidata.ssidString()
+        ForgetAuthentication.authorizeIfRequired(
+            reason: "Authenticate to forget the Wi-Fi network \"\(ssid)\"."
+        ) { result in
+            switch result {
+            case .failure(let error):
+                isForgetting = false
+                if let auth = error as? ForgetAuthentication.AuthError, case .cancelled = auth {
+                    return
+                }
+                deleteError = error.localizedDescription
+            case .success:
+                WiFiDataManager.shared.forgetNetwork(wifiID: wifidata.WiFiID, ssid: ssid) { success, error in
+                    isForgetting = false
+                    if success {
+                        onDelete?()
+                    } else {
+                        deleteError = error?.localizedDescription ?? "Forget \(ssid) failed."
+                    }
+                }
             }
         }
     }

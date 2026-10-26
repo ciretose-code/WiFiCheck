@@ -47,6 +47,8 @@
 		D0E1F2A3B4C5D67788DD44AA /* preferred-networks-empty.txt in Resources */ = {isa = PBXBuildFile; fileRef = C9D0E1F2A3B4C56677CC3399 /* preferred-networks-empty.txt */; };
 		F2A3B4C5D6E7F89900FF66CC /* known-networks-sample.plist in Resources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6E78899EE55BB /* known-networks-sample.plist */; };
 		B4C5D6E7F8A9B01122BB88EE /* known-networks-latin1-ssid.plist in Resources */ = {isa = PBXBuildFile; fileRef = A3B4C5D6E7F8A90011AA77DD /* known-networks-latin1-ssid.plist */; };
+		F0A1B2C3D4E5F60718293A4C /* ForgetAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A4B /* ForgetAuthentication.swift */; };
+		F0A1B2C3D4E5F60718293B5C /* ForgetAuthenticationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293B5B /* ForgetAuthenticationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -143,6 +145,8 @@
 		E1F2A3B4C5D6E78899EE55BB /* known-networks-sample.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = known-networks-sample.plist; sourceTree = "<group>"; };
 		A3B4C5D6E7F8A90011AA77DD /* known-networks-latin1-ssid.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = known-networks-latin1-ssid.plist; sourceTree = "<group>"; };
 		59F3E33E64694EA4B4B9EA88 /* WiFiCheckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WiFiCheckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0A1B2C3D4E5F60718293A4B /* ForgetAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetAuthentication.swift; sourceTree = "<group>"; };
+		F0A1B2C3D4E5F60718293B5B /* ForgetAuthenticationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetAuthenticationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -191,6 +195,7 @@
 				C3D4E5F6A7B8699001CCDD33 /* KnownNetworksParsingTests.swift */,
 				B0C1D2E3F405162738495A61 /* UpdateReleaseURLTests.swift */,
 				47FC3240C88E47009763F52B /* KnownNetworksStoreTests.swift */,
+				F0A1B2C3D4E5F60718293B5B /* ForgetAuthenticationTests.swift */,
 				CD567CB4244448EE9879C75E /* Fixtures */,
 			);
 			path = WiFiCheckTests;
@@ -258,6 +263,7 @@
 				7BCF2FA62737335E00ABC4D1 /* CheckboxView.swift */,
 				7B6363382725077F0054A094 /* ContentView.swift */,
 				7B0B6A87272CA8C3006053B8 /* KeychainAccess.swift */,
+				F0A1B2C3D4E5F60718293A4B /* ForgetAuthentication.swift */,
 				7B3DEFDC26EBF0DC007BE881 /* WiFiListView.swift */,
 				7B6FE0E62719408C00CF5CEB /* Utils.swift */,
 				7B0315F327247A7B00D775ED /* NetworkSetup.swift */,
@@ -482,6 +488,7 @@
 				AABB00011122334455667788 /* WiFiQRCode.swift in Sources */,
 				7B6FE0E72719408C00CF5CEB /* Utils.swift in Sources */,
 				7B0B6A88272CA8C3006053B8 /* KeychainAccess.swift in Sources */,
+				F0A1B2C3D4E5F60718293A4C /* ForgetAuthentication.swift in Sources */,
 			);
 		};
 		934726952D254FD598D3044D /* Sources */ = {
@@ -498,6 +505,7 @@
 				A9B0C1D2E3F4051627384950 /* UpdateReleaseURLTests.swift in Sources */,
 				038ADE8C4E984377BD7A7699 /* KnownNetworksStore.swift in Sources */,
 				B9EFADDC31DA4221B224883A /* KnownNetworksStoreTests.swift in Sources */,
+				F0A1B2C3D4E5F60718293B5C /* ForgetAuthenticationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
