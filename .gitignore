@@ -10,3 +10,4 @@ build/
 # Local Apple Team ID — copy from Config/Local.xcconfig.template
 Config/Local.xcconfig
 Scripts/ExportOptions.plist
+.worktrees/
