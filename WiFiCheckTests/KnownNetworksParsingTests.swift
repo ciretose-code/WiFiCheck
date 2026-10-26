@@ -69,4 +69,32 @@ final class KnownNetworksParsingTests: XCTestCase {
     func testParseDroppedDataRejectsInvalidPlist() {
         XCTAssertFalse(manager.parseDroppedData(Data("not a plist".utf8)))
     }
+
+    func testParseDroppedDataRejectsOversizedData() {
+        let oversized = Data(count: Constants.maxKnownNetworksImportBytes + 1)
+        XCTAssertFalse(manager.parseDroppedData(oversized))
+        XCTAssertTrue(manager.getWiFiDataList().isEmpty)
+    }
+
+    func testLoadFromURLRejectsOversizedFile() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("wificheck-oversized-\(UUID().uuidString).plist")
+        let oversized = Data(count: Constants.maxKnownNetworksImportBytes + 1)
+        try oversized.write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        XCTAssertFalse(manager.loadFromURL(url))
+        XCTAssertTrue(manager.getWiFiDataList().isEmpty)
+    }
+
+    func testParseDroppedDataRejectsNonKnownNetworksShape() throws {
+        // Valid plist dictionary, but no wifi.ssid.* keys — not Apple known-networks.
+        let unrelated: [String: Any] = [
+            "CFBundleIdentifier": "com.example.app",
+            "SomeSetting": true,
+        ]
+        let data = try PropertyListSerialization.data(fromPropertyList: unrelated, format: .xml, options: 0)
+        XCTAssertFalse(manager.parseDroppedData(data))
+        XCTAssertTrue(manager.getWiFiDataList().isEmpty)
+    }
 }

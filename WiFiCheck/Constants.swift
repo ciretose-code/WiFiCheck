@@ -52,6 +52,15 @@ enum Constants {
     /// WiFi known networks plist filename
     static let wifiKnownNetworksFile = "com.apple.wifi.known-networks.plist"
 
+    /// Maximum accepted size for user-imported known-networks plists (drag/drop or Open).
+    /// Real `com.apple.wifi.known-networks.plist` files are typically well under 1 MB even with
+    /// hundreds of networks and BSS history; 5 MB leaves headroom while bounding memory/CPU
+    /// spent on PropertyListSerialization for arbitrary dropped files.
+    static let maxKnownNetworksImportBytes = 5 * 1024 * 1024
+
+    /// Prefix of Apple known-networks dictionary keys (`wifi.ssid.<hex>`).
+    static let knownNetworkSSIDKeyPrefix = "wifi.ssid."
+
     /// Networksetup command line utility path
     static let networksetupPath = "/usr/sbin/networksetup"
 
