@@ -405,6 +405,17 @@ class WiFiDataManager {
         NSWorkspace.shared.activateFileViewerSelecting([fileURL])
     }
 
+    /// Whether `data` is within the import size budget for user-supplied known-networks plists.
+    private func isWithinKnownNetworksImportSizeLimit(_ data: Data) -> Bool {
+        guard data.count <= Constants.maxKnownNetworksImportBytes else {
+            Self.logger.warning(
+                "Rejected known-networks import: \(data.count, privacy: .public) bytes exceeds limit of \(Constants.maxKnownNetworksImportBytes, privacy: .public)"
+            )
+            return false
+        }
+        return true
+    }
+
     /// Parses WiFi data from raw plist data
     /// - Parameter data: Raw plist data to parse
     /// - Returns: Array of WiFiData objects
@@ -427,7 +438,14 @@ class WiFiDataManager {
             return Array<WiFiData>()
         }
 
-        for (wifiKey, valueDict) in knownNetworks {
+        // Fail closed on plists that are clearly not Apple known-networks dictionaries.
+        let ssidEntries = knownNetworks.filter { $0.key.hasPrefix(Constants.knownNetworkSSIDKeyPrefix) }
+        guard !ssidEntries.isEmpty else {
+            Self.logger.warning("parseWiFiData: no \(Constants.knownNetworkSSIDKeyPrefix, privacy: .public)* keys — not a known-networks plist")
+            return Array<WiFiData>()
+        }
+
+        for (wifiKey, valueDict) in ssidEntries {
             guard let value = valueDict as? Dictionary<String,AnyObject> else {
                 Self.logger.warning("Skipping invalid WiFi entry: \(wifiKey, privacy: .public)")
                 continue
@@ -492,6 +510,7 @@ class WiFiDataManager {
     /// - Returns: `true` if at least one network was parsed.
     @discardableResult
     func parseDroppedData(_ data: Data) -> Bool {
+        guard isWithinKnownNetworksImportSizeLimit(data) else { return false }
         let parsed = parseWiFiData(from: data)
         guard !parsed.isEmpty else {
             Self.logger.warning("parseDroppedData: no networks found in dropped data")
@@ -510,6 +529,15 @@ class WiFiDataManager {
     /// - Returns: `true` if the file was parsed successfully and contained at least one network.
     @discardableResult
     func loadFromURL(_ url: URL) -> Bool {
+        // Bound size before reading so oversized files never enter PropertyListSerialization.
+        if let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize,
+           fileSize > Constants.maxKnownNetworksImportBytes {
+            Self.logger.warning(
+                "loadFromURL: rejected \(url.path, privacy: .public) — \(fileSize, privacy: .public) bytes exceeds limit of \(Constants.maxKnownNetworksImportBytes, privacy: .public)"
+            )
+            return false
+        }
+
         let data: Data
         do {
             data = try Data(contentsOf: url)
@@ -517,6 +545,7 @@ class WiFiDataManager {
             Self.logger.error("loadFromURL: failed to read \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
             return false
         }
+        guard isWithinKnownNetworksImportSizeLimit(data) else { return false }
         let parsed = parseWiFiData(from: data)
         guard !parsed.isEmpty else {
             Self.logger.warning("loadFromURL: no networks found in \(url.path, privacy: .public)")
