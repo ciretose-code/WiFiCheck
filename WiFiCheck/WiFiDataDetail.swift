@@ -499,8 +499,6 @@ struct WiFiDataDetail: View {
         switch kcError {
         case .itemNotFound:
             return "The password was not found."
-        case .duplicateItem:
-            return "A duplicate keychain item already exists."
         case .invalidItemFormat:
             return "The stored item is not in a readable format."
         case .unexpectedStatus(let status):
