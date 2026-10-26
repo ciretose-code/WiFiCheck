@@ -567,6 +567,27 @@ class WiFiDataManager {
     private static let kHelperMachService = "com.ciretose.macos.tool.WiFiCheck.helper"
     private static let kDaemonPlistName   = "com.ciretose.macos.tool.WiFiCheck.helper.plist"
 
+    /// Only our signed helper may answer XPC calls from the app.
+    /// Team ID comes from `WiFiCheckTeamID` in Info.plist (`$(DEVELOPMENT_TEAM)` via Config/Local.xcconfig).
+    private static let kHelperCodeSigningRequirement: String = {
+        guard let teamID = Bundle.main.object(forInfoDictionaryKey: "WiFiCheckTeamID") as? String,
+              !teamID.isEmpty,
+              !teamID.hasPrefix("$(") else {
+            fatalError("WiFiCheckTeamID missing — copy Config/Local.xcconfig.template to Config/Local.xcconfig and set DEVELOPMENT_TEAM")
+        }
+        // OU is quoted because Team IDs can start with a digit.
+        return #"identifier "com.ciretose.macos.tool.WiFiCheck.helper" and anchor apple generic and certificate leaf[subject.OU] = "\#(teamID)""#
+    }()
+
+    /// Privileged connection to the helper with mutual code-signing enforced before resume.
+    private static func makeHelperConnection() -> NSXPCConnection {
+        let connection = NSXPCConnection(machServiceName: kHelperMachService, options: .privileged)
+        connection.remoteObjectInterface = NSXPCInterface(with: WiFiHelperProtocol.self)
+        // Must be set before resume(); a peer that fails this requirement is invalidated.
+        connection.setCodeSigningRequirement(kHelperCodeSigningRequirement)
+        return connection
+    }
+
     /// Current registration status of the privileged daemon.
     var helperStatus: SMAppService.Status {
         SMAppService.daemon(plistName: Self.kDaemonPlistName).status
@@ -690,9 +711,7 @@ class WiFiDataManager {
     /// Read the WiFi plist via the privileged helper over XPC.
     /// Calls `completion` exactly once on the main thread with the parsed networks and any error.
     func loadViaHelper(completion: @escaping ([WiFiData]?, Error?) -> Void) {
-        let connection = NSXPCConnection(machServiceName: Self.kHelperMachService,
-                                         options: .privileged)
-        connection.remoteObjectInterface = NSXPCInterface(with: WiFiHelperProtocol.self)
+        let connection = Self.makeHelperConnection()
 
         // Invalidation, interruption, proxy errors, the reply, and the timeout can
         // all fire on different queues. Lock the check-and-set so only the first
@@ -790,9 +809,7 @@ class WiFiDataManager {
             return
         }
 
-        let connection = NSXPCConnection(machServiceName: Self.kHelperMachService,
-                                         options: .privileged)
-        connection.remoteObjectInterface = NSXPCInterface(with: WiFiHelperProtocol.self)
+        let connection = Self.makeHelperConnection()
 
         let finishLock = NSLock()
         var finished = false
