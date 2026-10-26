@@ -64,6 +64,12 @@ struct WiFiQRCodeView: View {
     let qrString: String
 
     @State private var image: NSImage?
+    @State private var pasteboardClearWorkItem: DispatchWorkItem?
+
+    /// WIFI QR payloads embed the password as a `P:` field when present.
+    private var includesPassword: Bool {
+        qrString.contains(";P:")
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -84,12 +90,14 @@ struct WiFiQRCodeView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
             Button("Copy Image") {
-                if let image {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.writeObjects([image])
-                }
+                copyImageToPasteboard()
             }
             .disabled(image == nil)
+            if includesPassword {
+                Text("Clipboard clears in \(Constants.qrPasteboardClearDelay)s")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
         }
         .frame(minWidth: 280)
         .restoredPresentationControls()
@@ -107,5 +115,28 @@ struct WiFiQRCodeView: View {
                 image = generateQRCode(from: qrString)
             }
         }
+    }
+
+    private func copyImageToPasteboard() {
+        guard let image else { return }
+        pasteboardClearWorkItem?.cancel()
+
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.writeObjects([image])
+
+        guard includesPassword else { return }
+
+        // Only clear if the pasteboard still holds what we wrote (user hasn't replaced it).
+        let changeCount = NSPasteboard.general.changeCount
+        let workItem = DispatchWorkItem {
+            if NSPasteboard.general.changeCount == changeCount {
+                NSPasteboard.general.clearContents()
+            }
+        }
+        pasteboardClearWorkItem = workItem
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + .seconds(Constants.qrPasteboardClearDelay),
+            execute: workItem
+        )
     }
 }

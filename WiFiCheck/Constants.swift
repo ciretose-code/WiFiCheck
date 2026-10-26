@@ -27,6 +27,9 @@ enum Constants {
     /// Duration in seconds before auto-hiding displayed passwords
     static let passwordAutoHideDelay = 30
 
+    /// Duration in seconds before clearing a password-bearing QR image from the pasteboard
+    static let qrPasteboardClearDelay = 30
+
     /// Keychain service name for WiFi passwords
     static let keychainService = "AirPort"
 

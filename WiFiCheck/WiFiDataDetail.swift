@@ -186,6 +186,11 @@ struct WiFiDataDetail: View {
                                     .padding()
                                     .restoredPresentationControls()
                             }
+                            .onChange(of: showQRCode) {
+                                if !showQRCode {
+                                    qrPayload = ""
+                                }
+                            }
                             .accessibilityLabel("Show QR code for \(wifidata.ssidString())")
                             Spacer().frame(height: 8)
                             if !WiFiDataManager.shared.isLoadedFromFile {
@@ -444,6 +449,9 @@ struct WiFiDataDetail: View {
         pwdIcon = "lock"
         cachedPassword = nil
         stopPasswordTimer()
+        // Drop any WIFI:…;P:… payload that still holds the password in memory
+        showQRCode = false
+        qrPayload = ""
     }
 
     private func presentKeychainError(_ error: Error) {
