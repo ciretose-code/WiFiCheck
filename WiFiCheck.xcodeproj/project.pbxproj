@@ -31,6 +31,18 @@
 		B66BD60A93F54EEDA3DD3D24 /* WiFiHelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7315FC0F5A495181320B43 /* WiFiHelperProtocol.swift */; };
 		C9F789D8E9F54F81AD3BB403 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF125ADE13D04B59A57E952F /* main.swift */; };
 		E15064790C5349B7BEF8CC81 /* WiFiCheckHelper in CopyFiles (Helper Binary) */ = {isa = PBXBuildFile; fileRef = A8B1DAA0CDED49349773AB19 /* WiFiCheckHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		76D7C069507A418BADC1C8DD /* FixtureHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE4B6EE7ED4E4D77A8DCC076 /* FixtureHelpers.swift */; };
+		6DAED54D7BF5461DBA6B2E44 /* NetworkSetupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6554B1F591B44A2930F2C50 /* NetworkSetupTests.swift */; };
+		E47D8B6D42314920B09C43FC /* SSIDParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B24B9B734AA9433A9A92AB1A /* SSIDParsingTests.swift */; };
+		D1A2B3C4D5E64789A0B1C2D3 /* FrequencyBandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C67340581DB4598A8F0405E /* FrequencyBandTests.swift */; };
+		F0E1D2C3B4A5968778695A4B /* WiFiDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6478899AABB00 /* WiFiDataTests.swift */; };
+		B2C3D4E5F6A7588990BBCC22 /* SortTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6478899AABB11 /* SortTests.swift */; };
+		D4E5F6A7B8C9700112DDEE44 /* KnownNetworksParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8699001CCDD33 /* KnownNetworksParsingTests.swift */; };
+		F6A7B8C9D0E1922334FF0066 /* preferred-networks-english.txt in Resources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D0811223EEFF55 /* preferred-networks-english.txt */; };
+		B8C9D0E1F2A3B45566BB2288 /* preferred-networks-german.txt in Resources */ = {isa = PBXBuildFile; fileRef = A7B8C9D0E1F2A34455AA1177 /* preferred-networks-german.txt */; };
+		D0E1F2A3B4C5D67788DD44AA /* preferred-networks-empty.txt in Resources */ = {isa = PBXBuildFile; fileRef = C9D0E1F2A3B4C56677CC3399 /* preferred-networks-empty.txt */; };
+		F2A3B4C5D6E7F89900FF66CC /* known-networks-sample.plist in Resources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6E78899EE55BB /* known-networks-sample.plist */; };
+		B4C5D6E7F8A9B01122BB88EE /* known-networks-latin1-ssid.plist in Resources */ = {isa = PBXBuildFile; fileRef = A3B4C5D6E7F8A90011AA77DD /* known-networks-latin1-ssid.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +52,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 2C01E906FEF34DD785136C4D;
 			remoteInfo = WiFiCheckHelper;
+		};
+		DC53392528EB4790917FF3B8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7B3DEFCF26EBF0DC007BE881 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7B3DEFD626EBF0DC007BE881;
+			remoteInfo = WiFiCheck;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -104,6 +123,19 @@
 		FF125ADE13D04B59A57E952F /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		C0A1F1000000000000000001 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		C0A1F1000000000000000002 /* Local.xcconfig.template */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig.template; sourceTree = "<group>"; };
+		FE4B6EE7ED4E4D77A8DCC076 /* FixtureHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureHelpers.swift; sourceTree = "<group>"; };
+		A6554B1F591B44A2930F2C50 /* NetworkSetupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkSetupTests.swift; sourceTree = "<group>"; };
+		B24B9B734AA9433A9A92AB1A /* SSIDParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSIDParsingTests.swift; sourceTree = "<group>"; };
+		5C67340581DB4598A8F0405E /* FrequencyBandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrequencyBandTests.swift; sourceTree = "<group>"; };
+		E1F2A3B4C5D6478899AABB00 /* WiFiDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiDataTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6478899AABB11 /* SortTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortTests.swift; sourceTree = "<group>"; };
+		C3D4E5F6A7B8699001CCDD33 /* KnownNetworksParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnownNetworksParsingTests.swift; sourceTree = "<group>"; };
+		E5F6A7B8C9D0811223EEFF55 /* preferred-networks-english.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = preferred-networks-english.txt; sourceTree = "<group>"; };
+		A7B8C9D0E1F2A34455AA1177 /* preferred-networks-german.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = preferred-networks-german.txt; sourceTree = "<group>"; };
+		C9D0E1F2A3B4C56677CC3399 /* preferred-networks-empty.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = preferred-networks-empty.txt; sourceTree = "<group>"; };
+		E1F2A3B4C5D6E78899EE55BB /* known-networks-sample.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = known-networks-sample.plist; sourceTree = "<group>"; };
+		A3B4C5D6E7F8A90011AA77DD /* known-networks-latin1-ssid.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = known-networks-latin1-ssid.plist; sourceTree = "<group>"; };
+		59F3E33E64694EA4B4B9EA88 /* WiFiCheckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WiFiCheckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -118,9 +150,43 @@
 			files = (
 			);
 		};
+		E9D19ABDA0A34787AB4C1D11 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		CD567CB4244448EE9879C75E /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				E5F6A7B8C9D0811223EEFF55 /* preferred-networks-english.txt */,
+				A7B8C9D0E1F2A34455AA1177 /* preferred-networks-german.txt */,
+				C9D0E1F2A3B4C56677CC3399 /* preferred-networks-empty.txt */,
+				E1F2A3B4C5D6E78899EE55BB /* known-networks-sample.plist */,
+				A3B4C5D6E7F8A90011AA77DD /* known-networks-latin1-ssid.plist */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
+		11A7985C482B451F89D913A3 /* WiFiCheckTests */ = {
+			isa = PBXGroup;
+			children = (
+				FE4B6EE7ED4E4D77A8DCC076 /* FixtureHelpers.swift */,
+				A6554B1F591B44A2930F2C50 /* NetworkSetupTests.swift */,
+				B24B9B734AA9433A9A92AB1A /* SSIDParsingTests.swift */,
+				5C67340581DB4598A8F0405E /* FrequencyBandTests.swift */,
+				E1F2A3B4C5D6478899AABB00 /* WiFiDataTests.swift */,
+				A1B2C3D4E5F6478899AABB11 /* SortTests.swift */,
+				C3D4E5F6A7B8699001CCDD33 /* KnownNetworksParsingTests.swift */,
+				CD567CB4244448EE9879C75E /* Fixtures */,
+			);
+			path = WiFiCheckTests;
+			sourceTree = "<group>";
+		};
 		C0A1F1000000000000000003 /* Config */ = {
 			isa = PBXGroup;
 			children = (
@@ -152,6 +218,7 @@
 			isa = PBXGroup;
 			children = (
 				C0A1F1000000000000000003 /* Config */,
+				11A7985C482B451F89D913A3 /* WiFiCheckTests */,
 				7B798E5D2F848D9200D33965 /* Scripts */,
 				7B798E572F848B1E00D33965 /* docs */,
 				F35FB11B425B4DD3A4EE440A /* WiFiCheckHelper */,
@@ -167,6 +234,7 @@
 			children = (
 				7B3DEFD726EBF0DC007BE881 /* WiFiCheck.app */,
 				A8B1DAA0CDED49349773AB19 /* WiFiCheckHelper */,
+				59F3E33E64694EA4B4B9EA88 /* WiFiCheckTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -276,6 +344,24 @@
 			productReference = 7B3DEFD726EBF0DC007BE881 /* WiFiCheck.app */;
 			productType = "com.apple.product-type.application";
 		};
+		027ECFA9571E469B8AB69ED6 /* WiFiCheckTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2C8BC9E785BC47669EA0F2A2 /* Build configuration list for PBXNativeTarget "WiFiCheckTests" */;
+			buildPhases = (
+				934726952D254FD598D3044D /* Sources */,
+				E9D19ABDA0A34787AB4C1D11 /* Frameworks */,
+				0EAF57F2DAF64942AD4128F3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2D3B0A627F7941DE81DA5C7E /* PBXTargetDependency */,
+			);
+			name = WiFiCheckTests;
+			productName = WiFiCheckTests;
+			productReference = 59F3E33E64694EA4B4B9EA88 /* WiFiCheckTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -288,6 +374,10 @@
 				TargetAttributes = {
 					7B3DEFD626EBF0DC007BE881 = {
 						CreatedOnToolsVersion = 12.5.1;
+					};
+					027ECFA9571E469B8AB69ED6 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 7B3DEFD626EBF0DC007BE881;
 					};
 				};
 			};
@@ -306,6 +396,7 @@
 			targets = (
 				7B3DEFD626EBF0DC007BE881 /* WiFiCheck */,
 				2C01E906FEF34DD785136C4D /* WiFiCheckHelper */,
+				027ECFA9571E469B8AB69ED6 /* WiFiCheckTests */,
 			);
 		};
 /* End PBXProject section */
@@ -319,6 +410,18 @@
 				7B28BEA22F8180E5004E754D /* AppIcon.icon in Resources */,
 			);
 		};
+		0EAF57F2DAF64942AD4128F3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F6A7B8C9D0E1922334FF0066 /* preferred-networks-english.txt in Resources */,
+				B8C9D0E1F2A3B45566BB2288 /* preferred-networks-german.txt in Resources */,
+				D0E1F2A3B4C5D67788DD44AA /* preferred-networks-empty.txt in Resources */,
+				F2A3B4C5D6E7F89900FF66CC /* known-networks-sample.plist in Resources */,
+				B4C5D6E7F8A9B01122BB88EE /* known-networks-latin1-ssid.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -330,11 +433,13 @@
 			);
 			shellPath = /bin/sh;
 			shellScript = (
-				"# Type a script or drag a script file from your workspace to insert its path.",
+				"if [ \"${CI:-}\" = \"true\" ] || [ \"${CODE_SIGNING_ALLOWED:-YES}\" = \"NO\" ]; then",
+				"  echo \"Skipping build number increment (CI / unsigned build)\"",
+				"  exit 0",
+				"fi",
 				"buildNumber=$(/usr/libexec/PlistBuddy -c \"Print CFBundleVersion\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\")",
 				"buildNumber=$(($buildNumber + 1))",
 				"/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $buildNumber\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\"",
-				"",
 			);
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -368,6 +473,20 @@
 				7B0B6A88272CA8C3006053B8 /* KeychainAccess.swift in Sources */,
 			);
 		};
+		934726952D254FD598D3044D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				76D7C069507A418BADC1C8DD /* FixtureHelpers.swift in Sources */,
+				6DAED54D7BF5461DBA6B2E44 /* NetworkSetupTests.swift in Sources */,
+				E47D8B6D42314920B09C43FC /* SSIDParsingTests.swift in Sources */,
+				D1A2B3C4D5E64789A0B1C2D3 /* FrequencyBandTests.swift in Sources */,
+				F0E1D2C3B4A5968778695A4B /* WiFiDataTests.swift in Sources */,
+				B2C3D4E5F6A7588990BBCC22 /* SortTests.swift in Sources */,
+				D4E5F6A7B8C9700112DDEE44 /* KnownNetworksParsingTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -375,6 +494,11 @@
 			isa = PBXTargetDependency;
 			target = 2C01E906FEF34DD785136C4D /* WiFiCheckHelper */;
 			targetProxy = 8763431541AE4E6BAAFD6ED6 /* PBXContainerItemProxy */;
+		};
+		2D3B0A627F7941DE81DA5C7E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7B3DEFD626EBF0DC007BE881 /* WiFiCheck */;
+			targetProxy = DC53392528EB4790917FF3B8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -644,6 +768,42 @@
 			};
 			name = Release;
 		};
+		C8BACDFEE7DF451A8E7760E9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ciretose.macos.tool.WiFiCheckTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WiFiCheck.app/Contents/MacOS/WiFiCheck";
+			};
+			name = Debug;
+		};
+		A00D79AED7FD468394020B4E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ciretose.macos.tool.WiFiCheckTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WiFiCheck.app/Contents/MacOS/WiFiCheck";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -669,6 +829,15 @@
 				7B3DEFE826EBF0DE007BE881 /* Debug configuration for PBXNativeTarget "WiFiCheck" */,
 				7B3DEFE926EBF0DE007BE881 /* Release configuration for PBXNativeTarget "WiFiCheck" */,
 			);
+			defaultConfigurationName = Release;
+		};
+		2C8BC9E785BC47669EA0F2A2 /* Build configuration list for PBXNativeTarget "WiFiCheckTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C8BACDFEE7DF451A8E7760E9 /* Debug */,
+				A00D79AED7FD468394020B4E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */

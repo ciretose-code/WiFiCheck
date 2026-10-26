@@ -1,0 +1,4 @@
+Preferred networks on en0:
+	HomeNet
+	Cafe WiFi
+	Work(Guest)

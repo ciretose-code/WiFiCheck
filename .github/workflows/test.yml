@@ -1,0 +1,42 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app || sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Local signing config (unsigned CI)
+        run: |
+          cp Config/Local.xcconfig.template Config/Local.xcconfig
+          # Team ID unused when CODE_SIGNING_ALLOWED=NO; keep a placeholder so xcconfig resolves.
+          sed -i '' 's/YOUR_TEAM_ID//' Config/Local.xcconfig
+
+      - name: Build app + helper
+        run: |
+          xcodebuild \
+            -project WiFiCheck.xcodeproj \
+            -scheme WiFiCheck \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Run unit tests
+        run: |
+          xcodebuild \
+            -project WiFiCheck.xcodeproj \
+            -scheme WiFiCheck \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            test

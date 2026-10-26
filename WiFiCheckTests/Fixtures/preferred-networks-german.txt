@@ -1,0 +1,3 @@
+Bevorzugte Netzwerke auf en0:
+	Zuhause
+	Büro*
