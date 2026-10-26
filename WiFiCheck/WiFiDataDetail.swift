@@ -11,6 +11,28 @@ import MapKit
 import CoreLocation
 
 
+// MARK: - AP Location Privacy
+
+/// Controls whether BSS lat/lon are shown, mapped, and/or reverse-geocoded.
+/// Default is hidden so MapKit never contacts Apple until the user opts in.
+enum APLocationPrivacyMode: String, CaseIterable, Identifiable {
+    case hidden
+    case coordinates
+    case map
+    case mapAndGeocode
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .hidden: return "Hidden"
+        case .coordinates: return "Coordinates Only"
+        case .map: return "Map"
+        case .mapAndGeocode: return "Map & Place Names"
+        }
+    }
+}
+
 // MARK: - Geocode Cache
 
 actor GeocodeCache {
@@ -552,6 +574,12 @@ struct ChannelHistoryView: View {
 struct BSSIDListView: View {
     var bssidData: [WiFiData.BSSData]
 
+    @AppStorage("apLocationPrivacyMode") private var locationPrivacyMode = APLocationPrivacyMode.hidden
+
+    private var hasStoredLocations: Bool {
+        bssidData.contains { $0.LocationLatitude != nil && $0.LocationLongitude != nil }
+    }
+
     private func dhcpServerIP(from data: Data?) -> String? {
         guard let data = data, data.count == 4 else { return nil }
         return data.map { String($0) }.joined(separator: ".")
@@ -560,6 +588,9 @@ struct BSSIDListView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Access Points").bold()
+            if hasStoredLocations {
+                APLocationPrivacyControls(mode: $locationPrivacyMode)
+            }
             ForEach(bssidData) { (b: WiFiData.BSSData) in
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
@@ -597,7 +628,16 @@ struct BSSIDListView: View {
 //                            .truncationMode(.tail)
 //                    }
                     if let lat = b.LocationLatitude, let lon = b.LocationLongitude {
-                        BSSLocationMapView(latitude: lat, longitude: lon, accuracy: b.LocationAccuracy)
+                        switch locationPrivacyMode {
+                        case .hidden:
+                            EmptyView()
+                        case .coordinates:
+                            BSSCoordinateOnlyView(latitude: lat, longitude: lon, accuracy: b.LocationAccuracy)
+                        case .map:
+                            BSSLocationMapView(latitude: lat, longitude: lon, accuracy: b.LocationAccuracy, allowGeocode: false)
+                        case .mapAndGeocode:
+                            BSSLocationMapView(latitude: lat, longitude: lon, accuracy: b.LocationAccuracy, allowGeocode: true)
+                        }
                     }
                 }
                 .padding(.bottom, 4)
@@ -610,10 +650,59 @@ struct BSSIDListView: View {
 }
 
 
+/// Disclosure + preference picker for access-point location display.
+struct APLocationPrivacyControls: View {
+    @Binding var mode: APLocationPrivacyMode
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Access-point coordinates come from Apple’s known-networks store on this Mac. Place names use MapKit reverse geocoding, which sends those coordinates to Apple.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Picker("Show locations", selection: $mode) {
+                ForEach(APLocationPrivacyMode.allCases) { option in
+                    Text(option.title).tag(option)
+                }
+            }
+            .pickerStyle(.menu)
+            .help("Choose how access-point locations are shown. Default is Hidden.")
+        }
+        .padding(.bottom, 4)
+    }
+}
+
+
+struct BSSCoordinateOnlyView: View {
+    let latitude: Double
+    let longitude: Double
+    let accuracy: Double?
+
+    private var coordinateText: String {
+        "\(String(format: "%.5f", latitude)), \(String(format: "%.5f", longitude))"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(coordinateText)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            if let acc = accuracy {
+                Text("± \(String(format: "%.0f", acc))m accuracy")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+}
+
+
 struct BSSLocationMapView: View {
     let latitude: Double
     let longitude: Double
     let accuracy: Double?
+    var allowGeocode: Bool = false
 
     @State private var showExpanded = false
     @State private var placeName: String? = nil
@@ -669,8 +758,21 @@ struct BSSLocationMapView: View {
             }
         }
         .onAppear {
+            guard allowGeocode else {
+                placeName = nil
+                return
+            }
             Task {
                 placeName = await GeocodeCache.shared.resolve(lat: latitude, lon: longitude)
+            }
+        }
+        .onChange(of: allowGeocode) { _, enabled in
+            if enabled {
+                Task {
+                    placeName = await GeocodeCache.shared.resolve(lat: latitude, lon: longitude)
+                }
+            } else {
+                placeName = nil
             }
         }
         .sheet(isPresented: $showExpanded) {
