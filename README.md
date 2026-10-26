@@ -34,11 +34,14 @@ macOS protects the Wi-Fi preferences file (`com.apple.wifi.known-networks.plist`
 Installs a small background daemon that reads the file as root. Requires three one-time steps: entering your admin password, enabling the app in System Settings → Login Items, and granting Full Disk Access to the helper.
 
 **Option 2 — Import a file**
-Export the plist manually and open it in WiFi Check:
+Export the plist manually to a private folder (owner-only permissions) and open it in WiFi Check:
 ```bash
-sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist ~/Downloads/wifi-networks.plist
+mkdir -p "$HOME/Library/Application Support/WiFiCheck"
+sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist "$HOME/Library/Application Support/WiFiCheck/wifi-networks.plist"
+sudo chown "$USER" "$HOME/Library/Application Support/WiFiCheck/wifi-networks.plist"
+chmod 600 "$HOME/Library/Application Support/WiFiCheck/wifi-networks.plist"
 ```
-Then use File → Open in the app. No helper required, but data won't update automatically.
+Then use **Load File** in Setup (preferred — the app deletes the copy after a successful import) or File → Open. If you open the file another way, delete the copy yourself afterward. No helper required, but data won't update automatically.
 
 ---
 
