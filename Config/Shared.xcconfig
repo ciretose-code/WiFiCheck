@@ -1,0 +1,4 @@
+// Shared build settings committed to the repo.
+// Copy Local.xcconfig.template → Local.xcconfig and set your Apple Team ID.
+// Local.xcconfig is gitignored so Team IDs stay out of the public tree.
+#include? "Local.xcconfig"

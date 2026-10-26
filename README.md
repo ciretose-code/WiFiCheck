@@ -49,10 +49,12 @@ Requires Xcode 26+ and macOS 26.
 ```bash
 git clone https://github.com/ciretose-code/WiFiCheck.git
 cd WiFiCheck
+cp Config/Local.xcconfig.template Config/Local.xcconfig
+# Set DEVELOPMENT_TEAM in Config/Local.xcconfig to your Apple Team ID
 open WiFiCheck.xcodeproj
 ```
 
-Build and run the `WiFiCheck` scheme. For testing the privileged helper, install to `/Applications` first:
+`Config/Local.xcconfig` is gitignored so Team IDs stay out of the repo. Build and run the `WiFiCheck` scheme. For testing the privileged helper, install to `/Applications` first:
 
 ```bash
 ./Scripts/install-dev.sh

@@ -1,0 +1,5 @@
+// Local signing identity — do not commit this file.
+//   cp Config/Local.xcconfig.template Config/Local.xcconfig
+// Then set DEVELOPMENT_TEAM to your Apple Developer Team ID (Membership details).
+
+DEVELOPMENT_TEAM = YOUR_TEAM_ID

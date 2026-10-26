@@ -12,5 +12,9 @@
 	<string>1</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
+	<!-- Substituted at build time from DEVELOPMENT_TEAM (Config/Local.xcconfig). -->
+	<key>WiFiCheckTeamID</key>
+	<string>$(DEVELOPMENT_TEAM)</string>
 </dict>
 </plist>
+

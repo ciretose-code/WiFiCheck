@@ -5,8 +5,15 @@ Thanks for your interest in contributing. This is a small personal project, but 
 ## Getting started
 
 1. Fork the repo and create a branch from `main`.
-2. Open `WiFiCheck.xcodeproj` in Xcode 26+.
-3. Build and run the `WiFiCheck` scheme.
+2. Set your Apple Team ID locally (kept out of git):
+   ```bash
+   cp Config/Local.xcconfig.template Config/Local.xcconfig
+   # Edit Config/Local.xcconfig and set DEVELOPMENT_TEAM to your Team ID
+   ```
+3. Open `WiFiCheck.xcodeproj` in Xcode 26+.
+4. Build and run the `WiFiCheck` scheme.
+
+The privileged helper’s XPC client check embeds your Team ID from that local config at build time. Forks must use their own Team ID or the helper will reject the app.
 
 For changes involving the privileged helper, install to `/Applications` first:
 ```bash

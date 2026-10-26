@@ -91,7 +91,7 @@
 		7B798E562F848B1E00D33965 /* wificheckwindow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = wificheckwindow.png; sourceTree = "<group>"; };
 		7B798E582F848D6E00D33965 /* CONTRIBUTING.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CONTRIBUTING.md; sourceTree = "<group>"; };
 		7B798E592F848D6E00D33965 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
-		7B798E5A2F848D9200D33965 /* ExportOptions.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = ExportOptions.plist; sourceTree = "<group>"; };
+		7B798E5A2F848D9200D33965 /* ExportOptions.plist.template */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = ExportOptions.plist.template; sourceTree = "<group>"; };
 		7B798E5B2F848D9200D33965 /* install-dev.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-dev.sh"; sourceTree = "<group>"; };
 		7B798E5C2F848D9200D33965 /* release.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = release.sh; sourceTree = "<group>"; };
 		7B7D654B2F56525700FA47CF /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
@@ -102,6 +102,8 @@
 		AABB00011122334455667799 /* WiFiQRCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiQRCode.swift; sourceTree = "<group>"; };
 		CCD179744351419195A13EF0 /* WiFiCheckHelper.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WiFiCheckHelper.entitlements; sourceTree = "<group>"; };
 		FF125ADE13D04B59A57E952F /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		C0A1F1000000000000000001 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
+		C0A1F1000000000000000002 /* Local.xcconfig.template */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig.template; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +121,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		C0A1F1000000000000000003 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				C0A1F1000000000000000001 /* Shared.xcconfig */,
+				C0A1F1000000000000000002 /* Local.xcconfig.template */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
 		7B0A2538270A7F1B00A51D79 /* Info */ = {
 			isa = PBXGroup;
 			children = (
@@ -140,6 +151,7 @@
 		7B3DEFCE26EBF0DC007BE881 = {
 			isa = PBXGroup;
 			children = (
+				C0A1F1000000000000000003 /* Config */,
 				7B798E5D2F848D9200D33965 /* Scripts */,
 				7B798E572F848B1E00D33965 /* docs */,
 				F35FB11B425B4DD3A4EE440A /* WiFiCheckHelper */,
@@ -209,7 +221,7 @@
 		7B798E5D2F848D9200D33965 /* Scripts */ = {
 			isa = PBXGroup;
 			children = (
-				7B798E5A2F848D9200D33965 /* ExportOptions.plist */,
+				7B798E5A2F848D9200D33965 /* ExportOptions.plist.template */,
 				7B798E5B2F848D9200D33965 /* install-dev.sh */,
 				7B798E5C2F848D9200D33965 /* release.sh */,
 			);
@@ -375,7 +387,6 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				DEVELOPMENT_TEAM = 6D39SX3E6V;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = WiFiCheckHelper/Info.plist;
@@ -397,7 +408,6 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				DEVELOPMENT_TEAM = 6D39SX3E6V;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = WiFiCheckHelper/Info.plist;
@@ -413,6 +423,7 @@
 		};
 		7B3DEFE526EBF0DE007BE881 /* Debug configuration for PBXProject "WiFiCheck" */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0A1F1000000000000000001 /* Shared.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -447,7 +458,6 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 69KBWN8S4J;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -478,6 +488,7 @@
 		};
 		7B3DEFE626EBF0DE007BE881 /* Release configuration for PBXProject "WiFiCheck" */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0A1F1000000000000000001 /* Shared.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -512,7 +523,6 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 69KBWN8S4J;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -548,7 +558,6 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"WiFiCheck/Preview Content\"";
-				DEVELOPMENT_TEAM = 6D39SX3E6V;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -599,7 +608,6 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"WiFiCheck/Preview Content\"";
-				DEVELOPMENT_TEAM = 6D39SX3E6V;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;

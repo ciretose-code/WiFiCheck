@@ -7,3 +7,6 @@ build/
 *.p8
 *.p12
 *.pem
+# Local Apple Team ID — copy from Config/Local.xcconfig.template
+Config/Local.xcconfig
+Scripts/ExportOptions.plist

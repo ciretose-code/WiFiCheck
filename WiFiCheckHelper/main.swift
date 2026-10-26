@@ -36,9 +36,17 @@ func removingKnownNetwork(from data: Data, wifiID: String) throws -> Data {
 }
 
 /// Only the WiFi Check app may talk to this privileged helper.
-/// Team ID is the app target `DEVELOPMENT_TEAM` in the Xcode project (quoted because it starts with a digit).
-private let kClientCodeSigningRequirement =
-    #"identifier "com.ciretose.macos.tool.WiFiCheck" and anchor apple generic and certificate leaf[subject.OU] = "6D39SX3E6V""#
+/// Team ID comes from `WiFiCheckTeamID` in Info.plist (`$(DEVELOPMENT_TEAM)` via Config/Local.xcconfig).
+private let kClientCodeSigningRequirement: String = {
+    guard let teamID = Bundle.main.object(forInfoDictionaryKey: "WiFiCheckTeamID") as? String,
+          !teamID.isEmpty,
+          !teamID.hasPrefix("$(") else {
+        fatalError("WiFiCheckTeamID missing — copy Config/Local.xcconfig.template to Config/Local.xcconfig and set DEVELOPMENT_TEAM")
+    }
+    // OU is quoted because Team IDs can start with a digit.
+    return #"identifier "com.ciretose.macos.tool.WiFiCheck" and anchor apple generic and certificate leaf[subject.OU] = "\#(teamID)""#
+}()
+
 
 final class HelperDelegate: NSObject, NSXPCListenerDelegate, WiFiHelperProtocol {
 
