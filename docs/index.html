@@ -50,11 +50,6 @@
             <a class="btn btn-secondary" href="https://github.com/ciretose-code/WiFiCheck">View on GitHub</a>
             <a class="btn btn-secondary" href="https://github.com/sponsors/ciretose-code/">Chip In</a>
         </div>
-        <p class="verify-missing" style="margin-top: 0.75rem;">
-            For signatures, also download <code>SHA256SUMS</code> and <code>SHA256SUMS.minisig</code>, then trust
-            <a href="https://ciretose.com/ciretose.pub">ciretose.pub</a>.
-        </p>
-
         <section id="verify-section" class="card" hidden>
             <div class="verify-label">SHA-256 — <span id="verify-version" class="verify-version"></span></div>
             <div id="sha256-display" class="verify-hash"></div>
@@ -64,6 +59,10 @@
             </div>
             <p id="hc-missing" class="verify-missing" hidden>
                 Hash/Check not installed. <a href="https://apps.apple.com/us/app/hash-check/id1550525767">Get it free on the Mac App Store.</a>
+            </p>
+            <p class="verify-missing">
+                For signatures, also download <code>SHA256SUMS</code> and <code>SHA256SUMS.minisig</code>, then trust
+                <a href="https://ciretose.com/ciretose.pub">ciretose.pub</a>.
             </p>
         </section>
 
