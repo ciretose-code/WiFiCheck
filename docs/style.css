@@ -239,20 +239,42 @@ code {
 
 .copy-hash-btn {
     flex-shrink: 0;
-    margin-top: 0.1rem;
-    padding: 0.25rem 0.55rem;
-    border: 1px solid rgba(15, 23, 42, 0.12);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.05rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 1px solid transparent;
     border-radius: 6px;
-    background: rgba(15, 23, 42, 0.04);
+    background: transparent;
     color: var(--ink-soft);
-    font-size: 0.72rem;
-    font-weight: 600;
     cursor: pointer;
 }
 
 .copy-hash-btn:hover {
-    background: rgba(15, 23, 42, 0.08);
+    background: rgba(15, 23, 42, 0.06);
     color: var(--ink);
+}
+
+.copy-hash-icon {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
+.copy-hash-icon--check {
+    display: none;
+    color: #1a7f37;
+}
+
+.copy-hash-btn.copied .copy-hash-icon--copy {
+    display: none;
+}
+
+.copy-hash-btn.copied .copy-hash-icon--check {
+    display: block;
 }
 
 .verify-row {
