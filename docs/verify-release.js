@@ -74,6 +74,7 @@
         var section = document.getElementById('verify-section');
         var button = document.getElementById('verify-btn');
         var hashElement = document.getElementById('sha256-display');
+        var copyButton = document.getElementById('copy-hash-btn');
         var statusElement = document.getElementById('verify-status');
         var missingElement = document.getElementById('hc-missing');
         var versionElement = document.getElementById('verify-version');
@@ -83,6 +84,39 @@
         hashElement.textContent = hash;
         if (versionElement) versionElement.textContent = version || '';
         section.hidden = false;
+
+        if (copyButton) {
+            copyButton.addEventListener('click', function () {
+                var label = copyButton.getAttribute('data-label') || copyButton.textContent;
+                copyButton.setAttribute('data-label', label);
+                function done() {
+                    copyButton.textContent = 'Copied';
+                    setTimeout(function () {
+                        copyButton.textContent = label;
+                    }, 1500);
+                }
+                function fallbackCopy() {
+                    var field = document.createElement('textarea');
+                    field.value = hash;
+                    field.setAttribute('readonly', '');
+                    field.style.cssText = 'position:fixed;left:-9999px;top:0';
+                    document.body.appendChild(field);
+                    field.select();
+                    try {
+                        document.execCommand('copy');
+                        done();
+                    } catch (err) {
+                        /* leave the button label alone */
+                    }
+                    document.body.removeChild(field);
+                }
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(hash).then(done).catch(fallbackCopy);
+                } else {
+                    fallbackCopy();
+                }
+            });
+        }
 
         button.addEventListener('click', function (event) {
             event.preventDefault();
