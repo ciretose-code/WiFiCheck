@@ -56,7 +56,7 @@
         if (match) return Promise.resolve(match[1].toLowerCase());
 
         var checksum = (release.assets || []).find(function (asset) {
-            return /\.sha256$/i.test(asset.name);
+            return asset.name === 'SHA256SUMS' || /\.sha256$/i.test(asset.name);
         });
         if (checksum) {
             return fetch(checksum.browser_download_url)

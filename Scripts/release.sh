@@ -208,6 +208,13 @@ gh release create "$TAG" \
   "$SUMS_PATH" \
   "$SIG_PATH" \
   --title "${APP_NAME} ${TAG}" \
+  --notes "$(cat <<EOF
+### Verify with Hash/Check
+
+Download \`SHA256SUMS\` and \`SHA256SUMS.minisig\` alongside the DMG.
+Public key: https://ciretose.com/ciretose.pub
+EOF
+)" \
   --generate-notes
 
 # ── 9. Commit and push updated Info.plist ─────────────────────────────────────
