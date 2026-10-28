@@ -52,7 +52,10 @@
         </div>
         <section id="verify-section" class="card" hidden>
             <div class="verify-label">SHA-256 — <span id="verify-version" class="verify-version"></span></div>
-            <div id="sha256-display" class="verify-hash"></div>
+            <div class="verify-hash-row">
+                <div id="sha256-display" class="verify-hash"></div>
+                <button type="button" id="copy-hash-btn" class="copy-hash-btn">Copy</button>
+            </div>
             <div class="verify-row">
                 <a id="verify-btn" class="btn btn-secondary" href="#">Verify with Hash/Check</a>
                 <span id="verify-status" class="verify-status"></span>
