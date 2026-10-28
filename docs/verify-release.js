@@ -87,13 +87,15 @@
 
         if (copyButton) {
             copyButton.addEventListener('click', function () {
-                var label = copyButton.getAttribute('data-label') || copyButton.textContent;
-                copyButton.setAttribute('data-label', label);
                 function done() {
-                    copyButton.textContent = 'Copied';
+                    copyButton.classList.add('copied');
+                    copyButton.setAttribute('aria-label', 'Copied');
+                    copyButton.setAttribute('title', 'Copied');
                     setTimeout(function () {
-                        copyButton.textContent = label;
-                    }, 1500);
+                        copyButton.classList.remove('copied');
+                        copyButton.setAttribute('aria-label', 'Copy SHA-256');
+                        copyButton.setAttribute('title', 'Copy SHA-256');
+                    }, 2000);
                 }
                 function fallbackCopy() {
                     var field = document.createElement('textarea');
@@ -106,7 +108,7 @@
                         document.execCommand('copy');
                         done();
                     } catch (err) {
-                        /* leave the button label alone */
+                        /* leave the button state alone */
                     }
                     document.body.removeChild(field);
                 }
