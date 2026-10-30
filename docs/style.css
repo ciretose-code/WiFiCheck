@@ -75,7 +75,7 @@ code {
 
 .container {
     width: 90%;
-    max-width: 720px;
+    max-width: 860px;
     margin: 0 auto;
     padding: 5rem 0 3rem;
     display: flex;
@@ -220,37 +220,36 @@ code {
 }
 
 .verify-hash-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
     margin-bottom: 0.85rem;
+    line-height: 1.6;
 }
 
 .verify-hash {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
     color: var(--ink-soft);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 0.72rem;
     line-height: 1.6;
-    overflow-wrap: anywhere;
+    word-break: break-all;
 }
 
 .copy-hash-btn {
-    flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-top: 0.05rem;
-    width: 1.75rem;
-    height: 1.75rem;
+    vertical-align: text-bottom;
+    margin: 0 0 0 4px;
+    width: 22px;
+    height: 22px;
     padding: 0;
     border: 1px solid transparent;
     border-radius: 6px;
     background: transparent;
     color: var(--ink-soft);
+    font: inherit;
+    line-height: 1;
     cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .copy-hash-btn:hover {
@@ -260,8 +259,8 @@ code {
 
 .copy-hash-icon {
     display: block;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
 }
 
 .copy-hash-icon--check {
@@ -284,6 +283,54 @@ code {
     gap: 0.65rem;
 }
 
+.btn-verify {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(102, 51, 153, 0.35);
+    color: var(--accent);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-verify:hover {
+    background: rgba(102, 51, 153, 0.18);
+    border-color: rgba(102, 51, 153, 0.55);
+    color: var(--accent);
+}
+
+.btn-verify-site {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.btn-verify-site:hover {
+    color: var(--ink);
+}
+
+.verify-row .btn {
+    min-height: 0;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    line-height: 1.2;
+    box-shadow: none;
+}
+
+.verify-row .btn svg,
+.btn-verify svg {
+    flex-shrink: 0;
+}
+
 .verify-status,
 .verify-missing {
     color: var(--ink-soft);
@@ -300,6 +347,50 @@ code {
 
 .verify-missing a {
     color: #c0392b;
+}
+
+.verify-sig {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(102, 51, 153, 0.35);
+    color: var(--accent);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.verify-sig-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.verify-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border: 1px solid rgba(102, 51, 153, 0.3);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--ink);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.verify-chip:hover {
+    background: #fff;
+    border-color: rgba(102, 51, 153, 0.55);
+    color: var(--accent);
 }
 
 .faq h2 {

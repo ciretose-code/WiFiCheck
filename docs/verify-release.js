@@ -152,6 +152,13 @@
                 downloadButton.href = download.browser_download_url;
                 downloadButton.setAttribute('download', download.name);
             }
+            var assets = release.assets || [];
+            var sums = assets.find(function (asset) { return asset.name === 'SHA256SUMS'; });
+            var minisig = assets.find(function (asset) { return asset.name === 'SHA256SUMS.minisig'; });
+            var sumsLink = document.getElementById('sums-link');
+            var minisigLink = document.getElementById('minisig-link');
+            if (sums && sumsLink) sumsLink.href = sums.browser_download_url;
+            if (minisig && minisigLink) minisigLink.href = minisig.browser_download_url;
             return findHash(release, download).then(function (hash) {
                 if (hash) showVerify(hash, release.tag_name);
             });
