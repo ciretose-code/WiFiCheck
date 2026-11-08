@@ -36,7 +36,7 @@ From the app menu, WiFi Check can also manually compare your installed version a
 macOS protects the Wi-Fi preferences file (`com.apple.wifi.known-networks.plist`) under System Integrity Protection. Reading it requires one of two approaches:
 
 **Option 1 — Privileged Helper (recommended)**
-Installs a small background daemon that reads the file as root. Requires three one-time steps: entering your admin password, enabling the app in System Settings → Login Items, and granting Full Disk Access to the helper.
+Installs a small background daemon that reads the file as root. Requires three one-time steps: entering your admin password, enabling the app in System Settings → Login Items, and granting Full Disk Access to **WiFi Check** (the host app). Prefer the host app over any nested helper entry so the grant can survive updates.
 
 **Option 2 — Import a file**
 Export the plist manually to a private folder (owner-only permissions) and open it in WiFi Check.

@@ -30,7 +30,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2C01E906FEF34DD785136C4D"
-               BuildableName = "com.ciretose.macos.tool.WiFiCheck.helper"
+               BuildableName = "WiFiCheckHelper.app"
                BlueprintName = "WiFiCheckHelper"
                ReferencedContainer = "container:WiFiCheck.xcodeproj">
             </BuildableReference>

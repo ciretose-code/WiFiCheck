@@ -774,12 +774,9 @@ class WiFiDataManager {
         }
     }
 
-    /// `true` when the helper binary exists at the expected bundle-relative path.
+    /// `true` when the nested helper app (and its executable) exist in the host bundle.
     private var helperBinaryExists: Bool {
-        let url = Bundle.main.bundleURL
-            .appendingPathComponent("Contents/Library/LaunchDaemons")
-            .appendingPathComponent(Self.kHelperMachService)
-        return FileManager.default.fileExists(atPath: url.path)
+        FileManager.default.fileExists(atPath: Constants.helperBinaryPath)
     }
 
     /// Sentinel error used to signal that the daemon is registered but needs

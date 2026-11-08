@@ -336,7 +336,7 @@ struct WiFiListPane: View {
         To fix this:
         1. File → Remove Helper…, then try Install Helper again
         2. System Settings → Privacy & Security → Login Items & Extensions — enable WiFi Check under App Background Activity
-        3. System Settings → Privacy & Security → Full Disk Access — add the helper binary if it isn’t listed
+        3. System Settings → Privacy & Security → Full Disk Access — enable WiFi Check if it isn’t listed
         """
     }
 
@@ -347,9 +347,9 @@ struct WiFiListPane: View {
         \(detail)
 
         To fix this:
-        1. System Settings → Privacy & Security → Full Disk Access — enable the helper binary:
-           \(Constants.helperBinaryPath)
-           (Remove any older WiFiCheck helper entry after updating the app.)
+        1. System Settings → Privacy & Security → Full Disk Access — enable WiFi Check:
+           \(Constants.fullDiskAccessTargetPath)
+           (Prefer the host app, not a nested helper Mach-O. Remove any stale helper-only entries.)
         2. System Settings → Privacy & Security → Login Items & Extensions — enable WiFi Check background activity
         3. File → Remove Helper…, then Install Helper again
         """
@@ -594,7 +594,7 @@ struct SetupSheetView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Label("Enter your admin password if prompted", systemImage: "1.circle.fill")
                             Label("Enable WiFi Check in System Settings → Login Items → App Background Activity", systemImage: "2.circle.fill")
-                            Label("Grant Full Disk Access to the helper binary", systemImage: "3.circle.fill")
+                            Label("Grant Full Disk Access to WiFi Check", systemImage: "3.circle.fill")
                         }
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -605,7 +605,7 @@ struct SetupSheetView: View {
                                     .foregroundColor(.orange)
                                     .font(.caption)
                                     .padding(.top, 1)
-                                Text("One more step — the helper needs **Full Disk Access**. In System Settings → Privacy & Security → Full Disk Access, click **+** and add the helper binary:\n`\(Constants.helperBinaryPath)`\nUpdating the app changes this path, so a previous Full Disk Access grant can go stale.")
+                                Text("One more step — grant **Full Disk Access** to WiFi Check itself:\n`\(Constants.fullDiskAccessTargetPath)`\nPrefer the host app (bundle ID \(Constants.appBundleIdentifier)). The privileged helper is launchd-started without its own Launch Services identity, so FDA on a nested helper binary goes stale on updates.")
                                     .font(.caption)
                                     .foregroundColor(.primary)
                                     .multilineTextAlignment(.leading)
@@ -842,7 +842,7 @@ struct RemoveHelperSheetView: View {
                             .font(.callout)
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("1. Open **System Settings → Privacy & Security → Full Disk Access**\n2. Find `com.ciretose.macos.tool.WiFiCheck.helper`\n3. Click **–** to remove it")
+                        Text("1. Open **System Settings → Privacy & Security → Full Disk Access**\n2. Find `WiFiCheckHelper` / `com.ciretose.macos.tool.WiFiCheck.helper`\n3. Click **–** to remove it")
                             .font(.callout)
                             .fixedSize(horizontal: false, vertical: true)
                     }

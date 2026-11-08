@@ -33,7 +33,7 @@
 		B87C3E52987641029C3D7FDB /* KnownNetworksStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D048DB0A5A6545D4A3D470E1 /* KnownNetworksStore.swift */; };
 		038ADE8C4E984377BD7A7699 /* KnownNetworksStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D048DB0A5A6545D4A3D470E1 /* KnownNetworksStore.swift */; };
 		B9EFADDC31DA4221B224883A /* KnownNetworksStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FC3240C88E47009763F52B /* KnownNetworksStoreTests.swift */; };
-		E15064790C5349B7BEF8CC81 /* WiFiCheckHelper in CopyFiles (Helper Binary) */ = {isa = PBXBuildFile; fileRef = A8B1DAA0CDED49349773AB19 /* WiFiCheckHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		E15064790C5349B7BEF8CC81 /* WiFiCheckHelper.app in CopyFiles (Helper App) */ = {isa = PBXBuildFile; fileRef = A8B1DAA0CDED49349773AB19 /* WiFiCheckHelper.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		76D7C069507A418BADC1C8DD /* FixtureHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE4B6EE7ED4E4D77A8DCC076 /* FixtureHelpers.swift */; };
 		6DAED54D7BF5461DBA6B2E44 /* NetworkSetupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6554B1F591B44A2930F2C50 /* NetworkSetupTests.swift */; };
 		E47D8B6D42314920B09C43FC /* SSIDParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B24B9B734AA9433A9A92AB1A /* SSIDParsingTests.swift */; };
@@ -50,6 +50,7 @@
 		F0A1B2C3D4E5F60718293A4C /* ForgetAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A4B /* ForgetAuthentication.swift */; };
 		F0A1B2C3D4E5F60718293B5C /* ForgetAuthenticationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293B5B /* ForgetAuthenticationTests.swift */; };
 		A1B2C3D4E5F60718293C6D7E /* HelperInstallPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293C6D7D /* HelperInstallPlanTests.swift */; };
+		C1D2E3F405162738495A6B7C /* HelperBundlePathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5061728394A5B6C /* HelperBundlePathTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,14 +71,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		258B3F104C2840E89F14D56D /* CopyFiles (Helper Binary) */ = {
+		258B3F104C2840E89F14D56D /* CopyFiles (Helper App) */ = {
 			isa = PBXCopyFilesBuildPhase;
 			dstPath = Contents/Library/LaunchDaemons;
 			dstSubfolder = Wrapper;
 			files = (
-				E15064790C5349B7BEF8CC81 /* WiFiCheckHelper in CopyFiles (Helper Binary) */,
+				E15064790C5349B7BEF8CC81 /* WiFiCheckHelper.app in CopyFiles (Helper App) */,
 			);
-			name = "CopyFiles (Helper Binary)";
+			name = "CopyFiles (Helper App)";
 		};
 		CFC9EA24A6754763AE2921F0 /* CopyFiles (Daemon Plist) */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -124,7 +125,7 @@
 		7BCF2FA62737335E00ABC4D1 /* CheckboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxView.swift; sourceTree = "<group>"; };
 		8513818756E24D7198D0267C /* com.ciretose.macos.tool.WiFiCheck.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.ciretose.macos.tool.WiFiCheck.helper.plist; sourceTree = "<group>"; };
 		8E7315FC0F5A495181320B43 /* WiFiHelperProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiHelperProtocol.swift; sourceTree = "<group>"; };
-		A8B1DAA0CDED49349773AB19 /* WiFiCheckHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; name = WiFiCheckHelper; path = com.ciretose.macos.tool.WiFiCheck.helper; sourceTree = BUILT_PRODUCTS_DIR; };
+		A8B1DAA0CDED49349773AB19 /* WiFiCheckHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WiFiCheckHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AABB00011122334455667799 /* WiFiQRCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiQRCode.swift; sourceTree = "<group>"; };
 		CCD179744351419195A13EF0 /* WiFiCheckHelper.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WiFiCheckHelper.entitlements; sourceTree = "<group>"; };
 		FF125ADE13D04B59A57E952F /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -149,6 +150,7 @@
 		F0A1B2C3D4E5F60718293A4B /* ForgetAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetAuthentication.swift; sourceTree = "<group>"; };
 		F0A1B2C3D4E5F60718293B5B /* ForgetAuthenticationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetAuthenticationTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293C6D7D /* HelperInstallPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperInstallPlanTests.swift; sourceTree = "<group>"; };
+		B1C2D3E4F5061728394A5B6C /* HelperBundlePathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperBundlePathTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -199,6 +201,7 @@
 				47FC3240C88E47009763F52B /* KnownNetworksStoreTests.swift */,
 				F0A1B2C3D4E5F60718293B5B /* ForgetAuthenticationTests.swift */,
 				A1B2C3D4E5F60718293C6D7D /* HelperInstallPlanTests.swift */,
+				B1C2D3E4F5061728394A5B6C /* HelperBundlePathTests.swift */,
 				CD567CB4244448EE9879C75E /* Fixtures */,
 			);
 			path = WiFiCheckTests;
@@ -250,7 +253,7 @@
 			isa = PBXGroup;
 			children = (
 				7B3DEFD726EBF0DC007BE881 /* WiFiCheck.app */,
-				A8B1DAA0CDED49349773AB19 /* WiFiCheckHelper */,
+				A8B1DAA0CDED49349773AB19 /* WiFiCheckHelper.app */,
 				59F3E33E64694EA4B4B9EA88 /* WiFiCheckTests.xctest */,
 			);
 			name = Products;
@@ -339,8 +342,8 @@
 			);
 			name = WiFiCheckHelper;
 			productName = WiFiCheckHelper;
-			productReference = A8B1DAA0CDED49349773AB19 /* WiFiCheckHelper */;
-			productType = "com.apple.product-type.tool";
+			productReference = A8B1DAA0CDED49349773AB19 /* WiFiCheckHelper.app */;
+			productType = "com.apple.product-type.application";
 		};
 		7B3DEFD626EBF0DC007BE881 /* WiFiCheck */ = {
 			isa = PBXNativeTarget;
@@ -350,7 +353,7 @@
 				7B3DEFD326EBF0DC007BE881 /* Sources */,
 				7B3DEFD426EBF0DC007BE881 /* Frameworks */,
 				7B3DEFD526EBF0DC007BE881 /* Resources */,
-				258B3F104C2840E89F14D56D /* CopyFiles (Helper Binary) */,
+				258B3F104C2840E89F14D56D /* CopyFiles (Helper App) */,
 				CFC9EA24A6754763AE2921F0 /* CopyFiles (Daemon Plist) */,
 			);
 			buildRules = (
@@ -510,6 +513,7 @@
 				B9EFADDC31DA4221B224883A /* KnownNetworksStoreTests.swift in Sources */,
 				F0A1B2C3D4E5F60718293B5C /* ForgetAuthenticationTests.swift in Sources */,
 				A1B2C3D4E5F60718293C6D7E /* HelperInstallPlanTests.swift in Sources */,
+				C1D2E3F405162738495A6B7C /* HelperBundlePathTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -536,14 +540,17 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = WiFiCheckHelper/Info.plist;
-				INSTALL_PATH = /Library/PrivilegedHelperTools;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ciretose.macos.tool.WiFiCheck.helper;
-				PRODUCT_NAME = com.ciretose.macos.tool.WiFiCheck.helper;
+				PRODUCT_NAME = WiFiCheckHelper;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -557,14 +564,17 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = WiFiCheckHelper/Info.plist;
-				INSTALL_PATH = /Library/PrivilegedHelperTools;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ciretose.macos.tool.WiFiCheck.helper;
-				PRODUCT_NAME = com.ciretose.macos.tool.WiFiCheck.helper;
+				PRODUCT_NAME = WiFiCheckHelper;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;

@@ -6,15 +6,22 @@
 	<string>com.ciretose.macos.tool.WiFiCheck.helper</string>
 	<key>CFBundleName</key>
 	<string>WiFiCheckHelper</string>
+	<key>CFBundleDisplayName</key>
+	<string>WiFi Check Helper</string>
 	<key>CFBundleExecutable</key>
-	<string>com.ciretose.macos.tool.WiFiCheck.helper</string>
+	<string>WiFiCheckHelper</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>26.0</string>
+	<key>LSUIElement</key>
+	<true/>
 	<!-- Substituted at build time from DEVELOPMENT_TEAM (Config/Local.xcconfig). -->
 	<key>WiFiCheckTeamID</key>
 	<string>$(DEVELOPMENT_TEAM)</string>
 </dict>
 </plist>
-

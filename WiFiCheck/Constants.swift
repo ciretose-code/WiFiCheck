@@ -67,14 +67,43 @@ enum Constants {
     /// Airport framework utility path (optional, for advanced features)
     static let airportCommandPath = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
 
-    /// Privileged helper executable name (matches helper PRODUCT_NAME / BundleProgram)
-    static let helperBinaryName = "com.ciretose.macos.tool.WiFiCheck.helper"
+    /// Nested privileged helper app name (copied into Contents/Library/LaunchDaemons).
+    static let helperAppName = "WiFiCheckHelper.app"
 
-    /// Absolute path of the helper binary inside the running app bundle
-    static var helperBinaryPath: String {
+    /// Executable name inside the nested helper app.
+    static let helperExecutableName = "WiFiCheckHelper"
+
+    /// Nested helper bundle ID (Mach service / codesign requirement).
+    static let helperBundleIdentifier = "com.ciretose.macos.tool.WiFiCheck.helper"
+
+    /// Host app bundle ID — prefer this for Full Disk Access. The helper is
+    /// launchd-exec'd without Launch Services identity, so FDA on the helper
+    /// alone is path+cdhash and dies on updates; AssociatedBundleIdentifiers
+    /// ties the daemon to this host identity.
+    static let appBundleIdentifier = "com.ciretose.macos.tool.WiFiCheck"
+
+    /// SMAppService `BundleProgram` path relative to the host app bundle.
+    static let helperBundleProgramRelativePath =
+        "Contents/Library/LaunchDaemons/\(helperAppName)/Contents/MacOS/\(helperExecutableName)"
+
+    /// Absolute path of the nested helper .app inside the running host app bundle.
+    static var helperAppPath: String {
         Bundle.main.bundleURL
             .appendingPathComponent("Contents/Library/LaunchDaemons")
-            .appendingPathComponent(helperBinaryName)
+            .appendingPathComponent(helperAppName)
             .path
+    }
+
+    /// Absolute path of the helper executable inside the nested helper .app.
+    static var helperBinaryPath: String {
+        URL(fileURLWithPath: helperAppPath)
+            .appendingPathComponent("Contents/MacOS")
+            .appendingPathComponent(helperExecutableName)
+            .path
+    }
+
+    /// Path to add in System Settings → Full Disk Access (the host app).
+    static var fullDiskAccessTargetPath: String {
+        Bundle.main.bundlePath
     }
 }
