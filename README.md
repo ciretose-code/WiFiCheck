@@ -34,7 +34,10 @@ macOS protects the Wi-Fi preferences file (`com.apple.wifi.known-networks.plist`
 Installs a small background daemon that reads the file as root. Requires three one-time steps: entering your admin password, enabling the app in System Settings → Login Items, and granting Full Disk Access to the helper.
 
 **Option 2 — Import a file**
-Export the plist manually to a private folder (owner-only permissions) and open it in WiFi Check:
+Export the plist manually to a private folder (owner-only permissions) and open it in WiFi Check.
+
+`sudo` alone is not enough: grant **Full Disk Access** to **Terminal.app** (System Settings → Privacy & Security → Full Disk Access), then quit and reopen Terminal. Run the command in Terminal.app itself — not an IDE/integrated terminal — or `cp` fails with “Operation not permitted.”
+
 ```bash
 mkdir -p "$HOME/Library/Application Support/WiFiCheck"
 sudo cp /Library/Preferences/com.apple.wifi.known-networks.plist "$HOME/Library/Application Support/WiFiCheck/wifi-networks.plist"

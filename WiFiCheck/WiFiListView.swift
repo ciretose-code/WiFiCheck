@@ -271,7 +271,8 @@ struct WiFiListPane: View {
         }
     }
 
-    func installAndLoadViaHelper() {        helperInstalling = true
+    func installAndLoadViaHelper() {
+        helperInstalling = true
         helperError = nil
         helperNeedsApproval = false
         helperNeedsFDA = false
@@ -285,10 +286,11 @@ struct WiFiListPane: View {
                         applySort()
                         reloadView.toggle()
                         showSetupSheet = false
-                    } else if Self.isPermissionError(loadError) {
+                    } else if Self.isPermissionError(loadError) || networks != nil {
+                        // Empty reply with no hard error is a common TCC outcome without FDA.
                         helperNeedsFDA = true
                     } else {
-                        helperError = loadError?.localizedDescription ?? "Helper installed but could not read WiFi data."
+                        helperError = Self.helperLoadFailureMessage(for: loadError)
                     }
                 }
             } else {
@@ -298,10 +300,8 @@ struct WiFiListPane: View {
                    nsErr?.code == WiFiDataManager.requiresApprovalError.code {
                     helperNeedsApproval = true
                     helperError = nil
-                } else if let err = nsErr {
-                    helperError = "\(err.localizedDescription) (\(err.domain) \(err.code))"
                 } else {
-                    helperError = error?.localizedDescription ?? "Installation failed."
+                    helperError = Self.helperInstallFailureMessage(for: error)
                 }
             }
         }
@@ -311,8 +311,48 @@ struct WiFiListPane: View {
     private static func isPermissionError(_ error: Error?) -> Bool {
         guard let err = error as NSError? else { return false }
         // NSFileReadNoPermissionError (257) or EPERM/EACCES (1/13)
-        return err.domain == NSCocoaErrorDomain && err.code == NSFileReadNoPermissionError
-            || err.domain == NSPOSIXErrorDomain && (err.code == 1 || err.code == 13)
+        if err.domain == NSCocoaErrorDomain && err.code == NSFileReadNoPermissionError { return true }
+        if err.domain == NSPOSIXErrorDomain && (err.code == 1 || err.code == 13) { return true }
+        // XPC may flatten TCC denials; match common wording across wrapped errors.
+        let text = err.localizedDescription.lowercased()
+        if text.contains("don't have permission")
+            || text.contains("does not have permission")
+            || text.contains("permission to view")
+            || text.contains("operation not permitted") {
+            return true
+        }
+        if let underlying = err.userInfo[NSUnderlyingErrorKey] as? Error {
+            return isPermissionError(underlying)
+        }
+        return false
+    }
+
+    /// Recovery copy when helper registration fails.
+    private static func helperInstallFailureMessage(for error: Error?) -> String {
+        let detail = error?.localizedDescription ?? "Installation failed."
+        return """
+        \(detail)
+
+        To fix this:
+        1. File → Remove Helper…, then try Install Helper again
+        2. System Settings → Privacy & Security → Login Items & Extensions — enable WiFi Check under App Background Activity
+        3. System Settings → Privacy & Security → Full Disk Access — add the helper binary if it isn’t listed
+        """
+    }
+
+    /// Recovery copy when the helper is registered but cannot load Wi‑Fi data.
+    private static func helperLoadFailureMessage(for error: Error?) -> String {
+        let detail = error?.localizedDescription ?? "Helper installed but could not read WiFi data."
+        return """
+        \(detail)
+
+        To fix this:
+        1. System Settings → Privacy & Security → Full Disk Access — enable the helper binary:
+           \(Constants.helperBinaryPath)
+           (Remove any older WiFiCheck helper entry after updating the app.)
+        2. System Settings → Privacy & Security → Login Items & Extensions — enable WiFi Check background activity
+        3. File → Remove Helper…, then Install Helper again
+        """
     }
 
     func handleDrop(providers: [NSItemProvider]) -> Bool {
@@ -605,11 +645,28 @@ struct SetupSheetView: View {
                             }
                             .buttonStyle(WiFiButtonStyle())
                         } else if let err = helperError {
-                            Text(err)
-                                .font(.caption)
-                                .foregroundColor(.red)
-                                .multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.orange)
+                                    .font(.caption)
+                                    .padding(.top, 1)
+                                Text(err)
+                                    .font(.caption)
+                                    .foregroundColor(.primary)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Button(action: {
+                                NSWorkspace.shared.open(
+                                    URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!)
+                            }) {
+                                HStack {
+                                    Image(systemName: "lock.open")
+                                    Text("Open Full Disk Access Settings")
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(WiFiButtonStyle())
                         }
 
                         Button(action: onInstallHelper) {
@@ -617,9 +674,9 @@ struct SetupSheetView: View {
                                 if helperInstalling {
                                     ProgressView().scaleEffect(0.7).frame(width: 14, height: 14)
                                 } else {
-                                    Image(systemName: helperNeedsApproval || helperNeedsFDA ? "arrow.clockwise" : "lock.shield")
+                                    Image(systemName: helperNeedsApproval || helperNeedsFDA || helperError != nil ? "arrow.clockwise" : "lock.shield")
                                 }
-                                Text(helperInstalling ? "Installing…" : helperNeedsApproval || helperNeedsFDA ? "Check Again" : "Install Helper")
+                                Text(helperInstalling ? "Installing…" : (helperNeedsApproval || helperNeedsFDA || helperError != nil) ? "Check Again" : "Install Helper")
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -637,7 +694,7 @@ struct SetupSheetView: View {
                     recommended: false
                 ) {
                     VStack(spacing: 10) {
-                        Text("Run the command below in Terminal. It copies the WiFi file to a private Application Support folder with owner-only permissions. The app deletes the copy after a successful load — delete it yourself if you open the file another way.")
+                        Text("Run the command below in **Terminal.app** (not an IDE terminal). `sudo` alone is not enough — grant **Full Disk Access** to Terminal first (System Settings → Privacy & Security → Full Disk Access), then quit and reopen Terminal. Otherwise `cp` fails with “Operation not permitted.” The copy goes to a private Application Support folder with owner-only permissions. The app deletes it after a successful load — delete it yourself if you open the file another way.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.leading)
