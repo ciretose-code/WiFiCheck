@@ -1,4 +1,9 @@
+> [!IMPORTANT]
+> macOS 27.2 broke the install...  Hopefully a fix will be coming soon.
+
+
 # WiFi Check
+
 
 A macOS app that displays detailed information about the Wi-Fi networks your Mac has connected to, sourced directly from the system's protected Wi-Fi preferences file.
 
