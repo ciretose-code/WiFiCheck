@@ -625,6 +625,79 @@ class WiFiDataManager {
     /// Whether the privileged helper is installed and running.
     var helperIsRunning: Bool { helperStatus == .enabled }
 
+    /// What `installHelper` should do given SMAppService status and Mach reachability.
+    enum HelperInstallPlan: Equatable {
+        /// Helper is enabled and answering XPC — leave registration alone.
+        case noop
+        /// No usable registration — call `register()` only.
+        case registerOnly
+        /// Stale or stranded registration — `unregister()` then `register()`.
+        case unregisterThenRegister
+    }
+
+    /// Pure install planner. `machServiceReachable` must be false when SMAppService
+    /// reports `.enabled` but launchd has no job (bootstrap look-up fails).
+    static func planHelperInstall(
+        status: SMAppService.Status,
+        binaryExists: Bool,
+        machServiceReachable: Bool
+    ) -> HelperInstallPlan {
+        switch status {
+        case .enabled:
+            if binaryExists && machServiceReachable {
+                return .noop
+            }
+            // Binary missing, or enabled-but-unreachable (stranded BTM / missing launchd job).
+            return .unregisterThenRegister
+        case .requiresApproval:
+            return .unregisterThenRegister
+        case .notRegistered, .notFound:
+            return .registerOnly
+        @unknown default:
+            return .registerOnly
+        }
+    }
+
+    /// Best-effort check that the helper Mach service accepts a privileged XPC connection.
+    /// Returns false when bootstrap look-up fails (no launchd job) or the peer is invalidated.
+    private static func isHelperMachServiceReachable(timeout: TimeInterval = 1.0) -> Bool {
+        let connection = makeHelperConnection()
+        let lock = NSLock()
+        var finished = false
+        var reachable = false
+        let done = DispatchSemaphore(value: 0)
+
+        let finish: (Bool) -> Void = { ok in
+            lock.lock()
+            defer { lock.unlock() }
+            guard !finished else { return }
+            finished = true
+            reachable = ok
+            done.signal()
+        }
+
+        connection.invalidationHandler = { finish(false) }
+        connection.interruptionHandler = { finish(false) }
+        connection.resume()
+
+        guard let proxy = connection.remoteObjectProxyWithErrorHandler({ _ in
+            finish(false)
+        }) as? WiFiHelperProtocol else {
+            connection.invalidate()
+            return false
+        }
+
+        // Any reply (including a helper-side read error) proves the daemon is listening.
+        proxy.readWifiPlist { _, _ in
+            finish(true)
+            connection.invalidate()
+        }
+
+        _ = done.wait(timeout: .now() + timeout)
+        connection.invalidate()
+        return reachable
+    }
+
     /// Register the daemon with the system (shows macOS admin-auth sheet).
     /// Calls `completion` on the main thread with success/failure.
     /// Must be called from the main thread — SMAppService presents UI.
@@ -633,19 +706,41 @@ class WiFiDataManager {
 
         let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
         let currentStatus = service.status
+        let binaryExists = helperBinaryExists
         Self.logger.info("SMAppService status before register: \(String(describing: currentStatus))")
 
-        // Already running and the helper binary is where we expect it — nothing to do.
-        if currentStatus == .enabled && helperBinaryExists {
+        // Probe off the main thread — a sync wait here can deadlock if XPC
+        // callbacks hop back to main while SMAppService later presents UI.
+        let needsReachabilityProbe = (currentStatus == .enabled && binaryExists)
+        DispatchQueue.global(qos: .userInitiated).async {
+            let reachable = needsReachabilityProbe ? Self.isHelperMachServiceReachable() : false
+            let plan = Self.planHelperInstall(
+                status: currentStatus,
+                binaryExists: binaryExists,
+                machServiceReachable: reachable
+            )
+            Self.logger.info("Helper install plan: \(String(describing: plan)), reachable=\(reachable)")
+
+            DispatchQueue.main.async {
+                self.applyHelperInstallPlan(plan, service: service, completion: completion)
+            }
+        }
+    }
+
+    /// Applies a previously computed install plan on the main thread.
+    private func applyHelperInstallPlan(
+        _ plan: HelperInstallPlan,
+        service: SMAppService,
+        completion: @escaping (Bool, Error?) -> Void
+    ) {
+        assert(Thread.isMainThread, "applyHelperInstallPlan must run on the main thread")
+
+        switch plan {
+        case .noop:
             completion(true, nil)
             return
-        }
-
-        // If a stale registration exists (enabled with missing binary, or requiresApproval
-        // from a prior install with a different bundle layout), unregister first so
-        // register() installs the current bundle's plist fresh.
-        if currentStatus == .enabled || currentStatus == .requiresApproval {
-            Self.logger.info("Stale registration detected (status=\(currentStatus.rawValue)) — unregistering first")
+        case .unregisterThenRegister:
+            Self.logger.info("Re-registering helper (status=\(service.status.rawValue))")
             do {
                 try service.unregister()
                 Self.logger.info("Unregistered OK")
@@ -653,6 +748,8 @@ class WiFiDataManager {
                 // Unregister failing is non-fatal; attempt register() regardless.
                 Self.logger.warning("Unregister failed (non-fatal): \(error.localizedDescription, privacy: .public)")
             }
+        case .registerOnly:
+            break
         }
 
         do {

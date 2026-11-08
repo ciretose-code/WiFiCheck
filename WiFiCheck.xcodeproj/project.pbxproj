@@ -49,6 +49,7 @@
 		B4C5D6E7F8A9B01122BB88EE /* known-networks-latin1-ssid.plist in Resources */ = {isa = PBXBuildFile; fileRef = A3B4C5D6E7F8A90011AA77DD /* known-networks-latin1-ssid.plist */; };
 		F0A1B2C3D4E5F60718293A4C /* ForgetAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A4B /* ForgetAuthentication.swift */; };
 		F0A1B2C3D4E5F60718293B5C /* ForgetAuthenticationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293B5B /* ForgetAuthenticationTests.swift */; };
+		A1B2C3D4E5F60718293C6D7E /* HelperInstallPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293C6D7D /* HelperInstallPlanTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -147,6 +148,7 @@
 		59F3E33E64694EA4B4B9EA88 /* WiFiCheckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WiFiCheckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0A1B2C3D4E5F60718293A4B /* ForgetAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetAuthentication.swift; sourceTree = "<group>"; };
 		F0A1B2C3D4E5F60718293B5B /* ForgetAuthenticationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetAuthenticationTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293C6D7D /* HelperInstallPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperInstallPlanTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -196,6 +198,7 @@
 				B0C1D2E3F405162738495A61 /* UpdateReleaseURLTests.swift */,
 				47FC3240C88E47009763F52B /* KnownNetworksStoreTests.swift */,
 				F0A1B2C3D4E5F60718293B5B /* ForgetAuthenticationTests.swift */,
+				A1B2C3D4E5F60718293C6D7D /* HelperInstallPlanTests.swift */,
 				CD567CB4244448EE9879C75E /* Fixtures */,
 			);
 			path = WiFiCheckTests;
@@ -506,6 +509,7 @@
 				038ADE8C4E984377BD7A7699 /* KnownNetworksStore.swift in Sources */,
 				B9EFADDC31DA4221B224883A /* KnownNetworksStoreTests.swift in Sources */,
 				F0A1B2C3D4E5F60718293B5C /* ForgetAuthenticationTests.swift in Sources */,
+				A1B2C3D4E5F60718293C6D7E /* HelperInstallPlanTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
