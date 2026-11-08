@@ -7,7 +7,8 @@ import Foundation
     /// The helper runs as root (launchd daemon) so it can bypass the chmod 600 restriction.
     func readWifiPlist(reply: @escaping (Data?, Error?) -> Void)
 
-    /// Deletes one known-networks entry identified by its plist key (`wifi.ssid.<hex>`).
+    /// Deletes one known-networks entry identified by its plist key
+    /// (`wifi.ssid.<hex>` or `wifi.network.ssid.<SSID>`).
     /// The helper validates the key, removes only that entry, and writes the plist atomically.
     func deleteWifiNetwork(wifiID: String, reply: @escaping (Bool, Error?) -> Void)
 }

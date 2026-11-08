@@ -58,8 +58,16 @@ enum Constants {
     /// spent on PropertyListSerialization for arbitrary dropped files.
     static let maxKnownNetworksImportBytes = 5 * 1024 * 1024
 
-    /// Prefix of Apple known-networks dictionary keys (`wifi.ssid.<hex>`).
+    /// Legacy Apple known-networks dictionary keys (`wifi.ssid.<hex>`).
     static let knownNetworkSSIDKeyPrefix = "wifi.ssid."
+
+    /// macOS 27+ known-networks dictionary keys (`wifi.network.ssid.<plaintext SSID>`).
+    static let knownNetworkSSIDKeyPrefixModern = "wifi.network.ssid."
+
+    /// True for either legacy hex keys or modern plaintext SSID keys.
+    static func isKnownNetworkKey(_ key: String) -> Bool {
+        key.hasPrefix(knownNetworkSSIDKeyPrefixModern) || key.hasPrefix(knownNetworkSSIDKeyPrefix)
+    }
 
     /// Networksetup command line utility path
     static let networksetupPath = "/usr/sbin/networksetup"

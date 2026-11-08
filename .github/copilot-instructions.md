@@ -70,7 +70,7 @@ The plist is parsed manually with `PropertyListSerialization` because the top le
 
 **Preserve Apple's typo**: the real plist key is `BrokenBackhaulStateUdatedAt` (missing the second `p`). Keep that typo in the parser constant so lookups still work.
 
-**Do not treat Wi-Fi IDs as plain SSIDs**: plist entries use `wifi.ssid.<hexdata>` keys. Use `WiFiDataManager.parseWiFiSSID(_:)` when decoding network IDs or collocated-group values.
+**Do not treat Wi-Fi IDs as plain SSIDs**: plist entries use `wifi.ssid.<hexdata>` (legacy) or `wifi.network.ssid.<plaintext>` (macOS 27+). Use `Constants.isKnownNetworkKey` / `WiFiDataManager.parseWiFiSSID(_:)` when decoding network IDs or collocated-group values.
 
 **Helper/XPC names must stay aligned**: the app target, helper target, Mach service name (`com.ciretose.macos.tool.WiFiCheck.helper`), and daemon plist name all have to match for helper installation and XPC communication to work.
 

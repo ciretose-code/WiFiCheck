@@ -26,6 +26,13 @@ final class SSIDParsingTests: XCTestCase {
         XCTAssertEqual(manager.parseWiFiSSID("plain-ssid"), "plain-ssid")
     }
 
+    /// macOS 27+ known-networks keys embed the SSID in plaintext after this prefix.
+    func testParseWiFiSSIDNetworkSSIDPrefix() {
+        XCTAssertEqual(manager.parseWiFiSSID("wifi.network.ssid.HomeNet"), "HomeNet")
+        XCTAssertEqual(manager.parseWiFiSSID("wifi.network.ssid.Hilton Honors"), "Hilton Honors")
+        XCTAssertEqual(manager.parseWiFiSSID("wifi.network.ssid.café"), "café")
+    }
+
     func testSSIDStringPrefersUTF8ThenLatin1() {
         var utf8 = WiFiData()
         utf8.SSID = Data("café".utf8)

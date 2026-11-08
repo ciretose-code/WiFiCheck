@@ -8,8 +8,17 @@ enum HelperError {
     }
 }
 
-/// Accepts only Apple known-networks keys: `wifi.ssid.<hex bytes, optional spaces/brackets>`.
+/// Accepts Apple known-networks keys:
+/// - legacy `wifi.ssid.<hex bytes, optional spaces/brackets>`
+/// - macOS 27+ `wifi.network.ssid.<plaintext SSID>`
 func isValidKnownNetworkID(_ wifiID: String) -> Bool {
+    let modernPrefix = "wifi.network.ssid."
+    if wifiID.hasPrefix(modernPrefix) {
+        let rest = wifiID.dropFirst(modernPrefix.count)
+        guard !rest.isEmpty, rest.count <= 256 else { return false }
+        return !rest.contains(where: { $0 == "\0" || $0.isNewline })
+    }
+
     let prefix = "wifi.ssid."
     guard wifiID.hasPrefix(prefix) else { return false }
     let rest = wifiID.dropFirst(prefix.count)

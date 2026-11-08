@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import os.log
 
@@ -21,11 +22,30 @@ private let kClientCodeSigningRequirement: String = {
 final class HelperDelegate: NSObject, NSXPCListenerDelegate, WiFiHelperProtocol {
 
     func readWifiPlist(reply: @escaping (Data?, Error?) -> Void) {
+        let url = URL(fileURLWithPath: kWifiPlistPath)
+        logger.info("readWifiPlist: euid=\(geteuid(), privacy: .public) path=\(kWifiPlistPath, privacy: .public)")
         do {
-            let data = try Data(contentsOf: URL(fileURLWithPath: kWifiPlistPath))
+            let data = try Data(contentsOf: url)
+            // Diagnostics for macOS 27 TCC / format changes — log shape, not SSIDs.
+            var format: PropertyListSerialization.PropertyListFormat = .binary
+            if let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: &format),
+               let dict = plist as? [String: Any] {
+                let legacyKeys = dict.keys.filter { $0.hasPrefix("wifi.ssid.") }
+                let modernKeys = dict.keys.filter { $0.hasPrefix("wifi.network.ssid.") }
+                let sample = Array(dict.keys.prefix(8)).sorted()
+                logger.info("readWifiPlist: ok bytes=\(data.count, privacy: .public) keys=\(dict.count, privacy: .public) wifi.ssid=\(legacyKeys.count, privacy: .public) wifi.network.ssid=\(modernKeys.count, privacy: .public) sample=\(sample.joined(separator: ","), privacy: .public)")
+            } else {
+                logger.info("readWifiPlist: ok bytes=\(data.count, privacy: .public) (not a dictionary plist)")
+            }
             reply(data, nil)
         } catch {
-            reply(nil, error)
+            let nsErr = error as NSError
+            logger.error("readWifiPlist: FAIL domain=\(nsErr.domain, privacy: .public) code=\(nsErr.code, privacy: .public) \(nsErr.localizedDescription, privacy: .public)")
+            // Re-wrap so the NSError survives NSXPC (stock Cocoa/POSIX errors often do not).
+            reply(nil, HelperError.make(
+                code: 10,
+                message: "Failed to read known-networks plist: \(nsErr.domain) \(nsErr.code) — \(nsErr.localizedDescription)"
+            ))
         }
     }
 

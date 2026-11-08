@@ -88,7 +88,7 @@ final class KnownNetworksParsingTests: XCTestCase {
     }
 
     func testParseDroppedDataRejectsNonKnownNetworksShape() throws {
-        // Valid plist dictionary, but no wifi.ssid.* keys — not Apple known-networks.
+        // Valid plist dictionary, but no wifi.ssid.* / wifi.network.ssid.* keys.
         let unrelated: [String: Any] = [
             "CFBundleIdentifier": "com.example.app",
             "SomeSetting": true,
@@ -96,5 +96,28 @@ final class KnownNetworksParsingTests: XCTestCase {
         let data = try PropertyListSerialization.data(fromPropertyList: unrelated, format: .xml, options: 0)
         XCTAssertFalse(manager.parseDroppedData(data))
         XCTAssertTrue(manager.getWiFiDataList().isEmpty)
+    }
+
+    /// macOS 27+ uses `wifi.network.ssid.<plaintext>` top-level keys.
+    func testParseDroppedMacOS27NetworkSSIDKeys() throws {
+        let data = try Fixtures.data("known-networks-macos27-sample.plist")
+        XCTAssertTrue(manager.parseDroppedData(data))
+
+        let networks = manager.getWiFiDataList()
+        XCTAssertEqual(networks.count, 2)
+        let bySSID = Dictionary(uniqueKeysWithValues: networks.map { ($0.ssidString(), $0) })
+        let home = try XCTUnwrap(bySSID["HomeNet"])
+        XCTAssertTrue(home.WiFiID.hasPrefix("wifi.network.ssid."))
+        XCTAssertEqual(home.securityType(), .wpa3)
+        // CollocatedGroup may still use legacy wifi.ssid.<hex> refs on macOS 27.
+        XCTAssertEqual(home.CollocatedGroup.first?.ssid, "Cafe WiFi")
+        XCTAssertNotNil(bySSID["Cafe WiFi"])
+    }
+
+    func testIsKnownNetworkKeyRecognizesLegacyAndModernPrefixes() {
+        XCTAssertTrue(Constants.isKnownNetworkKey("wifi.ssid.<486f6d654e6574>"))
+        XCTAssertTrue(Constants.isKnownNetworkKey("wifi.network.ssid.HomeNet"))
+        XCTAssertFalse(Constants.isKnownNetworkKey("CFBundleIdentifier"))
+        XCTAssertFalse(Constants.isKnownNetworkKey("wifi.other.thing"))
     }
 }

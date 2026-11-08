@@ -39,6 +39,13 @@ final class KnownNetworksStoreTests: XCTestCase {
         XCTAssertTrue(isValidKnownNetworkID("wifi.ssid.<4D 79 46 72>"))
     }
 
+    func testAcceptsModernNetworkSSIDKeys() {
+        XCTAssertTrue(isValidKnownNetworkID("wifi.network.ssid.HomeNet"))
+        XCTAssertTrue(isValidKnownNetworkID("wifi.network.ssid.Hilton Honors"))
+        XCTAssertFalse(isValidKnownNetworkID("wifi.network.ssid."))
+        XCTAssertFalse(isValidKnownNetworkID("wifi.network.ssid." + String(repeating: "a", count: 257)))
+    }
+
     func testAcceptsBoundaryLengthSuffix() {
         let maxRest = "wifi.ssid." + String(repeating: "a", count: 256)
         XCTAssertTrue(isValidKnownNetworkID(maxRest))

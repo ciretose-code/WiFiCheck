@@ -257,32 +257,25 @@ class WiFiDataManager {
     
     /// Parses Apple's internal WiFi SSID format into a human-readable SSID string.
     ///
-    /// Apple stores WiFi SSIDs in the known networks plist using a special format where the SSID
-    /// is encoded as hexadecimal values within angle brackets. This function decodes that format.
+    /// Decodes an Apple known-networks dictionary key (or CollocatedGroup value) to an SSID.
     ///
-    /// **Format Details:**
-    /// - Input: `"wifi.ssid.<hexdata>"`
-    /// - The hexdata section contains pairs of hex digits representing UTF-8 bytes
-    /// - Format: `<4D7946726565 57696669>` where spaces are optional separators
+    /// Supports:
+    /// - Legacy: `"wifi.ssid.<hexdata>"` (hex UTF-8/Latin-1 bytes, optional spaces/brackets)
+    /// - macOS 27+: `"wifi.network.ssid.<plaintext SSID>"`
     ///
-    /// **Example:**
-    /// ```
-    /// Input:  "wifi.ssid.<4D7946726565 57696669>"
-    /// Decode: 4D=M, 79=y, 46=F, 72=r, 65=e, 65=e, 57=W, 69=i, 66=f, 69=i
-    /// Output: "MyFreeWifi"
-    /// ```
-    ///
-    /// Bytes are accumulated as [UInt8] and decoded as UTF-8 at the end, so multi-byte
-    /// characters (e.g. Chinese, Arabic, emoji) are handled correctly.
-    ///
-    /// - Parameter appleWiFiID: The Apple plist key in format "wifi.ssid.<hexdata>"
-    /// - Returns: The decoded SSID string, or the original input if not in Apple's format
+    /// - Parameter appleWiFiID: The Apple plist key / collocated-group string
+    /// - Returns: The decoded SSID string, or the original input if not in a known format
     func parseWiFiSSID(_ appleWiFiID: String) -> String {
-        guard appleWiFiID.hasPrefix("wifi.ssid.") else {
+        let modern = Constants.knownNetworkSSIDKeyPrefixModern
+        if appleWiFiID.hasPrefix(modern) {
+            return String(appleWiFiID.dropFirst(modern.count))
+        }
+
+        guard appleWiFiID.hasPrefix(Constants.knownNetworkSSIDKeyPrefix) else {
             return appleWiFiID
         }
 
-        let preSSID = String(appleWiFiID.dropFirst(10))
+        let preSSID = String(appleWiFiID.dropFirst(Constants.knownNetworkSSIDKeyPrefix.count))
         var bytes = [UInt8]()
         var hexBuf = ""
 
@@ -439,9 +432,10 @@ class WiFiDataManager {
         }
 
         // Fail closed on plists that are clearly not Apple known-networks dictionaries.
-        let ssidEntries = knownNetworks.filter { $0.key.hasPrefix(Constants.knownNetworkSSIDKeyPrefix) }
+        // Accept legacy `wifi.ssid.<hex>` and macOS 27+ `wifi.network.ssid.<plaintext>`.
+        let ssidEntries = knownNetworks.filter { Constants.isKnownNetworkKey($0.key) }
         guard !ssidEntries.isEmpty else {
-            Self.logger.warning("parseWiFiData: no \(Constants.knownNetworkSSIDKeyPrefix, privacy: .public)* keys — not a known-networks plist")
+            Self.logger.warning("parseWiFiData: no wifi.ssid.* / wifi.network.ssid.* keys — not a known-networks plist")
             return Array<WiFiData>()
         }
 
@@ -707,7 +701,7 @@ class WiFiDataManager {
         let service = SMAppService.daemon(plistName: Self.kDaemonPlistName)
         let currentStatus = service.status
         let binaryExists = helperBinaryExists
-        Self.logger.info("SMAppService status before register: \(String(describing: currentStatus))")
+        Self.logger.info("SMAppService status before register: raw=\(currentStatus.rawValue, privacy: .public) \(String(describing: currentStatus), privacy: .public)")
 
         // Probe off the main thread — a sync wait here can deadlock if XPC
         // callbacks hop back to main while SMAppService later presents UI.
@@ -719,7 +713,7 @@ class WiFiDataManager {
                 binaryExists: binaryExists,
                 machServiceReachable: reachable
             )
-            Self.logger.info("Helper install plan: \(String(describing: plan)), reachable=\(reachable)")
+            Self.logger.info("Helper install plan: \(String(describing: plan), privacy: .public), reachable=\(reachable, privacy: .public)")
 
             DispatchQueue.main.async {
                 self.applyHelperInstallPlan(plan, service: service, completion: completion)
@@ -891,13 +885,38 @@ class WiFiDataManager {
         }
 
         proxy.readWifiPlist { data, error in
+            if let error = error {
+                let nsErr = error as NSError
+                Self.logger.error("Helper read error domain=\(nsErr.domain, privacy: .public) code=\(nsErr.code, privacy: .public) \(nsErr.localizedDescription, privacy: .public)")
+            }
             guard let data = data else {
                 Self.logger.error("Helper returned no data: \(error?.localizedDescription ?? "unknown", privacy: .public)")
-                finish(nil, error)
+                finish(nil, error ?? Self.helperInvalidatedError)
                 connection.invalidate()
                 return
             }
+            Self.logger.info("Helper returned \(data.count, privacy: .public) bytes (error=\(error == nil ? "nil" : "non-nil", privacy: .public))")
             let parsed = self.parseWiFiData(from: data)
+            if parsed.isEmpty {
+                // Distinguish TCC-denied / wrong-shape replies from a legitimately empty store.
+                var format: PropertyListSerialization.PropertyListFormat = .binary
+                let keySample: String
+                if let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: &format),
+                   let dict = plist as? [String: Any] {
+                    keySample = Array(dict.keys.prefix(12)).sorted().joined(separator: ",")
+                } else {
+                    keySample = "<non-dictionary \(data.count) bytes>"
+                }
+                Self.logger.error("Helper data produced 0 networks; top-level keys: \(keySample, privacy: .public)")
+                finish(nil, error ?? NSError(
+                    domain: Self.helperXPCErrorDomain,
+                    code: 105,
+                    userInfo: [NSLocalizedDescriptionKey:
+                        "Helper returned data that is not a known-networks plist (0 wifi.ssid.*/wifi.network.ssid.* keys). Keys: \(keySample)"]
+                ))
+                connection.invalidate()
+                return
+            }
             finish(parsed, nil)
             connection.invalidate()
         }

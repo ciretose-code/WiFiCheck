@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>wifi.network.ssid.Cafe WiFi</key>
+	<dict>
+		<key>AddReason</key>
+		<string>User joined</string>
+		<key>AddedAt</key>
+		<date>2024-01-15T12:00:00Z</date>
+		<key>BSSList</key>
+		<array>
+			<dict>
+				<key>BSSID</key>
+				<string>aa:bb:cc:dd:ee:01</string>
+				<key>Channel</key>
+				<integer>36</integer>
+				<key>ChannelFlags</key>
+				<integer>16</integer>
+			</dict>
+		</array>
+		<key>Hidden</key>
+		<false/>
+		<key>JoinedByUserAt</key>
+		<date>2024-06-02T09:00:00Z</date>
+		<key>Moving</key>
+		<false/>
+		<key>SSID</key>
+		<data>
+		Q2FmZSBXaUZp
+		</data>
+		<key>SupportedSecurityTypes</key>
+		<string>WPA2 Personal</string>
+		<key>SystemMode</key>
+		<false/>
+		<key>UpdatedAt</key>
+		<date>2024-06-02T09:00:00Z</date>
+		<key>__OSSpecific__</key>
+		<dict>
+			<key>ChannelHistory</key>
+			<array/>
+			<key>CollocatedGroup</key>
+			<array>
+				<string>wifi.ssid.&lt;436166652057694669&gt;</string>
+			</array>
+			<key>RoamingProfileType</key>
+			<string>None</string>
+			<key>TemporarilyDisabled</key>
+			<false/>
+		</dict>
+	</dict>
+	<key>wifi.network.ssid.HomeNet</key>
+	<dict>
+		<key>AddReason</key>
+		<string>User joined</string>
+		<key>AddedAt</key>
+		<date>2024-01-15T12:00:00Z</date>
+		<key>BSSList</key>
+		<array>
+			<dict>
+				<key>BSSID</key>
+				<string>aa:bb:cc:dd:ee:01</string>
+				<key>Channel</key>
+				<integer>36</integer>
+				<key>ChannelFlags</key>
+				<integer>16</integer>
+			</dict>
+		</array>
+		<key>Hidden</key>
+		<false/>
+		<key>JoinedByUserAt</key>
+		<date>2024-06-02T09:00:00Z</date>
+		<key>Moving</key>
+		<false/>
+		<key>SSID</key>
+		<data>
+		SG9tZU5ldA==
+		</data>
+		<key>SupportedSecurityTypes</key>
+		<string>WPA3 Personal</string>
+		<key>SystemMode</key>
+		<false/>
+		<key>UpdatedAt</key>
+		<date>2024-06-02T09:00:00Z</date>
+		<key>__OSSpecific__</key>
+		<dict>
+			<key>ChannelHistory</key>
+			<array/>
+			<key>CollocatedGroup</key>
+			<array>
+				<string>wifi.ssid.&lt;436166652057694669&gt;</string>
+			</array>
+			<key>RoamingProfileType</key>
+			<string>None</string>
+			<key>TemporarilyDisabled</key>
+			<false/>
+		</dict>
+	</dict>
+</dict>
+</plist>

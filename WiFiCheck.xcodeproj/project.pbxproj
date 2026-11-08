@@ -47,6 +47,7 @@
 		D0E1F2A3B4C5D67788DD44AA /* preferred-networks-empty.txt in Resources */ = {isa = PBXBuildFile; fileRef = C9D0E1F2A3B4C56677CC3399 /* preferred-networks-empty.txt */; };
 		F2A3B4C5D6E7F89900FF66CC /* known-networks-sample.plist in Resources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6E78899EE55BB /* known-networks-sample.plist */; };
 		B4C5D6E7F8A9B01122BB88EE /* known-networks-latin1-ssid.plist in Resources */ = {isa = PBXBuildFile; fileRef = A3B4C5D6E7F8A90011AA77DD /* known-networks-latin1-ssid.plist */; };
+		C5D6E7F8A9B0C12233CC99FF /* known-networks-macos27-sample.plist in Resources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B01122AA88EE /* known-networks-macos27-sample.plist */; };
 		F0A1B2C3D4E5F60718293A4C /* ForgetAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A4B /* ForgetAuthentication.swift */; };
 		F0A1B2C3D4E5F60718293B5C /* ForgetAuthenticationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293B5B /* ForgetAuthenticationTests.swift */; };
 		A1B2C3D4E5F60718293C6D7E /* HelperInstallPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293C6D7D /* HelperInstallPlanTests.swift */; };
@@ -146,6 +147,7 @@
 		C9D0E1F2A3B4C56677CC3399 /* preferred-networks-empty.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = preferred-networks-empty.txt; sourceTree = "<group>"; };
 		E1F2A3B4C5D6E78899EE55BB /* known-networks-sample.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = known-networks-sample.plist; sourceTree = "<group>"; };
 		A3B4C5D6E7F8A90011AA77DD /* known-networks-latin1-ssid.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = known-networks-latin1-ssid.plist; sourceTree = "<group>"; };
+		B4C5D6E7F8A9B01122AA88EE /* known-networks-macos27-sample.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = known-networks-macos27-sample.plist; sourceTree = "<group>"; };
 		59F3E33E64694EA4B4B9EA88 /* WiFiCheckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WiFiCheckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0A1B2C3D4E5F60718293A4B /* ForgetAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetAuthentication.swift; sourceTree = "<group>"; };
 		F0A1B2C3D4E5F60718293B5B /* ForgetAuthenticationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetAuthenticationTests.swift; sourceTree = "<group>"; };
@@ -183,6 +185,7 @@
 				C9D0E1F2A3B4C56677CC3399 /* preferred-networks-empty.txt */,
 				E1F2A3B4C5D6E78899EE55BB /* known-networks-sample.plist */,
 				A3B4C5D6E7F8A90011AA77DD /* known-networks-latin1-ssid.plist */,
+				B4C5D6E7F8A9B01122AA88EE /* known-networks-macos27-sample.plist */,
 			);
 			path = Fixtures;
 			sourceTree = "<group>";
@@ -441,6 +444,7 @@
 				D0E1F2A3B4C5D67788DD44AA /* preferred-networks-empty.txt in Resources */,
 				F2A3B4C5D6E7F89900FF66CC /* known-networks-sample.plist in Resources */,
 				B4C5D6E7F8A9B01122BB88EE /* known-networks-latin1-ssid.plist in Resources */,
+				C5D6E7F8A9B0C12233CC99FF /* known-networks-macos27-sample.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
