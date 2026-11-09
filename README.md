@@ -1,7 +1,3 @@
-> [!IMPORTANT]
-> macOS 27.2 broke the install...  Hopefully a fix will be coming soon.
-
-
 # WiFi Check
 
 
