@@ -5,6 +5,7 @@
 //  Created by Eric Wuehler on 9/10/21.
 //
 
+import AppKit
 import SwiftUI
 
 @main
@@ -44,6 +45,12 @@ struct WiFiCheckApp: App {
                     NotificationCenter.default.post(name: .showRemoveHelperSheet, object: nil)
                 }
             }
+            CommandGroup(replacing: .help) {
+                Button("WiFi Check Help") {
+                    NSWorkspace.shared.open(Constants.helpURL)
+                }
+                .keyboardShortcut("?", modifiers: .command)
+            }
         }
     }
 }
@@ -57,8 +64,52 @@ extension Notification.Name {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // SwiftUI builds the menu asynchronously; rewire after the Help item exists,
+        // and again whenever AppKit reinstalls the default showHelp: action.
+        DispatchQueue.main.async { self.rewireHelpMenu() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.rewireHelpMenu() }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(menuDidChange(_:)),
+            name: NSMenu.didAddItemNotification,
+            object: nil
+        )
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        rewireHelpMenu()
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
+    }
+
+    @objc private func menuDidChange(_ notification: Notification) {
+        guard let menu = notification.object as? NSMenu,
+              menu.title == "Help" || menu == NSApp.mainMenu else { return }
+        DispatchQueue.main.async { self.rewireHelpMenu() }
+    }
+
+    /// Replaces the system Help action that shows “Help isn’t available for WiFi Check.”
+    private func rewireHelpMenu() {
+        guard let helpMenu = NSApp.mainMenu?.items
+            .first(where: { $0.title == "Help" })?
+            .submenu else { return }
+
+        for item in helpMenu.items where !item.isSeparatorItem {
+            let pointsAtSystemHelp = item.action == #selector(NSApplication.showHelp(_:))
+            let looksLikeHelpItem = item.title.localizedCaseInsensitiveContains("Help")
+            guard pointsAtSystemHelp || looksLikeHelpItem else { continue }
+            item.target = self
+            item.action = #selector(openProductHelp(_:))
+            item.keyEquivalent = "?"
+            item.keyEquivalentModifierMask = .command
+        }
+    }
+
+    @objc private func openProductHelp(_ sender: Any?) {
+        NSWorkspace.shared.open(Constants.helpURL)
     }
 }
 

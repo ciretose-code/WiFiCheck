@@ -33,6 +33,11 @@ enum Constants {
     /// Keychain service name for WiFi passwords
     static let keychainService = "AirPort"
 
+    // MARK: - Help
+
+    /// Product site opened from the Help menu
+    static let helpURL = URL(string: "https://wificheck.app")!
+
     // MARK: - App Updates
 
     /// GitHub repository owner used for manual update checks
