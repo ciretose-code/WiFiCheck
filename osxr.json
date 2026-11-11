@@ -1,0 +1,12 @@
+{
+  "scheme": "WiFiCheck",
+  "project": "WiFiCheck.xcodeproj",
+  "appName": "WiFi Check",
+  "notaryProfile": "osxr-notary",
+  "versionSource": "plist",
+  "infoPlist": "WiFiCheck/Info.plist",
+  "dmgBackground": "Scripts/dmg-background.png",
+  "releaseBranch": "main",
+  "runTests": false,
+  "minisignPublicKeyURL": "https://ciretose.com/ciretose.pub"
+}

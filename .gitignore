@@ -7,7 +7,9 @@ build/
 *.p8
 *.p12
 *.pem
+*.key
 # Local Apple Team ID — copy from Config/Local.xcconfig.template
 Config/Local.xcconfig
+Config/Signing.local.xcconfig
 Scripts/ExportOptions.plist
 .worktrees/
