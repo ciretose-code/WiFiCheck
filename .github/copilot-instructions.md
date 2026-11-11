@@ -29,11 +29,8 @@ For helper testing, the built app must be installed to `/Applications` because `
 ./Scripts/install-dev.sh
 ```
 
-The release pipeline is scripted here:
-
-```bash
-./Scripts/release.sh
-```
+Releases use the shared **osxr** toolkit (`osxr.json` at the repo root). In an
+agent session run `/osxr:release` (dry-run first; `--apply` only after confirmation).
 
 There are **no XCTest targets** in this repo today, so there is no single-test command to run. There is also **no lint/formatter configuration**; follow the existing Swift style and rely on Xcode compiler diagnostics.
 
