@@ -124,7 +124,6 @@
 		7B798E592F848D6E00D33965 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		7B798E5A2F848D9200D33965 /* ExportOptions.plist.template */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = ExportOptions.plist.template; sourceTree = "<group>"; };
 		7B798E5B2F848D9200D33965 /* install-dev.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-dev.sh"; sourceTree = "<group>"; };
-		7B798E5C2F848D9200D33965 /* release.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = release.sh; sourceTree = "<group>"; };
 		7B7D654B2F56525700FA47CF /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		7BCF2FA62737335E00ABC4D1 /* CheckboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxView.swift; sourceTree = "<group>"; };
 		8513818756E24D7198D0267C /* com.ciretose.macos.tool.WiFiCheck.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.ciretose.macos.tool.WiFiCheck.helper.plist; sourceTree = "<group>"; };
@@ -291,7 +290,6 @@
 			children = (
 				7B798E5A2F848D9200D33965 /* ExportOptions.plist.template */,
 				7B798E5B2F848D9200D33965 /* install-dev.sh */,
-				7B798E5C2F848D9200D33965 /* release.sh */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
@@ -368,7 +366,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7B3DEFE726EBF0DE007BE881 /* Build configuration list for PBXNativeTarget "WiFiCheck" */;
 			buildPhases = (
-				7B0B6A89272E3A0E006053B8 /* Increment Build Number */,
 				7B3DEFD326EBF0DC007BE881 /* Sources */,
 				7B3DEFD426EBF0DC007BE881 /* Frameworks */,
 				7B3DEFD526EBF0DC007BE881 /* Resources */,
@@ -445,26 +442,6 @@
 			);
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		7B0B6A89272E3A0E006053B8 /* Increment Build Number */ = {
-			isa = PBXShellScriptBuildPhase;
-			name = "Increment Build Number";
-			outputPaths = (
-				"$(PROJECT_DIR)/$(INFOPLIST_FILE)",
-			);
-			shellPath = /bin/sh;
-			shellScript = (
-				"if [ \"${CI:-}\" = \"true\" ] || [ \"${CODE_SIGNING_ALLOWED:-YES}\" = \"NO\" ]; then",
-				"  echo \"Skipping build number increment (CI / unsigned build)\"",
-				"  exit 0",
-				"fi",
-				"buildNumber=$(/usr/libexec/PlistBuddy -c \"Print CFBundleVersion\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\")",
-				"buildNumber=$(($buildNumber + 1))",
-				"/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $buildNumber\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\"",
-			);
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		3EAEC6CA66654E15956EEB46 /* Sources */ = {
